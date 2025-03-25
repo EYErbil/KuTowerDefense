@@ -20,6 +20,7 @@ graph TD
     UC11[Toggle Game Speed]
     UC12[View Tower Range]
     UC13[Configure Game Options]
+    UC14[Game Over]
 
     %% Relationships
     Player --> UC1
@@ -39,6 +40,8 @@ graph TD
     Player --> UC12
     
     UC3 --> UC13
+    
+    GameSystem((Game System)) --> UC14
     
     %% Include relationships
     UC5 -->|include| place_path[Place Path Tiles]

@@ -1,33 +1,39 @@
 # Operation Contract: Start New Game
 
-## Operation: startNewGame(mapName: String): GameSession
+## Operation: startNewGame(mapId: String, difficultyLevel: Enum): void
 
 ## Cross References: Use Case UC1 - Start New Game
 
 ## Preconditions:
 - The application is running
-- At least one Map has been saved in the system
-- The Player has selected a map to load
+- The Player has selected "New Game" from the main menu
+- The map with the specified mapId exists in the system
+- difficultyLevel is one of the predefined game difficulty settings
 
 ## Postconditions:
-- A new GameSession object is created
-- The selected Map is loaded into the GameSession
-- Player's starting resources are initialized:
-  - Gold is set to starting value from options
-  - Hit points are set to starting value from options
-- Enemy wave data is initialized according to options:
-  - Number of waves
-  - Groups per wave
-  - Enemies per group
-  - Delays between waves, groups, and enemies
-- Grace period timer (4 seconds) is started
-- Game UI elements are displayed:
-  - Map with path and tower slots
-  - Player resources (gold, hit points)
-  - Wave counter
-  - Game control buttons (pause, speed toggle)
+- The specified map is loaded and initialized
+- Game entities are created according to the map definition:
+  - Entry and exit points are established
+  - Path network is constructed
+  - Buildable areas are marked
+  - Terrain features are rendered
+- Game state is initialized based on difficultyLevel:
+  - Player's starting resources (gold, lives)
+  - Enemy wave composition and timing
+  - Tower costs and upgrade paths
+- Game UI is displayed with:
+  - Game map as the central element
+  - Resource displays (gold, lives)
+  - Tower selection interface
+  - Wave/progress indicators
+  - Game control buttons (pause, speed, quit)
+- Game time begins running (unless auto-paused at start)
+- The first wave countdown is initiated
 
 ## Notes:
-- The GameSession maintains all state for the current game
-- Enemy spawn scheduling begins after the grace period expires
-- The GameSession object is returned to allow referencing the current game 
+- Different difficulty levels should modify game parameters without changing map layout
+- Loading large maps may require a progress indicator
+- The system should validate map integrity before starting
+- Player's previous game statistics should be available but not affect the new game
+- Game state should be periodically auto-saved for crash recovery
+- Real-time performance monitoring may adjust visual effects to maintain frame rate 
