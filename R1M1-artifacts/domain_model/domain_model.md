@@ -141,7 +141,7 @@ classDiagram
         resetToDefaults()
     }
 
-    % Relationships
+    %% Relationships
     Player "1" -- "1" GameSession : participates in
     Map "1" -- "*" Tile : contains
     Map "1" -- "1" Path : has
