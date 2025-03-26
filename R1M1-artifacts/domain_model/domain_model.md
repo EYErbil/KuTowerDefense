@@ -5,8 +5,7 @@ classDiagram
     class Player {
         gold
         hitPoints
-        adjustGold(amount)
-        adjustHitPoints(amount)
+        
     }
 
     class Map {
@@ -14,7 +13,7 @@ classDiagram
         grid
         startPoint
         endPoint
-        validateMap()
+        
     }
 
     class Tile {
@@ -28,7 +27,7 @@ classDiagram
         tiles
         startPoint
         endPoint
-        isConnected()
+        
     }
 
     class TowerSlot {
@@ -44,8 +43,7 @@ classDiagram
         rateOfFire
         damage
         cost
-        target(Enemy)
-        fire()
+        
     }
 
     class ArcherTower {
@@ -66,8 +64,7 @@ classDiagram
         damage
         position
         targetEnemy
-        move()
-        hit()
+       
     }
 
     class Arrow {
@@ -89,9 +86,7 @@ classDiagram
         speed
         position
         pathProgress
-        move()
-        takeDamage(amount)
-        isDefeated()
+       
     }
 
     class Goblin {
@@ -109,13 +104,13 @@ classDiagram
         totalGroups
         currentGroup
         groups
-        spawnNextGroup()
+        
     }
 
     class Group {
         enemies
         delay
-        spawnNextEnemy()
+        
     }
 
     class GameSession {
@@ -126,8 +121,7 @@ classDiagram
         enemies
         gameSpeed
         isPaused
-        startWave()
-        updateGameState()
+        
     }
 
     class GameOptions {
@@ -136,9 +130,7 @@ classDiagram
         waveSettings
         towerSettings
         enemySettings
-        saveOptions()
-        loadOptions()
-        resetToDefaults()
+       
     }
 
     %% Relationships
