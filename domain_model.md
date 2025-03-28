@@ -169,8 +169,6 @@ classDiagram
     Path "1" -- "*" Tile : consists of
     TowerSlot "0..1" -- "1" Tower : contains
     GameSession "1" -- "1" Map : uses
-    GameSession "1" -- "*" Tower : manages
-    GameSession "1" -- "*" Enemy : manages
     GameSession "1" -- "*" Wave : contains
     Wave "1" -- "*" Group : contains
     Group "1" -- "*" Enemy : spawns
