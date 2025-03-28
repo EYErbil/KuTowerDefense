@@ -1,4 +1,6 @@
-
+```mermaid
+classDiagram
+    title KU Tower Defense Domain Model
 
 
     class Player {
