@@ -4,8 +4,9 @@ classDiagram
 
 
     class Player {
-        gold
-        hitPoints
+        currentGold
+        currentHitPoints
+        
     }
 
     
@@ -30,7 +31,6 @@ classDiagram
    
     class TowerSlot {
         position
-        isEmpty
     }
 
     
@@ -38,9 +38,9 @@ classDiagram
         position   
         rangeMultiplier
         rateOfFireMultiplier
-        cost
         level
         damageMultiplier
+        updateCostModifier
         
     }
 
@@ -48,15 +48,21 @@ classDiagram
     class ArcherTower {
         range
         rateOfFire
+        updateCost
+        buildCost
     }
     class ArtilleryTower {
         aoeRadiusMultiplier
         range
         rateOfFire
+        updateCost
+        buildCost
     }
     class MageTower {
         range
         rateOfFire
+        updateCost
+        buildCost
     }
 
     Tower <|-- ArcherTower
@@ -93,9 +99,9 @@ classDiagram
         
     }
 
-    ArcherTower "1" -- "*" Arrow : fires
-    ArtilleryTower "1" -- "*" ArtilleryShell : fires
-    MageTower "1" -- "*" Spell : fires
+    ArcherTower  --  Arrow : spawns
+    ArtilleryTower  -- ArtilleryShell : spawns
+    MageTower  --  Spell : spawns
 
     
     class Enemy {
@@ -112,7 +118,7 @@ classDiagram
         aoeResistance
         hitpoint
         speed
-        loot
+        
         
     }
 
@@ -122,7 +128,7 @@ classDiagram
         aoeResistance
         speed
         hitpoint
-        loot
+        
     }
 
     Enemy <|-- Goblin
@@ -130,25 +136,30 @@ classDiagram
 
     
     class Wave {
-        number
+        delayBetweenGroups
+        waveNumber
         totalGroups
-        currentGroup
+        
+        
         
     }
 
     class Group {
-        enemies
-        delay
+        numberOfGoblins
+        numberOfKnights
+        delayBetweenEnemies
     }
 
     class GameSession {
+        delayBetweenWaves
         map
         player
         waves
-        towers
-        enemies
+        currentWaveIndex
+        aliveEnemies
         gameSpeed
         isPaused
+        
         
     }
 
@@ -158,6 +169,8 @@ classDiagram
         waveSettings
         towerSettings
         enemySettings
+        lootObtainedFromGoblin
+        lootObtainedFromKnight
         
     }
 
