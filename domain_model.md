@@ -65,9 +65,9 @@ classDiagram
         buildCost
     }
 
-    Tower -- ArcherTower : hastype
-    Tower -- ArtilleryTower : hastype
-    Tower -- MageTower : hastype
+    Tower -- ArcherTower : has type
+    Tower -- ArtilleryTower : has type
+    Tower -- MageTower : has type
 
     
     class Arrow {
@@ -131,8 +131,8 @@ classDiagram
         
     }
 
-    Enemy <|-- Goblin
-    Enemy <|-- Knight
+    Enemy -- Goblin : has type
+    Enemy -- Knight : has type
 
     
     class Wave {
