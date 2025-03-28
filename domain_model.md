@@ -65,9 +65,9 @@ classDiagram
         buildCost
     }
 
-    Tower -- ArcherTower
-    Tower -- ArtilleryTower
-    Tower -- MageTower
+    Tower -- ArcherTower : hastype
+    Tower -- ArtilleryTower : hastype
+    Tower -- MageTower : hastype
 
     
     class Arrow {
