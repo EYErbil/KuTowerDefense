@@ -6,7 +6,6 @@ graph TD
 
     %% Actors
     Player(["/‾\\<br> | <br>/ \\<br><br>Player"]):::actor
-    ...
     GameSystem(["Game System<br>(Actor)"]):::actor
 
     %% Main Use Cases (elliptical style)
@@ -62,13 +61,7 @@ graph TD
     validate_map -- extend --> UC6
 
     %% Class definitions for different “types” of nodes
-    classDef actor stroke:#333,stroke-dasharray: 3 3,fill:#fff,rx:5,ry:5
+    classDef actor stroke:#333,stroke-dasharray:3 3,fill:#fff,rx:5,ry:5
     classDef usecase stroke:#333,fill:#f8f8f8,rx:20,ry:20
-    classDef include stroke-dasharray: 1 1,fill:#fff,rx:20,ry:20
-    classDef extend stroke-dasharray: 2 2,fill:#fff,rx:20,ry:20
-
-UC8 ..> select_tower_type : <<include>>
-
-%% "extend" relationship:
-validate_map ..|> UC6 : <<extend>>
-``` 
+    classDef include stroke-dasharray:1 1,fill:#fff,rx:20,ry:20
+    classDef extend stroke-dasharray:2 2,fill:#fff,rx:20,ry:20
