@@ -1,55 +1,53 @@
 ```mermaid
-graph TD
-    title[KU Tower Defense - Phase I Use Case Diagram]
-    style title fill:none,stroke:none
+%% This syntax is experimental and may not be supported in all Mermaid environments
+useCaseDiagram
+title: KU Tower Defense - Phase I Use Case Diagram
 
-    %% Actors
-    Player((Player))
+actor Player as "Player"
+actor GameSystem as "Game System"
 
-    %% Main Use Cases
-    UC1[Start New Game]
-    UC2[Open Level Editor]
-    UC3[Open Options]
-    UC4[Quit Game]
-    UC5[Create Custom Map]
-    UC6[Save Map]
-    UC7[Load Map]
-    UC8[Construct Tower]
-    UC9[Sell Tower]
-    UC10[Pause Game]
-    UC11[Toggle Game Speed]
-    UC12[View Tower Range]
-    UC13[Configure Game Options]
-    UC14[Game Over]
+usecase UC1 as "Start New Game"
+usecase UC2 as "Open Level Editor"
+usecase UC3 as "Open Options"
+usecase UC4 as "Quit Game"
+usecase UC5 as "Create Custom Map"
+usecase UC6 as "Save Map"
+usecase UC7 as "Load Map"
+usecase UC8 as "Construct Tower"
+usecase UC9 as "Sell Tower"
+usecase UC10 as "Pause Game"
+usecase UC11 as "Toggle Game Speed"
+usecase UC12 as "View Tower Range"
+usecase UC13 as "Configure Game Options"
+usecase UC14 as "Game Over"
 
-    %% Relationships
-    Player --> UC1
-    Player --> UC2
-    Player --> UC3
-    Player --> UC4
-    
-    UC2 --> UC5
-    UC5 --> UC6
-    
-    UC1 --> UC7
-    
-    Player --> UC8
-    Player --> UC9
-    Player --> UC10
-    Player --> UC11
-    Player --> UC12
-    
-    UC3 --> UC13
-    
-    GameSystem((Game System)) --> UC14
-    
-    %% Include relationships
-    UC5 -->|include| place_path[Place Path Tiles]
-    UC5 -->|include| place_tower_slots[Place Tower Slots]
-    UC5 -->|include| mark_start_end[Mark Start/End Points]
-    
-    UC8 -->|include| select_tower_type[Select Tower Type]
-    
-    %% Extend relationships
-    validate_map[Validate Map] -->|extend| UC6
+Player --> UC1
+Player --> UC2
+Player --> UC3
+Player --> UC4
+
+UC2 --> UC5
+UC5 --> UC6
+
+UC1 --> UC7
+
+Player --> UC8
+Player --> UC9
+Player --> UC10
+Player --> UC11
+Player --> UC12
+
+UC3 --> UC13
+
+GameSystem --> UC14
+
+%% "include" relationships:
+UC5 ..> place_path : <<include>>
+UC5 ..> place_tower_slots : <<include>>
+UC5 ..> mark_start_end : <<include>>
+
+UC8 ..> select_tower_type : <<include>>
+
+%% "extend" relationship:
+validate_map ..|> UC6 : <<extend>>
 ``` 
