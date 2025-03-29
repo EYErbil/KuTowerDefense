@@ -2,22 +2,21 @@
 classDiagram
     title KU Tower Defense Domain Model
 
+
     class Player {
-        gold
-        hitPoints
+        currentGold
+        currentHitPoints
         
     }
 
+    
     class Map {
         name
-        grid
-        startPoint
-        endPoint
-        
+        tiles  
+        path
     }
 
     class Tile {
-        type
         position
         isWalkable
         isPlaceable
@@ -27,100 +26,140 @@ classDiagram
         tiles
         startPoint
         endPoint
-        
     }
 
+   
     class TowerSlot {
         position
-        isEmpty
-        tower
     }
 
+    
     class Tower {
-        type
-        position
-        range
-        rateOfFire
-        damage
-        cost
+        position   
+        rangeMultiplier
+        rateOfFireMultiplier
+        level
+        damageMultiplier
+        updateCostModifier
         
     }
 
+    
     class ArcherTower {
-        arrowDamage
+        range
+        rateOfFire
+        updateCost
+        buildCost
     }
-
     class ArtilleryTower {
-        shellDamage
-        aoeRadius
+        aoeRadiusMultiplier
+        range
+        rateOfFire
+        updateCost
+        buildCost
     }
-
     class MageTower {
-        spellDamage
+        range
+        rateOfFire
+        updateCost
+        buildCost
     }
 
-    class Projectile {
-        type
+    Tower -- ArcherTower : has type
+    Tower -- ArtilleryTower : has type
+    Tower -- MageTower : has type
+
+    
+    class Arrow {
         damage
+        damageType
+        speed
         position
         targetEnemy
-       
-    }
-
-    class Arrow {
-        speed
+        
     }
 
     class ArtilleryShell {
+        damage
+        damageType  
+        speed
         aoeRadius
-        explosionDamage
+        position
+        targetEnemy
+        
     }
 
     class Spell {
+        damage
+        damageType
+        speed
         effectDuration
+        position
+        targetEnemy
+        
     }
 
+    ArcherTower  --  Arrow : spawns
+    ArtilleryTower  -- ArtilleryShell : spawns
+    MageTower  --  Spell : spawns
+
+    
     class Enemy {
-        type
-        hitPoints
-        speed
+        
+        
         position
         pathProgress
-       
+        
     }
 
     class Goblin {
         arrowResistance
-        spellWeakness
+        spellResistance
+        aoeResistance
+        hitpoint
+        speed
+        
+        
     }
 
     class Knight {
         arrowResistance
-        spellWeakness
+        spellResistance
+        aoeResistance
+        speed
+        hitpoint
+        
     }
 
+    Enemy -- Goblin : has type
+    Enemy -- Knight : has type
+
+    
     class Wave {
-        number
+        delayBetweenGroups
+        waveNumber
         totalGroups
-        currentGroup
-        groups
+        
+        
         
     }
 
     class Group {
-        enemies
-        delay
-        
+        numberOfGoblins
+        numberOfKnights
+        delayBetweenEnemies
     }
 
     class GameSession {
+        delayBetweenWaves
         map
         player
         waves
-        towers
-        enemies
+        currentWaveIndex
+        aliveEnemies
         gameSpeed
         isPaused
+        
         
     }
 
@@ -130,30 +169,20 @@ classDiagram
         waveSettings
         towerSettings
         enemySettings
-       
+        lootObtainedFromGoblin
+        lootObtainedFromKnight
+        
     }
 
-    %% Relationships
+    
     Player "1" -- "1" GameSession : participates in
     Map "1" -- "*" Tile : contains
     Map "1" -- "1" Path : has
     Map "1" -- "*" TowerSlot : has
     Path "1" -- "*" Tile : consists of
     TowerSlot "0..1" -- "1" Tower : contains
-    Tower <|-- ArcherTower
-    Tower <|-- ArtilleryTower
-    Tower <|-- MageTower
-    Tower "1" -- "*" Projectile : fires
-    Projectile <|-- Arrow
-    Projectile <|-- ArtilleryShell
-    Projectile <|-- Spell
-    Enemy <|-- Goblin
-    Enemy <|-- Knight
     GameSession "1" -- "1" Map : uses
-    GameSession "1" -- "*" Tower : manages
-    GameSession "1" -- "*" Enemy : manages
     GameSession "1" -- "*" Wave : contains
     Wave "1" -- "*" Group : contains
     Group "1" -- "*" Enemy : spawns
     GameSession "1" -- "1" GameOptions : configuredBy
-``` 
