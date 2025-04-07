@@ -1,28 +1,30 @@
 ```mermaid
 graph TD
-    title[KU Tower Defense - Phase I Use Case Diagram]
+    %% This is just a title node (invisible)
+    title["KU Tower Defense - Phase I Use Case Diagram"]
     style title fill:none,stroke:none
 
     %% Actors
-    Player((Player))
+    Player(["/‾\\<br> | <br>/ \\<br><br>Player"]):::actor
+    GameSystem(["Game System<br>(Actor)"]):::actor
 
-    %% Main Use Cases
-    UC1[Start New Game]
-    UC2[Open Level Editor]
-    UC3[Open Options]
-    UC4[Quit Game]
-    UC5[Create Custom Map]
-    UC6[Save Map]
-    UC7[Load Map]
-    UC8[Construct Tower]
-    UC9[Sell Tower]
-    UC10[Pause Game]
-    UC11[Toggle Game Speed]
-    UC12[View Tower Range]
-    UC13[Configure Game Options]
-    UC14[Game Over]
+    %% Main Use Cases (elliptical style)
+    UC1["Start New Game"]:::usecase
+    UC2["Open Level Editor"]:::usecase
+    UC3["Open Options"]:::usecase
+    UC4["Quit Game"]:::usecase
+    UC5["Create Custom Map"]:::usecase
+    UC6["Save Map"]:::usecase
+    UC7["Load Map"]:::usecase
+    UC8["Construct Tower"]:::usecase
+    UC9["Sell Tower"]:::usecase
+    UC10["Pause Game"]:::usecase
+    UC11["Toggle Game Speed"]:::usecase
+    UC12["View Tower Range"]:::usecase
+    UC13["Configure Game Options"]:::usecase
+    UC14["Game Over"]:::usecase
 
-    %% Relationships
+    %% Relationship lines
     Player --> UC1
     Player --> UC2
     Player --> UC3
@@ -41,15 +43,25 @@ graph TD
     
     UC3 --> UC13
     
-    GameSystem((Game System)) --> UC14
-    
-    %% Include relationships
-    UC5 -->|include| place_path[Place Path Tiles]
-    UC5 -->|include| place_tower_slots[Place Tower Slots]
-    UC5 -->|include| mark_start_end[Mark Start/End Points]
-    
-    UC8 -->|include| select_tower_type[Select Tower Type]
-    
-    %% Extend relationships
-    validate_map[Validate Map] -->|extend| UC6
-``` 
+    GameSystem --> UC14
+
+    %% "include" relationships
+    place_path["Place Path Tiles"]:::include
+    place_tower_slots["Place Tower Slots"]:::include
+    mark_start_end["Mark Start/End Points"]:::include
+    UC5 -- include --> place_path
+    UC5 -- include --> place_tower_slots
+    UC5 -- include --> mark_start_end
+
+    select_tower_type["Select Tower Type"]:::include
+    UC8 -- include --> select_tower_type
+
+    %% "extend" relationship
+    validate_map["Validate Map"]:::extend
+    validate_map -- extend --> UC6
+
+    %% Class definitions for different “types” of nodes
+    classDef actor stroke:#333,stroke-dasharray:3 3,fill:#fff,rx:5,ry:5
+    classDef usecase stroke:#333,fill:#f8f8f8,rx:20,ry:20
+    classDef include stroke-dasharray:1 1,fill:#fff,rx:20,ry:20
+    classDef extend stroke-dasharray:2 2,fill:#fff,rx:20,ry:20
