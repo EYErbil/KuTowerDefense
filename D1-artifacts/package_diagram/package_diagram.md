@@ -1,88 +1,84 @@
 # Logical Architecture - Package Diagram
 
 ```mermaid
-classDiagram
-    title KU Tower Defense - Logical Architecture
-    
-    namespace ku.towerdefense.model.game {
-        class GameSession
-        class Player
-        class GameOptions
-    }
+%%{init: {'theme': 'neutral'}}%%
+flowchart TB
+    title[KU Tower Defense - Logical Architecture]
+    style title fill:none,stroke:none
+
+    subgraph ku_towerdefense [ku.towerdefense]
+        subgraph model [model]
+            subgraph model_game [game]
+                GameSession[GameSession]
+                Player[Player]
+                GameOptions[GameOptions]
+            end
             
-    namespace ku.towerdefense.model.entities {
-        class Enemy
-        class Tower
-        class Projectile
-        class Wave
-        class Group
-    }
+            subgraph model_entities [entities]
+                Enemy[Enemy]
+                Tower[Tower]
+                Projectile[Projectile]
+                Wave[Wave]
+                Group[Group]
+            end
             
-    namespace ku.towerdefense.model.map {
-        class Map
-        class Tile
-        class Path
-        class TowerSlot
-    }
+            subgraph model_map [map]
+                Map[Map]
+                Tile[Tile]
+                Path[Path]
+                TowerSlot[TowerSlot]
+            end
+        end
         
-    namespace ku.towerdefense.view.screens {
-        class MainMenuScreen
-        class GameScreen
-        class MapEditorScreen
-        class OptionsScreen
-    }
+        subgraph view [view]
+            subgraph view_screens [screens]
+                MainMenuScreen[MainMenuScreen]
+                GameScreen[GameScreen]
+                MapEditorScreen[MapEditorScreen]
+                OptionsScreen[OptionsScreen]
+            end
             
-    namespace ku.towerdefense.view.components {
-        class TowerPanel
-        class GameControlPanel
-        class MapGrid
-        class EnemyRenderer
-        class TowerRenderer
-    }
+            subgraph view_components [components]
+                TowerPanel[TowerPanel]
+                GameControlPanel[GameControlPanel]
+                MapGrid[MapGrid]
+                EnemyRenderer[EnemyRenderer]
+                TowerRenderer[TowerRenderer]
+            end
             
-    namespace ku.towerdefense.view.animations {
-        class ProjectileAnimation
-        class EnemyMovementAnimation
-        class ExplosionAnimation
-    }
+            subgraph view_animations [animations]
+                ProjectileAnimation[ProjectileAnimation]
+                EnemyMovementAnimation[EnemyMovementAnimation]
+                ExplosionAnimation[ExplosionAnimation]
+            end
+        end
         
-    namespace ku.towerdefense.controller {
-        class GameController
-        class MapEditorController
-        class OptionsController
-        class InputHandler
-    }
+        subgraph controller [controller]
+            GameController[GameController]
+            MapEditorController[MapEditorController]
+            OptionsController[OptionsController]
+            InputHandler[InputHandler]
+        end
         
-    namespace ku.towerdefense.persistence {
-        class MapSerializer
-        class OptionsSerializer
-        class FileManager
-    }
+        subgraph persistence [persistence]
+            MapSerializer[MapSerializer]
+            OptionsSerializer[OptionsSerializer]
+            FileManager[FileManager]
+        end
         
-    namespace ku.towerdefense.util {
-        class MathUtils
-        class PathFinder
-        class ResourceLoader
-        class GameClock
-    }
+        subgraph util [util]
+            MathUtils[MathUtils]
+            PathFinder[PathFinder]
+            ResourceLoader[ResourceLoader]
+            GameClock[GameClock]
+        end
+    end
     
     %% Package Dependencies
-    ku.towerdefense.model.game --> ku.towerdefense.util : uses
-    ku.towerdefense.model.entities --> ku.towerdefense.util : uses
-    ku.towerdefense.model.map --> ku.towerdefense.util : uses
-    
-    ku.towerdefense.view.screens --> ku.towerdefense.model.game : observes
-    ku.towerdefense.view.screens --> ku.towerdefense.model.entities : observes
-    ku.towerdefense.view.screens --> ku.towerdefense.model.map : observes
-    
-    ku.towerdefense.controller --> ku.towerdefense.model.game : manipulates
-    ku.towerdefense.controller --> ku.towerdefense.model.entities : manipulates
-    ku.towerdefense.controller --> ku.towerdefense.model.map : manipulates
-    
-    ku.towerdefense.controller --> ku.towerdefense.view.screens : updates
-    ku.towerdefense.controller --> ku.towerdefense.view.components : updates
-    
-    ku.towerdefense.controller --> ku.towerdefense.persistence : uses
-    ku.towerdefense.model.game --> ku.towerdefense.persistence : uses for loading/saving
-    ku.towerdefense.model.map --> ku.towerdefense.persistence : uses for loading/saving
+    model -- uses --> util
+    view -- observes --> model
+    controller -- manipulates --> model
+    controller -- updates --> view
+    controller -- uses --> persistence
+    model -- uses for loading/saving --> persistence
 ``` 
