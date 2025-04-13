@@ -5,52 +5,64 @@ graph TD
     GameClock[GameClock]
     GameSession[GameSession]
     Tower[Tower]
+    TargetingSystem[TargetingSystem]
     Enemy[Enemy]
     Projectile[Projectile]
-    ArtilleryShell[ArtilleryShell]
+    ProjectileManager[ProjectileManager]
+    DamageCalculator[DamageCalculator]
+    TowerAnimation[TowerAnimation]
     ProjectileAnimation[ProjectileAnimation]
     GameScreen[GameScreen]
+    Player([Player])
+    AudioManager[AudioManager]
 
-    GameClock -->|1: tick()| GameSession
-    GameSession -->|2: updateGameState()| GameSession
+    GameClock -->|"1: tick(deltaTime)"| GameSession
+    GameSession -->|"2: updateTowers(deltaTime)"| GameSession
+    GameSession -->|"3: update(deltaTime)"| Tower
     
-    GameSession -->|3: update(deltaTime)| Tower
-    Tower -->|4: decrementCooldown(deltaTime)| Tower
+    Tower -->|"4: updateAttackCooldown(deltaTime)"| Tower
+    Tower -->|"5: canAttack() == true"| Tower
+    Tower -->|"6: findTarget()"| TargetingSystem
     
-    Tower -->|5: findTarget()| Tower
-    Tower -->|6: getPosition()| Enemy
-    Enemy -.->|7: enemyPosition| Tower
-    Tower -->|8: calculateDistance(enemyPosition)| Tower
-    Tower -->|9: setTarget(enemy)| Tower
+    TargetingSystem -->|"7: getEnemiesInRange(position, range)"| GameSession
+    GameSession -.->|"8: enemiesInRange"| TargetingSystem
     
-    Tower -->|10: resetCooldown()| Tower
-    Tower -->|11: createProjectile(target)| Projectile
-    Projectile -->|12: initializeProperties()| Projectile
-    Projectile -.->|13: newProjectile| Tower
+    TargetingSystem -->|"9a: selectTarget(enemiesInRange, strategy)"| TargetingSystem
+    TargetingSystem -.->|"10a: selectedEnemy"| Tower
     
-    Tower -->|14: addProjectile(newProjectile)| GameSession
-    GameSession -->|15: createAnimation(newProjectile)| ProjectileAnimation
-    ProjectileAnimation -.->|16: visualize projectile launch| GameScreen
+    Tower -->|"11a: attack(selectedEnemy)"| Tower
+    Tower -->|"12a: resetAttackCooldown()"| Tower
     
-    GameSession -->|17: update(deltaTime)| Projectile
-    Projectile -->|18: moveTowardTarget(deltaTime)| Projectile
+    Tower -->|"13a: fireProjectile(selectedEnemy)"| ProjectileManager
+    ProjectileManager -->|"14a: createProjectile(tower, target)"| Projectile
+    Projectile -->|"15a: initializeProperties(tower.damage, tower.effectType)"| Projectile
+    Projectile -.->|"16a: newProjectile"| ProjectileManager
     
-    Projectile -->|19: takeDamage(damage)| Enemy
+    ProjectileManager -->|"17a: trackProjectile(newProjectile)"| GameSession
+    GameSession -.->|"18a: projectileAdded"| GameScreen
     
-    Projectile -->|20a: applyAreaDamage(position, radius)| GameSession
-    GameSession -->|21: takeDamage(areaDamage)| Enemy
-    Enemy -->|22: hitPoints -= damage| Enemy
+    Tower -->|"19a: playAttackAnimation()"| TowerAnimation
+    TowerAnimation -.->|"20a: tower attack animation"| GameScreen
     
-    Enemy -->|23: markAsDefeated()| Enemy
-    Enemy -->|24: notifyDefeated()| GameSession
-    GameSession -->|25: removeEnemy(enemy)| GameSession
-    GameSession -->|26: rewardPlayer(enemy.getValue())| GameSession
+    Tower -->|"21a: playAttackSound()"| AudioManager
+    AudioManager -.->|"22a: attack sound effect"| Player
     
-    Projectile -->|27: playExplosionAnimation()| ProjectileAnimation
-    ProjectileAnimation -.->|28: visualize explosion| GameScreen
+    GameSession -->|"23a: updateProjectiles(deltaTime)"| ProjectileManager
+    ProjectileManager -->|"24a: updatePosition(deltaTime)"| Projectile
+    Projectile -->|"25a: moveTowardsTarget(deltaTime)"| Projectile
     
-    Projectile -->|20b: hitPoints -= damage| Enemy
+    ProjectileManager -->|"26a: checkCollision()"| Projectile
+    Projectile -->|"27a: hasReachedTarget() == true"| Projectile
+    Projectile -->|"28a: applyDamage()"| Enemy
     
-    Projectile -->|29: notifyHit()| GameSession
-    GameSession -->|30: removeProjectile(projectile)| GameSession
+    Enemy -->|"29a: receiveDamage(damage, effectType)"| Enemy
+    Enemy -->|"30a: health -= adjustedDamage"| Enemy
+    
+    Projectile -->|"31a: playImpactAnimation()"| ProjectileAnimation
+    ProjectileAnimation -.->|"32a: impact animation"| GameScreen
+    
+    GameScreen -.->|"33a: visual feedback of attack"| Player
+    
+    TargetingSystem -.->|"10b: no valid targets"| Tower
+    Tower -->|"11b: idle()"| Tower
 ``` 

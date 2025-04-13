@@ -7,39 +7,47 @@ graph TD
     InputHandler[InputHandler]
     GameController[GameController]
     GameSession[GameSession]
-    TowerSlot[TowerSlot]
     Tower[Tower]
+    TowerSlot[TowerSlot]
     PlayerModel[Player]
+    TowerEffectManager[TowerEffectManager]
+    AudioManager[AudioManager]
 
-    Player -->|1: rightClickOnTower(position)| GameScreen
-    GameScreen -->|2: handleTowerRightClick(position)| InputHandler
-    InputHandler -->|3: sellTowerAt(position)| GameController
+    Player -->|"1: clickOnTower(position)"| GameScreen
+    GameScreen -->|"2: handleTowerClick(position)"| InputHandler
+    InputHandler -->|"3: selectTower(position)"| GameController
+    GameController -->|"4: findTowerAt(position)"| GameSession
+    GameSession -->|"5: getTowerAt(position)"| GameSession
+    GameSession -.->|"6: selectedTower"| GameController
     
-    GameController -->|4: getTowerAt(position)| GameSession
-    GameSession -->|5: findTowerAtPosition(position)| GameSession
-    GameSession -->|6: findTowerSlotAt(position)| GameSession
-    GameSession -.->|7: towerSlot| GameController
+    GameController -->|"7: showTowerMenu(selectedTower)"| GameScreen
+    GameScreen -.->|"8: display tower options"| Player
     
-    GameController -->|8: showSellConfirmationDialog()| GameScreen
-    GameScreen -.->|9: display confirmation dialog| Player
+    Player -->|"9: clickSellTower()"| GameScreen
+    GameScreen -->|"10: sellSelectedTower()"| GameController
     
-    Player -->|10: confirmSellTower()| GameScreen
-    GameScreen -->|11: confirmSellTower()| GameController
+    GameController -->|"11: getSellValue(selectedTower)"| Tower
+    Tower -.->|"12: sellValue"| GameController
     
-    GameController -->|12: sellTower(towerSlot)| GameSession
-    GameSession -->|13: getTower()| TowerSlot
-    TowerSlot -.->|14: tower| GameSession
+    GameController -->|"13: sellTower(selectedTower)"| GameSession
+    GameSession -->|"14: removeTower(selectedTower)"| TowerSlot
+    TowerSlot -->|"15: isEmpty = true"| TowerSlot
     
-    GameSession -->|15: calculateRefundAmount(tower)| GameSession
-    GameSession -->|16: removeTower()| TowerSlot
-    TowerSlot -->|17: tower = null| TowerSlot
-    TowerSlot -->|18: isEmpty = true| TowerSlot
+    GameSession -->|"16: addGold(sellValue)"| PlayerModel
+    PlayerModel -->|"17: gold += sellValue"| PlayerModel
     
-    GameSession -->|19: adjustGold(refundAmount)| PlayerModel
-    PlayerModel -->|20: gold += refundAmount| PlayerModel
+    GameController -->|"18: removeEffects(selectedTower)"| TowerEffectManager
+    TowerEffectManager -->|"19: cleanupEffects()"| TowerEffectManager
     
-    GameSession -.->|21: sellComplete| GameController
-    GameController -->|22: updateGameView()| GameScreen
-    GameScreen -->|23: updateResourceDisplay()| GameScreen
-    GameScreen -.->|24: display updated gold and removed tower| Player
+    GameController -->|"20: playSellSound()"| AudioManager
+    AudioManager -.->|"21: play sound effect"| Player
+    
+    GameController -->|"22: hideTowerMenu()"| GameScreen
+    GameScreen -.->|"23: hide tower menu"| Player
+    
+    GameController -->|"24: updateResourceDisplay()"| GameScreen
+    GameScreen -.->|"25: updated gold amount"| Player
+    
+    GameController -->|"26: updateMapView()"| GameScreen
+    GameScreen -.->|"27: tower removed visualization"| Player
 ``` 

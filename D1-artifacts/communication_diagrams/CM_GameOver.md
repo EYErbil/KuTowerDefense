@@ -6,47 +6,53 @@ graph TD
     GameSession[GameSession]
     PlayerModel[Player]
     GameController[GameController]
-    GameScreen[GameScreen]
+    AudioManager[AudioManager]
+    ScoreManager[ScoreManager]
     GameOverScreen[GameOverScreen]
-    MainMenuScreen[MainMenuScreen]
+    GameScreen[GameScreen]
     Player([Player])
 
-    GameClock -->|1: tick(deltaTime)| GameSession
-    GameSession -->|2: updateGameState(deltaTime)| GameSession
+    GameClock -->|"1: tick(deltaTime)"| GameSession
+    GameSession -->|"2: update(deltaTime)"| GameSession
     
-    GameSession -->|3a: adjustHitPoints(-1)| PlayerModel
-    PlayerModel -->|4a: hitPoints -= 1| PlayerModel
-    PlayerModel -.->|5a: updatedHitPoints| GameSession
+    GameSession -->|"3a: checkLives()"| GameSession
+    GameSession -->|"4a: getLives()"| PlayerModel
+    PlayerModel -.->|"5a: currentLives (= 0)"| GameSession
     
-    GameSession -->|6a: updateHitPointDisplay(hitPoints)| GameScreen
-    GameScreen -.->|7a: display updated hit points| Player
+    GameSession -->|"3b: checkWaveStatus()"| GameSession
+    GameSession -->|"4b: enemiesRemaining() == 0 && wavesRemaining() == 0"| GameSession
     
-    GameSession -->|8a: notifyGameOver(DEFEAT)| GameController
-    GameController -->|9a: pauseGame()| GameSession
-    GameSession -->|10a: setPaused(true)| GameSession
+    GameSession -->|"6: isGameOver() == true"| GameSession
+    GameSession -->|"7: endGame(gameOverType)"| GameController
     
-    GameController -->|11a: showDefeatScreen()| GameOverScreen
-    GameOverScreen -->|12a: setupDefeatBanner()| GameOverScreen
-    GameOverScreen -->|13a: displayGameStatistics()| GameOverScreen
-    GameOverScreen -.->|14a: display defeat screen| Player
+    GameController -->|"8: stopGameClock()"| GameClock
+    GameController -->|"9: playSound(gameOverType == WIN ? 'victory' : 'defeat')"| AudioManager
+    AudioManager -.->|"10: sound effect"| Player
     
-    GameSession -->|3b: notifyGameOver(VICTORY)| GameController
-    GameController -->|4b: pauseGame()| GameSession
-    GameSession -->|5b: setPaused(true)| GameSession
+    GameController -->|"11: calculateFinalScore()"| ScoreManager
+    ScoreManager -->|"12: sumPoints()"| ScoreManager
+    ScoreManager -.->|"13: finalScore"| GameController
     
-    GameController -->|6b: showVictoryScreen()| GameOverScreen
-    GameOverScreen -->|7b: setupVictoryBanner()| GameOverScreen
-    GameOverScreen -->|8b: displayGameStatistics()| GameOverScreen
-    GameOverScreen -.->|9b: display victory screen| Player
+    GameController -->|"14: checkHighScore(finalScore)"| ScoreManager
+    ScoreManager -->|"15a: isHighScore(finalScore) == true"| ScoreManager
+    ScoreManager -->|"16a: saveHighScore(finalScore)"| ScoreManager
     
-    Player -->|15: clickContinue()| GameOverScreen
-    GameOverScreen -->|16: continueFromGameOver()| GameController
+    GameController -->|"17: createGameOverData(gameOverType, finalScore)"| GameController
+    GameController -.->|"18: gameOverData"| GameController
     
-    GameController -->|17: endGame()| GameSession
-    GameSession -->|18: cleanup()| GameSession
-    GameSession -.->|19: cleanupComplete| GameController
+    GameController -->|"19: showGameOver(gameOverData)"| GameOverScreen
+    GameOverScreen -->|"20: setupUI(gameOverData)"| GameOverScreen
+    GameOverScreen -->|"21: displayStats()"| GameOverScreen
+    GameOverScreen -->|"22: setupButtons()"| GameOverScreen
     
-    GameController -->|20: returnToMainMenu()| MainMenuScreen
-    MainMenuScreen -->|21: setupMenu()| MainMenuScreen
-    MainMenuScreen -.->|22: display main menu| Player
+    GameController -->|"23: hideGameScreen()"| GameScreen
+    GameScreen -.->|"24: hide game elements"| Player
+    
+    GameOverScreen -.->|"25: display game over screen"| Player
+    
+    Player -->|"26: clickReturnToMainMenu()"| GameOverScreen
+    GameOverScreen -->|"27: returnToMainMenu()"| GameController
+    
+    Player -->|"28: clickPlayAgain()"| GameOverScreen
+    GameOverScreen -->|"29: playAgain()"| GameController
 ``` 

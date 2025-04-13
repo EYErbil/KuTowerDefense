@@ -8,35 +8,33 @@ graph TD
     GameController[GameController]
     GameSession[GameSession]
     Tower[Tower]
-    TowerRangeIndicator[TowerRangeIndicator]
+    RangeIndicator[RangeIndicator]
 
-    Player -->|1: mouseOverTower(position)| GameScreen
-    GameScreen -->|2: handleMouseOver(position)| InputHandler
-    InputHandler -->|3: showTowerRangeAt(position)| GameController
+    Player -->|"1: hoverOverTower(position)"| GameScreen
+    GameScreen -->|"2: handleTowerHover(position)"| InputHandler
+    InputHandler -->|"3: showTowerRange(position)"| GameController
     
-    GameController -->|4: getTowerAt(position)| GameSession
-    GameSession -->|5: findTowerAtPosition(position)| GameSession
-    GameSession -.->|6: tower| GameController
+    GameController -->|"4: getTowerAt(position)"| GameSession
+    GameSession -->|"5: findTowerAt(position)"| GameSession
+    GameSession -.->|"6: towerAtPosition"| GameController
     
-    GameController -->|7: getRange()| Tower
-    Tower -.->|8: range| GameController
+    GameController -->|"7: getRange()"| Tower
+    Tower -.->|"8: towerRange"| GameController
     
-    GameController -->|9: showTowerRange(tower, range)| GameScreen
-    GameScreen -->|10: show(tower)| TowerRangeIndicator
-    TowerRangeIndicator -->|11: setRange(range)| TowerRangeIndicator
-    TowerRangeIndicator -->|12: setVisible(true)| TowerRangeIndicator
+    GameController -->|"9: createRangeIndicator(towerPosition, towerRange)"| RangeIndicator
+    RangeIndicator -->|"10: initializeGraphics()"| RangeIndicator
+    RangeIndicator -.->|"11: rangeIndicator"| GameController
     
-    GameScreen -->|13: render()| TowerRangeIndicator
-    TowerRangeIndicator -.->|14: display range circle| GameScreen
-    GameScreen -.->|15: display tower range visualization| Player
+    GameController -->|"12: displayRangeIndicator(rangeIndicator)"| GameScreen
+    GameScreen -.->|"13: show tower range visualization"| Player
     
-    Player -->|16: mouseOutTower()| GameScreen
-    GameScreen -->|17: handleMouseOut()| InputHandler
-    InputHandler -->|18: hideTowerRange()| GameController
+    Player -->|"14: moveMouseAwayFromTower()"| GameScreen
+    GameScreen -->|"15: handleMouseExit()"| InputHandler
+    InputHandler -->|"16: hideTowerRange()"| GameController
     
-    GameController -->|19: hideTowerRange()| GameScreen
-    GameScreen -->|20: hide()| TowerRangeIndicator
-    TowerRangeIndicator -->|21: setVisible(false)| TowerRangeIndicator
+    GameController -->|"17: removeRangeIndicator()"| RangeIndicator
+    RangeIndicator -->|"18: dispose()"| RangeIndicator
     
-    GameScreen -.->|22: remove range visualization| Player
+    GameController -->|"19: updateGameScreen()"| GameScreen
+    GameScreen -.->|"20: hide tower range visualization"| Player
 ``` 

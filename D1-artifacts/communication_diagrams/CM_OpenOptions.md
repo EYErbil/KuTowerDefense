@@ -4,61 +4,65 @@
 graph TD
     Player([Player])
     MainMenuScreen[MainMenuScreen]
-    OptionsController[OptionsController]
-    OptionsScreen[OptionsScreen]
-    OptionsSerializer[OptionsSerializer]
+    GameOptionsMenu[GameOptionsMenu]
+    GameController[GameController]
     GameOptions[GameOptions]
-    ValidationService[ValidationService]
+    UserPreferences[UserPreferences]
+    AudioManager[AudioManager]
+    SliderUI[SliderUI]
+    ToggleUI[ToggleUI]
+    DropdownUI[DropdownUI]
 
-    Player -->|1: clickOptions()| MainMenuScreen
-    MainMenuScreen -->|2: openOptions()| OptionsController
+    Player -->|"1: clickOptions()"| MainMenuScreen
+    MainMenuScreen -->|"2: showOptionsMenu()"| GameController
+    GameController -->|"3: createOptionsMenu()"| GameOptionsMenu
     
-    OptionsController -->|3: loadOptions()| OptionsSerializer
-    OptionsSerializer -->|4a: deserializeOptions()| OptionsSerializer
-    OptionsSerializer -.->|5a: savedOptions| OptionsController
+    GameOptionsMenu -->|"4: getCurrentOptions()"| GameController
+    GameController -->|"5: getOptions()"| GameOptions
+    GameOptions -.->|"6: currentOptions"| GameController
+    GameController -.->|"7: currentOptions"| GameOptionsMenu
     
-    OptionsController -->|4b: createDefaultOptions()| GameOptions
-    GameOptions -.->|5b: defaultOptions| OptionsController
+    GameOptionsMenu -->|"8: getUserPreferences()"| UserPreferences
+    UserPreferences -.->|"9: userPreferences"| GameOptionsMenu
     
-    OptionsController -->|6: initialize(options)| OptionsScreen
-    OptionsScreen -->|7: createEnemyOptionsPanel()| OptionsScreen
-    OptionsScreen -->|8: createTowerOptionsPanel()| OptionsScreen
-    OptionsScreen -->|9: createEconomyOptionsPanel()| OptionsScreen
-    OptionsScreen -->|10: createWaveOptionsPanel()| OptionsScreen
-    OptionsScreen -->|11: createGameplayOptionsPanel()| OptionsScreen
-    OptionsScreen -.->|12: display options screen| Player
+    GameOptionsMenu -->|"10: setupUI(currentOptions, userPreferences)"| GameOptionsMenu
+    GameOptionsMenu -->|"11: createAudioSliders()"| SliderUI
+    GameOptionsMenu -->|"12: createGameplayToggles()"| ToggleUI
+    GameOptionsMenu -->|"13: createVideoSettings()"| DropdownUI
     
-    Player -->|13: modifyOption(category, name, value)| OptionsScreen
-    OptionsScreen -->|14: updateOption(category, name, value)| OptionsController
-    OptionsController -->|15: validateValue(category, name, value)| ValidationService
+    GameOptionsMenu -.->|"14: display options menu"| Player
     
-    ValidationService -.->|16a: valid| OptionsController
-    OptionsController -->|17a: setValue(category, name, value)| GameOptions
-    OptionsController -.->|18a: updateSuccessful| OptionsScreen
+    Player -->|"15: adjustMusicVolume(value)"| SliderUI
+    SliderUI -->|"16: onValueChanged(value)"| GameOptionsMenu
+    GameOptionsMenu -->|"17: setMusicVolume(value)"| AudioManager
+    AudioManager -->|"18: updateMusicVolume()"| AudioManager
     
-    ValidationService -.->|16b: invalid, reason| OptionsController
-    OptionsController -.->|17b: showValidationError(reason)| OptionsScreen
-    OptionsScreen -.->|18b: display error message| Player
+    Player -->|"19: adjustSFXVolume(value)"| SliderUI
+    SliderUI -->|"20: onValueChanged(value)"| GameOptionsMenu
+    GameOptionsMenu -->|"21: setSFXVolume(value)"| AudioManager
+    AudioManager -->|"22: updateSFXVolume()"| AudioManager
     
-    Player -->|19a: clickSave()| OptionsScreen
-    OptionsScreen -->|20a: saveOptions()| OptionsController
-    OptionsController -->|21a: getAllOptions()| GameOptions
-    GameOptions -.->|22a: currentOptions| OptionsController
-    OptionsController -->|23a: saveOptions(currentOptions)| OptionsSerializer
-    OptionsSerializer -->|24a: serializeOptions()| OptionsSerializer
-    OptionsSerializer -.->|25a: saveSuccess| OptionsController
-    OptionsController -.->|26a: showSaveConfirmation()| OptionsScreen
-    OptionsScreen -.->|27a: display save confirmation| Player
-    OptionsController -->|28a: returnToMainMenu()| MainMenuScreen
+    Player -->|"23: toggleFullscreen(value)"| ToggleUI
+    ToggleUI -->|"24: onValueChanged(value)"| GameOptionsMenu
+    GameOptionsMenu -->|"25: setFullscreen(value)"| GameController
+    GameController -->|"26: applyFullscreenSetting(value)"| GameController
     
-    Player -->|19b: clickResetToDefault()| OptionsScreen
-    OptionsScreen -->|20b: resetToDefault()| OptionsController
-    OptionsController -->|21b: createDefaultOptions()| GameOptions
-    GameOptions -.->|22b: defaultOptions| OptionsController
-    OptionsController -->|23b: resetAllFields(defaultOptions)| OptionsScreen
-    OptionsScreen -.->|24b: display default values| Player
+    Player -->|"27: selectDifficulty(difficulty)"| DropdownUI
+    DropdownUI -->|"28: onValueChanged(difficulty)"| GameOptionsMenu
+    GameOptionsMenu -->|"29: setDifficulty(difficulty)"| GameOptions
     
-    Player -->|19c: clickCancel()| OptionsScreen
-    OptionsScreen -->|20c: cancelChanges()| OptionsController
-    OptionsController -->|21c: returnToMainMenu()| MainMenuScreen
+    Player -->|"30: clickSave()"| GameOptionsMenu
+    GameOptionsMenu -->|"31: saveOptions()"| GameController
+    GameController -->|"32: saveOptions(gameOptions)"| GameOptions
+    GameOptions -->|"33: saveToStorage()"| GameOptions
+    
+    GameController -->|"34: saveUserPreferences(preferences)"| UserPreferences
+    UserPreferences -->|"35: saveToStorage()"| UserPreferences
+    
+    GameOptionsMenu -.->|"36: confirmation message"| Player
+    
+    Player -->|"37: clickBack()"| GameOptionsMenu
+    GameOptionsMenu -->|"38: closeOptionsMenu()"| GameController
+    GameController -->|"39: returnToMainMenu()"| MainMenuScreen
+    MainMenuScreen -.->|"40: display main menu"| Player
 ``` 
