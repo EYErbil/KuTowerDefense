@@ -1,4 +1,6 @@
-classDiagram
+# Class Diagram: Controller Components
+
+```mermaid
 
     class Application {
         -Screen currentScreen
