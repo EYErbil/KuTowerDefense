@@ -1,7 +1,5 @@
-# Class Diagram: Controller Components
-
 ```mermaid
-
+classDiagram
     class Application {
         -Screen currentScreen
         -GameController gameController
