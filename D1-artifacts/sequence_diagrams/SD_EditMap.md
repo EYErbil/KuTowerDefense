@@ -3,14 +3,14 @@
 ```mermaid
 sequenceDiagram
     actor Player
-    participant ":MainMenuScreen"
-    participant ":MapEditorController"
-    participant ":MapEditorScreen"
-    participant ":MapSerializer"
-    participant ":Map"
-    participant ":Tile"
-    participant ":Path"
-    participant ":ValidationService"
+    actor MainMenuScreen
+    participant MapEditorController
+    participant MapEditorScreen
+    participant MapSerializer
+    participant Map
+    participant Tile
+    participant Path
+    participant ValidationService
 
     Player->>MainMenuScreen: clickEditMap()
     MainMenuScreen->>MapEditorController: openMapEditor()
