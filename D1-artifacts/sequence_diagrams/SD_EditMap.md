@@ -3,7 +3,7 @@
 ```mermaid
 sequenceDiagram
     actor Player
-    actor MainMenuScreen
+    participant MainMenuScreen
     participant MapEditorController
     participant MapEditorScreen
     participant MapSerializer
