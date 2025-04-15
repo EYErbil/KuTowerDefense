@@ -80,5 +80,5 @@ flowchart TB
     controller -- manipulates --> model
     controller -- updates --> view
     controller -- uses --> persistence
-    model -- uses for loading/saving --> persistence
+    model -- "uses for loading/saving" --> persistence
 ``` 
