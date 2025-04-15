@@ -304,4 +304,12 @@ classDiagram
     Enemy <|-- Knight
     Wave "1" -- "*" Group
     Tower "1" -- "*" Projectile : fires
+%% Additional semantic relationships
+    Enemy --> EnemyType : has type
+    Projectile --> ProjectileType : has type
+    Projectile --> Enemy : targets
+    Tower --> TowerType : uses
+    Tile --> Point : located at
+    TowerSlot --> Point : has position
+
 ``` 
