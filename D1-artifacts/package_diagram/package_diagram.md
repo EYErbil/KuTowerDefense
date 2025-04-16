@@ -1,5 +1,3 @@
-# Logical Architecture - Package Diagram
-
 ```mermaid
 %%{init: {'theme': 'neutral'}}%%
 flowchart TB
@@ -74,11 +72,10 @@ flowchart TB
         end
     end
     
-    %% Package Dependencies
-    model -- uses --> util
-    view -- observes --> model
-    controller -- manipulates --> model
-    controller -- updates --> view
-    controller -- uses --> persistence
-    model -- "uses for loading/saving" --> persistence
-``` 
+    %% Dependencies
+    model --> util
+    view --> model
+    controller --> model
+    controller --> view
+    controller --> persistence
+    model --> persistence
