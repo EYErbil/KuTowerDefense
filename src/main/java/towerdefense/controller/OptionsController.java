@@ -1,87 +1,82 @@
 package towerdefense.controller;
 
-import towerdefense.view.screens.OptionsScreen;
+import towerdefense.model.GameModel;
+// import towerdefense.view.screens.OptionsScreen; // No longer needed
 
 /**
- * Controller for game options and settings.
- * Manages loading, saving, and applying game options.
+ * Controller for the options screen logic.
+ * Handles saving and loading options.
  */
 public class OptionsController {
 
-    private OptionsScreen optionsScreen;
+    private GameModel model;
+    // private OptionsScreen optionsScreen; // Remove field
 
-    /**
-     * Constructor for OptionsController.
-     */
-    public OptionsController() {
-        // Initialize components
+    public OptionsController(GameModel model) {
+        this.model = model;
+        // Load existing options from model or preferences
+        loadOptions();
     }
 
     /**
-     * Open the options screen.
-     */
-    public void openOptions() {
-        System.out.println("OptionsController: Opening options screen");
-
-        // Create and show options screen
-        if (optionsScreen == null) {
-            optionsScreen = new OptionsScreen();
-        }
-
-        // Load current options
-        loadCurrentOptions();
-
-        // Show the options screen
-        optionsScreen.initialize();
-        optionsScreen.setVisible(true);
-    }
-
-    /**
-     * Load current game options.
-     */
-    private void loadCurrentOptions() {
-        System.out.println("OptionsController: Loading current options");
-        // This would load current options from storage
-        // For now, just use default values
-    }
-
-    /**
-     * Save game options.
-     */
-    public void saveOptions() {
-        System.out.println("OptionsController: Saving options");
-        // This would save options to storage
-    }
-
-    /**
-     * Apply audio settings.
+     * Handles the action of saving the current options.
+     * Called by the OptionsScreen view.
      * 
-     * @param musicVolume Music volume level (0-100)
-     * @param sfxVolume   Sound effects volume level (0-100)
+     * @param musicVol   Music volume level.
+     * @param sfxVol     SFX volume level.
+     * @param fullscreen Fullscreen state.
+     * @param difficulty Selected difficulty.
      */
-    public void applyAudioSettings(int musicVolume, int sfxVolume) {
-        System.out
-                .println("OptionsController: Applying audio settings - Music: " + musicVolume + ", SFX: " + sfxVolume);
-        // This would apply audio settings to the game
+    public void saveOptions(double musicVol, double sfxVol, boolean fullscreen, String difficulty) {
+        System.out.println("Controller: Saving options...");
+        System.out.println("  Music Volume: " + musicVol);
+        System.out.println("  SFX Volume: " + sfxVol);
+        System.out.println("  Fullscreen: " + fullscreen);
+        System.out.println("  Difficulty: " + difficulty);
+        // TODO: Implement actual saving logic (e.g., save to GameModel, Preferences
+        // API)
+        // model.setMusicVolume(musicVol);
+        // ... etc ...
     }
 
     /**
-     * Apply gameplay settings.
-     * 
-     * @param difficulty Game difficulty level
+     * Handles loading options (e.g., when controller is created).
      */
-    public void applyGameplaySettings(String difficulty) {
-        System.out.println("OptionsController: Applying gameplay settings - Difficulty: " + difficulty);
-        // This would apply gameplay settings to the game
+    private void loadOptions() {
+        System.out.println("Controller: Loading options...");
+        // TODO: Implement loading logic
+        // Example:
+        // double musicVol = model.getMusicVolume();
+        // ... update view references if held ...
     }
 
     /**
-     * Apply video settings.
-     * 
-     * @param fullscreen Whether fullscreen mode is enabled
+     * Handles resetting options to default values.
+     * Called by the OptionsScreen view.
+     * Note: This method could return default values, or directly update model/view
+     * if needed.
      */
-    public void applyVideoSettings(boolean fullscreen) {
-        System.out.println("OptionsController: Applying video settings - Fullscreen: " + fullscreen);
-        // This would apply video settings to the game
+    public void resetOptionsToDefaults() {
+        System.out.println("Controller: Resetting options to defaults...");
+        // TODO: Implement logic to reset options in the model or provide defaults
+        // Example: provide default values back to the view to update sliders etc.
+    }
+
+    // Add getters if the view needs to pull initial values from controller after
+    // load
+    public double getDefaultMusicVolume() {
+        return 75.0;
+    }
+
+    public double getDefaultSfxVolume() {
+        return 80.0;
+    }
+
+    public boolean getDefaultFullscreen() {
+        return false;
+    }
+
+    public String getDefaultDifficulty() {
+        return "Normal";
     }
 }

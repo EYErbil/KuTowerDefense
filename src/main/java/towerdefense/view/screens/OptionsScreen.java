@@ -1,201 +1,165 @@
 package towerdefense.view.screens;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JSlider;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
+import javafx.application.Platform;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Parent;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.text.Font;
+import towerdefense.Main; // For navigation
+import towerdefense.model.GameModel; // If options interact with model
+import towerdefense.controller.OptionsController; // Import controller
 
 /**
- * Options screen for Tower Defense.
- * Allows configuration of game settings.
+ * Provides the JavaFX UI components for the Options screen.
  */
-public class OptionsScreen extends JFrame {
+public class OptionsScreen {
 
-    private static final long serialVersionUID = 1L;
+    // Keep references to controls if needed for saving/loading
+    private Slider musicVolumeSlider;
+    private Slider sfxVolumeSlider;
+    private CheckBox fullscreenCheckbox;
+    private ComboBox<String> difficultyComboBox;
+    private Label musicValueLabel;
+    private Label sfxValueLabel;
 
-    // UI Components
-    private JSlider musicVolumeSlider;
-    private JSlider sfxVolumeSlider;
-    private JCheckBox fullscreenCheckbox;
-    private JComboBox<String> difficultyComboBox;
+    private BorderPane view;
+    private OptionsController controller; // Store the controller
 
-    /**
-     * Constructor for OptionsScreen.
-     */
-    public OptionsScreen() {
-        // Basic frame setup
-        this.setTitle("Tower Defense - Options");
-        this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        this.setMinimumSize(new Dimension(600, 500));
-        this.setLocationRelativeTo(null);
+    // Constructor accepts the controller
+    public OptionsScreen(OptionsController controller) {
+        this.controller = controller;
+        initializeUI();
+        loadInitialValues(); // Load initial/default values after UI is built
+    }
+
+    private void initializeUI() {
+        view = new BorderPane();
+        view.setPadding(new Insets(20));
+        view.setStyle("-fx-background-color: #f4f4f4;"); // Example background
+
+        // Title
+        Label titleLabel = new Label("Options");
+        titleLabel.setFont(Font.font("Arial", 24));
+        titleLabel.setAlignment(Pos.CENTER);
+        BorderPane.setAlignment(titleLabel, Pos.CENTER);
+        view.setTop(titleLabel);
+        BorderPane.setMargin(titleLabel, new Insets(0, 0, 20, 0));
+
+        // --- Options Grid ---
+        GridPane optionsGrid = new GridPane();
+        optionsGrid.setHgap(10);
+        optionsGrid.setVgap(15);
+        optionsGrid.setPadding(new Insets(10));
+
+        // --- Audio Settings ---
+        int rowIndex = 0;
+        optionsGrid.add(createSectionLabel("Audio Settings"), 0, rowIndex++, 3, 1);
+
+        // Music Volume
+        optionsGrid.add(new Label("Music Volume:"), 0, rowIndex);
+        musicVolumeSlider = new Slider(0, 100, 75);
+        musicVolumeSlider.setShowTickMarks(true);
+        musicVolumeSlider.setShowTickLabels(true);
+        musicVolumeSlider.setMajorTickUnit(25);
+        musicValueLabel = new Label(String.format("%.0f%%", musicVolumeSlider.getValue()));
+        musicVolumeSlider.valueProperty().addListener(
+                (obs, oldVal, newVal) -> musicValueLabel.setText(String.format("%.0f%%", newVal.doubleValue())));
+        HBox musicBox = new HBox(10, musicVolumeSlider, musicValueLabel);
+        musicBox.setAlignment(Pos.CENTER_LEFT);
+        optionsGrid.add(musicBox, 1, rowIndex++);
+
+        // SFX Volume
+        optionsGrid.add(new Label("SFX Volume:"), 0, rowIndex);
+        sfxVolumeSlider = new Slider(0, 100, 80);
+        sfxVolumeSlider.setShowTickMarks(true);
+        sfxVolumeSlider.setShowTickLabels(true);
+        sfxVolumeSlider.setMajorTickUnit(25);
+        sfxValueLabel = new Label(String.format("%.0f%%", sfxVolumeSlider.getValue()));
+        sfxVolumeSlider.valueProperty().addListener(
+                (obs, oldVal, newVal) -> sfxValueLabel.setText(String.format("%.0f%%", newVal.doubleValue())));
+        HBox sfxBox = new HBox(10, sfxVolumeSlider, sfxValueLabel);
+        sfxBox.setAlignment(Pos.CENTER_LEFT);
+        optionsGrid.add(sfxBox, 1, rowIndex++);
+
+        // --- Video Settings ---
+        optionsGrid.add(createSectionLabel("Video Settings"), 0, rowIndex++, 3, 1);
+        fullscreenCheckbox = new CheckBox("Fullscreen");
+        optionsGrid.add(fullscreenCheckbox, 0, rowIndex++);
+
+        // --- Gameplay Settings ---
+        optionsGrid.add(createSectionLabel("Gameplay Settings"), 0, rowIndex++, 3, 1);
+        optionsGrid.add(new Label("Difficulty:"), 0, rowIndex);
+        difficultyComboBox = new ComboBox<>();
+        difficultyComboBox.getItems().addAll("Easy", "Normal", "Hard");
+        difficultyComboBox.setValue("Normal");
+        optionsGrid.add(difficultyComboBox, 1, rowIndex++);
+
+        view.setCenter(optionsGrid);
+
+        // --- Bottom Buttons ---
+        Button saveButton = new Button("Save & Close");
+        saveButton.setOnAction(e -> {
+            // Call controller to save current values
+            controller.saveOptions(
+                    musicVolumeSlider.getValue(),
+                    sfxVolumeSlider.getValue(),
+                    fullscreenCheckbox.isSelected(),
+                    difficultyComboBox.getValue());
+            Main.loadMainMenuScreen(); // Go back to main menu
+        });
+
+        Button cancelButton = new Button("Cancel");
+        cancelButton.setOnAction(e -> Main.loadMainMenuScreen()); // Go back without saving
+
+        Button defaultsButton = new Button("Restore Defaults");
+        defaultsButton.setOnAction(e -> {
+            // Call controller method
+            controller.resetOptionsToDefaults();
+            // Update UI with defaults provided by controller
+            loadDefaultValues();
+        });
+
+        HBox buttonBox = new HBox(10, defaultsButton, saveButton, cancelButton);
+        buttonBox.setAlignment(Pos.CENTER_RIGHT);
+        buttonBox.setPadding(new Insets(20, 0, 0, 0));
+        view.setBottom(buttonBox);
+    }
+
+    private Label createSectionLabel(String text) {
+        Label label = new Label(text);
+        label.setFont(Font.font("Arial", 16));
+        label.setStyle("-fx-font-weight: bold;");
+        label.setPadding(new Insets(10, 0, 5, 0));
+        return label;
     }
 
     /**
-     * Initialize the options screen.
+     * Loads initial values from the controller (called after UI init).
      */
-    public void initialize() {
-        // Set up the layout
-        JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
-        // Create options panel with grid layout
-        JPanel optionsPanel = new JPanel(new GridLayout(0, 1, 0, 20));
-        optionsPanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 20));
-
-        // Add audio options
-        JPanel audioPanel = new JPanel(new GridLayout(0, 1, 0, 10));
-        audioPanel.setBorder(BorderFactory.createTitledBorder("Audio Settings"));
-
-        // Music volume
-        JPanel musicPanel = new JPanel(new BorderLayout());
-        JLabel musicLabel = new JLabel("Music Volume:");
-        musicVolumeSlider = new JSlider(0, 100, 75);
-        musicVolumeSlider.setMajorTickSpacing(20);
-        musicVolumeSlider.setMinorTickSpacing(5);
-        musicVolumeSlider.setPaintTicks(true);
-        musicVolumeSlider.setPaintLabels(true);
-        final JLabel musicValueLabel = new JLabel("75%");
-
-        musicVolumeSlider.addChangeListener(new ChangeListener() {
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                int value = musicVolumeSlider.getValue();
-                musicValueLabel.setText(value + "%");
-            }
-        });
-
-        musicPanel.add(musicLabel, BorderLayout.WEST);
-        musicPanel.add(musicVolumeSlider, BorderLayout.CENTER);
-        musicPanel.add(musicValueLabel, BorderLayout.EAST);
-
-        // SFX volume
-        JPanel sfxPanel = new JPanel(new BorderLayout());
-        JLabel sfxLabel = new JLabel("SFX Volume:");
-        sfxVolumeSlider = new JSlider(0, 100, 80);
-        sfxVolumeSlider.setMajorTickSpacing(20);
-        sfxVolumeSlider.setMinorTickSpacing(5);
-        sfxVolumeSlider.setPaintTicks(true);
-        sfxVolumeSlider.setPaintLabels(true);
-        final JLabel sfxValueLabel = new JLabel("80%");
-
-        sfxVolumeSlider.addChangeListener(new ChangeListener() {
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                int value = sfxVolumeSlider.getValue();
-                sfxValueLabel.setText(value + "%");
-            }
-        });
-
-        sfxPanel.add(sfxLabel, BorderLayout.WEST);
-        sfxPanel.add(sfxVolumeSlider, BorderLayout.CENTER);
-        sfxPanel.add(sfxValueLabel, BorderLayout.EAST);
-
-        audioPanel.add(musicPanel);
-        audioPanel.add(sfxPanel);
-
-        // Add video options
-        JPanel videoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        videoPanel.setBorder(BorderFactory.createTitledBorder("Video Settings"));
-
-        fullscreenCheckbox = new JCheckBox("Fullscreen");
-        videoPanel.add(fullscreenCheckbox);
-
-        // Add gameplay options
-        JPanel gameplayPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        gameplayPanel.setBorder(BorderFactory.createTitledBorder("Gameplay Settings"));
-
-        JLabel difficultyLabel = new JLabel("Difficulty: ");
-        difficultyLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-
-        String[] difficulties = { "Easy", "Normal", "Hard" };
-        difficultyComboBox = new JComboBox<>(difficulties);
-        difficultyComboBox.setSelectedIndex(1); // Default to Normal
-
-        gameplayPanel.add(difficultyLabel);
-        gameplayPanel.add(difficultyComboBox);
-
-        // Add panels to options panel
-        optionsPanel.add(audioPanel);
-        optionsPanel.add(videoPanel);
-        optionsPanel.add(gameplayPanel);
-
-        mainPanel.add(optionsPanel, BorderLayout.CENTER);
-
-        // Add buttons panel at the bottom
-        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-
-        JButton saveButton = new JButton("Save");
-        JButton cancelButton = new JButton("Cancel");
-        JButton defaultsButton = new JButton("Restore Defaults");
-
-        // Add action listeners
-        saveButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                saveOptions();
-                dispose(); // Close this screen
-            }
-        });
-
-        cancelButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                dispose(); // Close this screen
-            }
-        });
-
-        defaultsButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                resetToDefaults();
-            }
-        });
-
-        // Add buttons to panel
-        buttonsPanel.add(defaultsButton);
-        buttonsPanel.add(saveButton);
-        buttonsPanel.add(cancelButton);
-
-        mainPanel.add(buttonsPanel, BorderLayout.SOUTH);
-
-        // Add panel to frame
-        this.add(mainPanel);
-        this.pack();
+    private void loadInitialValues() {
+        // TODO: Get actual loaded values from controller if loadOptions is implemented
+        loadDefaultValues(); // For now, just load defaults
     }
 
     /**
-     * Save current options.
+     * Loads default values from the controller.
      */
-    private void saveOptions() {
-        System.out.println("Saving options...");
-        System.out.println("Music Volume: " + musicVolumeSlider.getValue() + "%");
-        System.out.println("SFX Volume: " + sfxVolumeSlider.getValue() + "%");
-        System.out.println("Fullscreen: " + fullscreenCheckbox.isSelected());
-        System.out.println("Difficulty: " + difficultyComboBox.getSelectedItem());
-        // This would call the options controller to save the options
+    private void loadDefaultValues() {
+        musicVolumeSlider.setValue(controller.getDefaultMusicVolume());
+        sfxVolumeSlider.setValue(controller.getDefaultSfxVolume());
+        fullscreenCheckbox.setSelected(controller.getDefaultFullscreen());
+        difficultyComboBox.setValue(controller.getDefaultDifficulty());
     }
 
     /**
-     * Reset options to default values.
+     * Returns the root node of the options UI.
      */
-    private void resetToDefaults() {
-        System.out.println("Resetting to defaults...");
-        musicVolumeSlider.setValue(75);
-        sfxVolumeSlider.setValue(80);
-        fullscreenCheckbox.setSelected(false);
-        difficultyComboBox.setSelectedIndex(1); // Normal
+    public Parent getView() {
+        if (view == null) {
+            initializeUI();
+        }
+        return view;
     }
 }

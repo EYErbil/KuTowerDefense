@@ -1,126 +1,154 @@
 package towerdefense.view.screens;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JToolBar;
-import javax.swing.SwingConstants;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Parent;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.text.Font;
+import towerdefense.Main; // For navigation
+import towerdefense.controller.MapEditorController; // Import controller
+import javafx.application.Platform; // For UI updates
 
 /**
- * Map editor screen for Tower Defense.
- * Allows creation and editing of game maps.
+ * Provides the JavaFX UI components for the Map Editor screen.
  */
-public class MapEditorScreen extends JFrame {
+public class MapEditorScreen {
 
-    private static final long serialVersionUID = 1L;
+    private BorderPane view;
+    private Label statusLabel;
+    private Label positionLabel;
+    private GridPane mapGridPane; // Keep reference to update cells
+    private MapEditorController controller; // Store the controller
+    // Add references to map grid pane, selected tile, etc. as needed
 
-    /**
-     * Constructor for MapEditorScreen.
-     */
-    public MapEditorScreen() {
-        // Basic frame setup
-        this.setTitle("Tower Defense - Map Editor");
-        this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        this.setMinimumSize(new Dimension(1024, 768));
-        this.setLocationRelativeTo(null);
+    public MapEditorScreen(MapEditorController controller) {
+        this.controller = controller;
+        initializeUI();
+    }
+
+    private void initializeUI() {
+        view = new BorderPane();
+        view.setPadding(new Insets(10));
+
+        // --- Toolbar ---
+        ToolBar toolBar = new ToolBar();
+        Button newButton = new Button("New");
+        Button openButton = new Button("Open");
+        Button saveButton = new Button("Save");
+        Button validateButton = new Button("Validate");
+        Button exitButton = new Button("Exit Editor");
+
+        // Wire actions to controller
+        newButton.setOnAction(e -> controller.handleNewMap());
+        openButton.setOnAction(e -> controller.handleOpenMap());
+        saveButton.setOnAction(e -> controller.handleSaveMap());
+        validateButton.setOnAction(e -> controller.handleValidateMap());
+        exitButton.setOnAction(e -> {
+            // TODO: Add confirmation if unsaved changes exist
+            Main.loadMainMenuScreen(); // Go back to main menu
+        });
+
+        toolBar.getItems().addAll(
+                newButton, new Separator(),
+                openButton, new Separator(),
+                saveButton, new Separator(),
+                validateButton, new Separator(),
+                exitButton);
+        view.setTop(toolBar);
+
+        // --- Map Grid Placeholder ---
+        mapGridPane = new GridPane(); // Assign to field
+        mapGridPane.setGridLinesVisible(true); // For visual aid during development
+        mapGridPane.setAlignment(Pos.CENTER);
+        // TODO: Populate with map cells/tiles based on controller.currentMap
+        buildMapGrid(); // Initial build
+
+        ScrollPane mapScrollPane = new ScrollPane(mapGridPane);
+        mapScrollPane.setFitToWidth(true);
+        mapScrollPane.setFitToHeight(true);
+        view.setCenter(mapScrollPane);
+        BorderPane.setMargin(mapScrollPane, new Insets(10));
+
+        // --- Tile Selector Panel ---
+        VBox tileSelectorPanel = new VBox(10);
+        tileSelectorPanel.setPadding(new Insets(10));
+        tileSelectorPanel.setAlignment(Pos.TOP_CENTER);
+        tileSelectorPanel.setStyle("-fx-border-color: grey; -fx-border-width: 1;");
+        tileSelectorPanel.setPrefWidth(150);
+
+        tileSelectorPanel.getChildren().add(new Label("Tile Types"));
+
+        ToggleGroup tileToggleGroup = new ToggleGroup();
+        String[] tileTypes = { "Path", "Tower Slot", "Start", "End", "Obstacle", "Erase" };
+        for (String type : tileTypes) {
+            ToggleButton tileButton = new ToggleButton(type);
+            tileButton.setToggleGroup(tileToggleGroup);
+            tileButton.setPrefWidth(120);
+            tileButton.setOnAction(e -> {
+                if (tileButton.isSelected()) {
+                    controller.handleTileSelection(type); // Call controller
+                    updateStatusLabel("Selected: " + type);
+                }
+            });
+            tileSelectorPanel.getChildren().add(tileButton);
+        }
+        view.setRight(tileSelectorPanel);
+
+        // --- Status Bar ---
+        BorderPane statusPane = new BorderPane();
+        statusPane.setPadding(new Insets(5));
+        statusLabel = new Label("Ready.");
+        positionLabel = new Label("Position: -, -");
+        statusPane.setLeft(statusLabel);
+        statusPane.setRight(positionLabel);
+        view.setBottom(statusPane);
     }
 
     /**
-     * Initialize the map editor screen.
+     * Builds or rebuilds the visual map grid based on controller data.
      */
-    public void initialize() {
-        // Set up the layout
-        JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+    private void buildMapGrid() {
+        mapGridPane.getChildren().clear(); // Clear previous grid
+        // TODO: Get dimensions from controller.currentMap or defaults
+        int numRows = 15; // Example
+        int numCols = 20; // Example
 
-        // Add toolbar at the top
-        JToolBar toolBar = new JToolBar();
-        toolBar.setFloatable(false);
-
-        // Add toolbar buttons
-        JButton newButton = new JButton("New Map");
-        JButton openButton = new JButton("Open Map");
-        JButton saveButton = new JButton("Save Map");
-        JButton validateButton = new JButton("Validate Map");
-        JButton exitButton = new JButton("Exit Editor");
-
-        // Add action listener to exit button
-        exitButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                dispose(); // Close this screen
+        for (int row = 0; row < numRows; row++) {
+            for (int col = 0; col < numCols; col++) {
+                Pane cell = new Pane();
+                cell.setPrefSize(32, 32);
+                // TODO: Set cell style/content based on controller.currentMap.getTile(row, col)
+                cell.setStyle("-fx-border-color: lightgrey;");
+                final int r = row;
+                final int c = col;
+                cell.setOnMouseClicked(event -> {
+                    controller.handleMapGridClick(r, c); // Call controller
+                    updatePositionLabel(c, r);
+                    // TODO: Update cell visual based on successful placement (view might query
+                    // controller again)
+                });
+                mapGridPane.add(cell, col, row);
             }
-        });
+        }
+    }
 
-        // Add buttons to toolbar
-        toolBar.add(newButton);
-        toolBar.addSeparator();
-        toolBar.add(openButton);
-        toolBar.addSeparator();
-        toolBar.add(saveButton);
-        toolBar.addSeparator();
-        toolBar.add(validateButton);
-        toolBar.addSeparator();
-        toolBar.add(exitButton);
+    // --- Status Update Methods ---
+    private void updateStatusLabel(String status) {
+        Platform.runLater(() -> statusLabel.setText(status)); // Ensure UI update on FX thread
+    }
 
-        mainPanel.add(toolBar, BorderLayout.NORTH);
+    private void updatePositionLabel(int col, int row) {
+        Platform.runLater(() -> positionLabel.setText(String.format("Position: %d, %d", col, row)));
+    }
 
-        // Add map grid placeholder
-        JPanel mapGridPanel = new JPanel();
-        mapGridPanel.setBorder(BorderFactory.createTitledBorder("Map Grid"));
-
-        // Add placeholder label
-        JLabel placeholderLabel = new JLabel("Map Grid Placeholder", SwingConstants.CENTER);
-        placeholderLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        mapGridPanel.add(placeholderLabel);
-
-        mainPanel.add(mapGridPanel, BorderLayout.CENTER);
-
-        // Add tile selector on the right
-        JPanel tileSelectorPanel = new JPanel(new GridLayout(6, 1, 0, 10));
-        tileSelectorPanel.setBorder(BorderFactory.createTitledBorder("Tile Types"));
-        tileSelectorPanel.setPreferredSize(new Dimension(200, 500));
-
-        // Add tile type buttons
-        JButton pathButton = new JButton("Path Tile");
-        JButton towerButton = new JButton("Tower Slot");
-        JButton startButton = new JButton("Start Point");
-        JButton endButton = new JButton("End Point");
-        JButton obstacleButton = new JButton("Obstacle");
-        JButton eraseButton = new JButton("Erase");
-
-        // Add components to tile selector panel
-        tileSelectorPanel.add(pathButton);
-        tileSelectorPanel.add(towerButton);
-        tileSelectorPanel.add(startButton);
-        tileSelectorPanel.add(endButton);
-        tileSelectorPanel.add(obstacleButton);
-        tileSelectorPanel.add(eraseButton);
-
-        mainPanel.add(tileSelectorPanel, BorderLayout.EAST);
-
-        // Add status panel at the bottom
-        JPanel statusPanel = new JPanel(new BorderLayout());
-        statusPanel.setBorder(BorderFactory.createTitledBorder("Status"));
-
-        JLabel statusLabel = new JLabel("Ready to edit map", SwingConstants.LEFT);
-        statusPanel.add(statusLabel, BorderLayout.WEST);
-
-        JLabel positionLabel = new JLabel("Position: 0, 0", SwingConstants.RIGHT);
-        statusPanel.add(positionLabel, BorderLayout.EAST);
-
-        mainPanel.add(statusPanel, BorderLayout.SOUTH);
-
-        // Add panel to frame
-        this.add(mainPanel);
-        this.pack();
+    /**
+     * Returns the root node of the map editor UI.
+     */
+    public Parent getView() {
+        if (view == null) {
+            initializeUI();
+        }
+        return view;
     }
 }

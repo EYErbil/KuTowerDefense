@@ -3,40 +3,44 @@ package towerdefense.view.screens;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
+import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import javafx.stage.Stage;
 import towerdefense.controller.MainMenuController;
 import towerdefense.model.GameModel;
 
 /**
- * Main menu screen for Tower Defense.
- * Provides options to start a new game, edit maps, access options, and quit the
- * game.
+ * Provides the UI components for the main menu screen.
  */
-public class MainMenuScreen extends Stage {
+public class MainMenuScreen /* extends Stage */ {
 
-    private final MainMenuController controller;
+    private MainMenuController controller;
     private final GameModel model;
+    private BorderPane view; // Store the root node
 
     /**
-     * Constructor for MainMenuScreen.
+     * Constructor for MainMenuScreen UI Provider.
      */
     public MainMenuScreen(GameModel model) {
         this.model = model;
-        this.controller = new MainMenuController(this, model);
+        // Pass only the model to the controller constructor
+        this.controller = new MainMenuController(model); // Fix: Remove null argument
         initializeUI();
     }
 
     /**
-     * Initialize the UI components.
+     * Initialize the UI components and return the root node.
      */
     private void initializeUI() {
+        // Create main layout
+        view = new BorderPane(); // Create the root node
+        view.setPadding(new Insets(50));
+        view.setStyle("-fx-background-color: #ecf0f1;");
+
         // Create title label
         Label titleLabel = new Label("Tower Defense");
         titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 36));
@@ -48,30 +52,35 @@ public class MainMenuScreen extends Stage {
         Button exitButton = createStyledButton("Exit");
 
         // Set button actions
+        // Controller needs to be updated to not rely on view.close()
         startButton.setOnAction(e -> controller.startGame());
         settingsButton.setOnAction(e -> controller.openSettings());
-        exitButton.setOnAction(e -> Platform.exit());
+        exitButton.setOnAction(e -> {
+            Platform.exit();
+            System.exit(0); // Ensure application exits cleanly
+        });
 
         // Create button container
         VBox buttonContainer = new VBox(20);
         buttonContainer.setAlignment(Pos.CENTER);
         buttonContainer.getChildren().addAll(startButton, settingsButton, exitButton);
 
-        // Create main layout
-        BorderPane mainLayout = new BorderPane();
-        mainLayout.setPadding(new Insets(50));
-        mainLayout.setStyle("-fx-background-color: #ecf0f1;");
-
         // Add components to layout
-        mainLayout.setTop(titleLabel);
+        view.setTop(titleLabel);
         BorderPane.setAlignment(titleLabel, Pos.CENTER);
-        mainLayout.setCenter(buttonContainer);
+        view.setCenter(buttonContainer);
 
-        // Set up the scene
-        Scene scene = new Scene(mainLayout, 800, 600);
-        setScene(scene);
-        setTitle("Tower Defense - Main Menu");
-        setResizable(false);
+        // Removed Scene and Stage setup
+    }
+
+    /**
+     * Returns the root node of the main menu UI.
+     */
+    public Parent getView() {
+        if (view == null) {
+            initializeUI(); // Ensure UI is initialized if called before constructor finishes (unlikely)
+        }
+        return view;
     }
 
     /**
@@ -99,7 +108,5 @@ public class MainMenuScreen extends Stage {
         return button;
     }
 
-    public void showScreen() {
-        show();
-    }
+    // Removed showScreen method
 }
