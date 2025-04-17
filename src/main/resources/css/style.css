@@ -1,0 +1,262 @@
+/* General styles */
+.root {
+    -fx-font-family: 'Segoe UI', Arial, sans-serif;
+    -fx-font-size: 14px;
+    -fx-background-color: #333333;
+    -fx-text-fill: white;
+}
+
+.label {
+    -fx-text-fill: white;
+}
+
+.button {
+    -fx-background-color: #555555;
+    -fx-text-fill: white;
+    -fx-border-color: #777777;
+    -fx-border-width: 1px;
+    -fx-padding: 8px 16px;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #666666;
+}
+
+.button:pressed {
+    -fx-background-color: #444444;
+}
+
+/* Menu screen styles */
+.menu-title {
+    -fx-font-size: 36px;
+    -fx-font-weight: bold;
+    -fx-fill: white;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 5, 0, 0, 3);
+}
+
+/* Game screen styles */
+.game-info-text {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.sidebar-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-fill: white;
+    -fx-margin-bottom: 10px;
+}
+
+.action-button {
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+}
+
+.action-button:hover {
+    -fx-background-color: #3e8e41;
+}
+
+.secondary-button {
+    -fx-background-color: #3498db;
+    -fx-text-fill: white;
+}
+
+.secondary-button:hover {
+    -fx-background-color: #2980b9;
+}
+
+.cancel-button {
+    -fx-background-color: #e74c3c;
+    -fx-text-fill: white;
+}
+
+.cancel-button:hover {
+    -fx-background-color: #c0392b;
+}
+
+/* Map editor styles */
+.section-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.selected-tile {
+    -fx-background-color: #ffcc00;
+    -fx-text-fill: #333333;
+    -fx-border-color: #ff9900;
+    -fx-border-width: 2px;
+}
+
+.map-name {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+/* Settings screen styles */
+.screen-title {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-fill: white;
+    -fx-margin-bottom: 20px;
+}
+
+.slider {
+    -fx-show-tick-labels: true;
+    -fx-show-tick-marks: true;
+}
+
+.slider .track {
+    -fx-background-color: #777777;
+}
+
+.slider .thumb {
+    -fx-background-color: #4CAF50;
+}
+
+/* Tooltip styles */
+.tooltip {
+    -fx-background-color: #333333;
+    -fx-text-fill: white;
+    -fx-font-size: 12px;
+    -fx-padding: 5px;
+    -fx-border-color: #777777;
+    -fx-border-width: 1px;
+}
+
+/* Health bar styles */
+.health-text {
+    -fx-fill: white;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+/* Main application styling */
+.root {
+    -fx-font-family: "Arial";
+    -fx-background-color: #333333;
+}
+
+/* Main menu styling */
+.menu-title {
+    -fx-font-size: 36px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffd700;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.8), 10, 0, 0, 2);
+}
+
+.menu-button {
+    -fx-background-image: url("/Asset_pack/UI/Button_Blue.png");
+    -fx-background-color: transparent;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center;
+    -fx-background-size: stretch;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+    -fx-padding: 15 30 15 30;
+    -fx-min-height: 50px;
+    -fx-pref-width: 250px;
+    -fx-cursor: hand;
+    -fx-background-radius: 0;
+    -fx-border-width: 0;
+    -fx-effect: null;
+}
+
+.menu-button:hover {
+    -fx-background-image: url("/Asset_pack/UI/Button_Hover.png");
+    -fx-background-color: transparent;
+    -fx-effect: dropshadow(gaussian, rgba(255,255,255,0.3), 5, 0, 0, 1);
+}
+
+.menu-button:pressed {
+    -fx-background-image: url("/Asset_pack/UI/Button_Blue_Pressed.png");
+    -fx-background-color: transparent;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 5, 0, 0, 1);
+}
+
+/* Game screen styling */
+.game-info {
+    -fx-background-color: rgba(0, 0, 0, 0.7);
+    -fx-padding: 5;
+    -fx-background-radius: 5;
+}
+
+.gold-text {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffd700;
+}
+
+.wave-text {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #64b5f6;
+}
+
+/* Tower selection menu */
+.tower-selection-menu {
+    -fx-background-color: rgba(50, 50, 50, 0.9);
+    -fx-background-radius: 10;
+    -fx-padding: 10;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 10, 0, 0, 0);
+}
+
+.tower-option {
+    -fx-background-color: #4a5c8c;
+    -fx-background-radius: 5;
+    -fx-padding: 5;
+    -fx-cursor: hand;
+}
+
+.tower-option:hover {
+    -fx-background-color: #5a6c9c;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.6), 5, 0, 0, 0);
+}
+
+/* Options screen styling */
+.options-section {
+    -fx-background-color: rgba(50, 50, 50, 0.9);
+    -fx-background-radius: 10;
+    -fx-padding: 15;
+    -fx-spacing: 10;
+}
+
+.options-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffd700;
+}
+
+.options-label {
+    -fx-font-size: 14px;
+    -fx-text-fill: white;
+}
+
+/* Map editor styling */
+.editor-toolbar {
+    -fx-background-color: #333333;
+    -fx-padding: 10;
+    -fx-spacing: 5;
+}
+
+.tile-palette {
+    -fx-background-color: #444444;
+    -fx-padding: 10;
+    -fx-background-radius: 5;
+}
+
+.tile-option {
+    -fx-background-color: transparent;
+    -fx-border-color: #888888;
+    -fx-border-width: 1;
+    -fx-cursor: hand;
+}
+
+.tile-option:selected {
+    -fx-border-color: #ffd700;
+    -fx-border-width: 2;
+} 
