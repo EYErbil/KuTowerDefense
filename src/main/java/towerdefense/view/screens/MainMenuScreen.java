@@ -6,8 +6,8 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import towerdefense.controller.MainMenuController;
@@ -21,14 +21,15 @@ public class MainMenuScreen /* extends Stage */ {
     private MainMenuController controller;
     private final GameModel model;
     private BorderPane view; // Store the root node
+    private final String defaultButtonStyle = "-fx-background-color: #5a3d2b; -fx-text-fill: white; -fx-font-family: 'Arial Black'; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 5; -fx-border-color: #3e2c1d; -fx-border-width: 2; -fx-border-radius: 5;";
+    private final String hoverButtonStyle = "-fx-background-color: #7c553f; -fx-text-fill: white; -fx-font-family: 'Arial Black'; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 5; -fx-border-color: #3e2c1d; -fx-border-width: 2; -fx-border-radius: 5;";
 
     /**
      * Constructor for MainMenuScreen UI Provider.
      */
     public MainMenuScreen(GameModel model) {
         this.model = model;
-        // Pass only the model to the controller constructor
-        this.controller = new MainMenuController(model); // Fix: Remove null argument
+        this.controller = new MainMenuController(model);
         initializeUI();
     }
 
@@ -36,38 +37,41 @@ public class MainMenuScreen /* extends Stage */ {
      * Initialize the UI components and return the root node.
      */
     private void initializeUI() {
-        // Create main layout
-        view = new BorderPane(); // Create the root node
+        view = new BorderPane();
         view.setPadding(new Insets(50));
-        view.setStyle("-fx-background-color: #ecf0f1;");
+        // Dark wood/parchment background
+        view.setStyle("-fx-background-color: #8a6e4b; -fx-border-color: #3e2c1d; -fx-border-width: 5;");
 
-        // Create title label
-        Label titleLabel = new Label("Tower Defense");
-        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 36));
-        titleLabel.setStyle("-fx-text-fill: #2c3e50;");
+        // Game Title Label
+        Label titleLabel = new Label("KU Tower Defense");
+        // Use a more thematic font if available, fallback to bold Arial/similar
+        titleLabel.setFont(Font.font("Times New Roman", FontWeight.BOLD, 48));
+        titleLabel.setStyle("-fx-text-fill: #3e2c1d;"); // Dark brown text
 
-        // Create buttons
+        // Create buttons using helper
         Button startButton = createStyledButton("Start Game");
+        Button mapEditorButton = createStyledButton("Map Editor"); // Added Map Editor Button
         Button settingsButton = createStyledButton("Settings");
-        Button exitButton = createStyledButton("Exit");
+        Button exitButton = createStyledButton("Exit Game");
 
         // Set button actions
-        // Controller needs to be updated to not rely on view.close()
         startButton.setOnAction(e -> controller.startGame());
+        mapEditorButton.setOnAction(e -> controller.openMapEditor()); // Action for Map Editor
         settingsButton.setOnAction(e -> controller.openSettings());
         exitButton.setOnAction(e -> {
             Platform.exit();
-            System.exit(0); // Ensure application exits cleanly
+            System.exit(0);
         });
 
-        // Create button container
-        VBox buttonContainer = new VBox(20);
+        // Button container
+        VBox buttonContainer = new VBox(25); // Increased spacing
         buttonContainer.setAlignment(Pos.CENTER);
-        buttonContainer.getChildren().addAll(startButton, settingsButton, exitButton);
+        buttonContainer.getChildren().addAll(startButton, mapEditorButton, settingsButton, exitButton);
 
         // Add components to layout
         view.setTop(titleLabel);
         BorderPane.setAlignment(titleLabel, Pos.CENTER);
+        BorderPane.setMargin(titleLabel, new Insets(0, 0, 40, 0)); // Add margin below title
         view.setCenter(buttonContainer);
 
         // Removed Scene and Stage setup
@@ -88,23 +92,14 @@ public class MainMenuScreen /* extends Stage */ {
      */
     private Button createStyledButton(String text) {
         Button button = new Button(text);
-        button.setPrefWidth(200);
-        button.setPrefHeight(50);
-        button.setStyle("-fx-background-color: #3498db; " +
-                "-fx-text-fill: white; " +
-                "-fx-font-size: 16px; " +
-                "-fx-font-weight: bold; " +
-                "-fx-background-radius: 5;");
-        button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: #2980b9; " +
-                "-fx-text-fill: white; " +
-                "-fx-font-size: 16px; " +
-                "-fx-font-weight: bold; " +
-                "-fx-background-radius: 5;"));
-        button.setOnMouseExited(e -> button.setStyle("-fx-background-color: #3498db; " +
-                "-fx-text-fill: white; " +
-                "-fx-font-size: 16px; " +
-                "-fx-font-weight: bold; " +
-                "-fx-background-radius: 5;"));
+        button.setPrefWidth(250); // Slightly wider buttons
+        button.setPrefHeight(55);
+        button.setStyle(defaultButtonStyle);
+        // Hover effect
+        button.setOnMouseEntered(e -> button.setStyle(hoverButtonStyle));
+        button.setOnMouseExited(e -> button.setStyle(defaultButtonStyle));
+        // TODO: Add pressed effect
+
         return button;
     }
 

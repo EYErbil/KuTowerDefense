@@ -8,6 +8,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import towerdefense.Main; // For navigation
 import towerdefense.controller.GameController; // Import controller
 import towerdefense.model.GameModel; // If game state is needed
@@ -24,6 +25,13 @@ public class GameScreen {
     private Label livesLabel;
     // private GameModel model; // Controller likely manages model interaction
     private GameController controller; // Store the controller
+    private final String buttonStyle = "-fx-background-color: #6f4f2f; -fx-text-fill: white; -fx-font-family: 'Arial'; -fx-font-size: 11px; -fx-background-radius: 3; -fx-border-color: #4a3b2a; -fx-border-width: 1; -fx-border-radius: 3;";
+    private final String buttonHoverStyle = "-fx-background-color: #8a6e4b; -fx-text-fill: white; -fx-font-family: 'Arial'; -fx-font-size: 11px; -fx-background-radius: 3; -fx-border-color: #4a3b2a; -fx-border-width: 1; -fx-border-radius: 3;";
+    private final String labelStyle = "-fx-font-family: 'Arial Black'; -fx-font-size: 13px; -fx-text-fill: #e4d8c4;"; // Light
+                                                                                                                      // text
+                                                                                                                      // for
+                                                                                                                      // dark
+                                                                                                                      // background
 
     public GameScreen(GameController controller) {
         this.controller = controller;
@@ -34,18 +42,18 @@ public class GameScreen {
     private void initializeUI() {
         view = new BorderPane();
         view.setPadding(new Insets(10));
-        view.setStyle("-fx-background-color: #e0e0e0;"); // Example background
+        // Darker background for the game screen
+        view.setStyle("-fx-background-color: #5a4a3a;");
 
         // --- Game Board Area (Center) ---
-        gameBoardPane = new Pane(); // Use Pane for flexible element positioning
-        gameBoardPane.setStyle("-fx-background-color: lightgreen; -fx-border-color: black;"); // Placeholder appearance
-        gameBoardPane.setPrefSize(800, 600); // Example size
-        // TODO: Add game elements (towers, enemies, path) to this pane
-        // TODO: Implement game loop / animation timer to update this pane
-
+        gameBoardPane = new Pane();
+        // Simple grass/dirt placeholder color
+        gameBoardPane.setStyle("-fx-background-color: #779977; -fx-border-color: black;");
+        gameBoardPane.setPrefSize(800, 600);
         Label gamePlaceholder = new Label("Game Board Area (JavaFX)");
         gamePlaceholder.setFont(Font.font(24));
-        gameBoardPane.getChildren().add(gamePlaceholder); // Add label temporarily
+        gamePlaceholder.setStyle("-fx-text-fill: white;");
+        gameBoardPane.getChildren().add(gamePlaceholder);
         // Center the placeholder label (simple centering)
         gamePlaceholder.layoutXProperty()
                 .bind(gameBoardPane.widthProperty().subtract(gamePlaceholder.widthProperty()).divide(2));
@@ -53,27 +61,35 @@ public class GameScreen {
                 .bind(gameBoardPane.heightProperty().subtract(gamePlaceholder.heightProperty()).divide(2));
 
         view.setCenter(gameBoardPane);
-        BorderPane.setMargin(gameBoardPane, new Insets(0, 10, 0, 0));
+        BorderPane.setMargin(gameBoardPane, new Insets(0, 10, 10, 0)); // Margin adjusted
 
         // --- Control Panel (Right) ---
-        VBox controlPanel = new VBox(15);
+        VBox controlPanel = new VBox(10);
         controlPanel.setPadding(new Insets(10));
         controlPanel.setAlignment(Pos.TOP_CENTER);
-        controlPanel.setStyle("-fx-border-color: grey; -fx-border-width: 1; -fx-background-color: #f0f0f0;");
-        controlPanel.setPrefWidth(180);
+        // Dark wood panel style
+        controlPanel.setStyle(
+                "-fx-background-color: #6f4f2f; -fx-border-color: #4a3b2a; -fx-border-width: 2; -fx-background-radius: 5; -fx-border-radius: 5;");
+        controlPanel.setPrefWidth(160); // Slightly narrower
 
-        Label controlsTitle = new Label("Controls");
-        controlsTitle.setFont(Font.font("Arial", 16));
+        Label controlsTitle = new Label("Game Info");
+        controlsTitle.setFont(Font.font("Arial Black", FontWeight.BOLD, 16));
+        controlsTitle.setStyle("-fx-text-fill: #e4d8c4;");
         controlsTitle.setUnderline(true);
 
+        // Apply label style
         waveLabel = new Label("Wave: 0/0");
+        waveLabel.setStyle(labelStyle);
         goldLabel = new Label("Gold: 0");
+        goldLabel.setStyle(labelStyle);
         livesLabel = new Label("Lives: 0");
+        livesLabel.setStyle(labelStyle);
 
-        Button pauseButton = new Button("Pause");
-        Button speedButton = new Button("Speed x1"); // Toggle speed
-        Button optionsButton = new Button("Options");
-        Button quitButton = new Button("Quit to Menu");
+        // Style buttons
+        Button pauseButton = createStyledButton("Pause");
+        Button speedButton = createStyledButton("Speed x1");
+        Button optionsButton = createStyledButton("Options");
+        Button quitButton = createStyledButton("Quit");
 
         // Wire actions to controller
         pauseButton.setOnAction(e -> controller.handlePauseToggle());
@@ -88,26 +104,29 @@ public class GameScreen {
         });
 
         controlPanel.getChildren().addAll(
-                controlsTitle, waveLabel, goldLabel, livesLabel,
+                controlsTitle, new Separator(), waveLabel, goldLabel, livesLabel,
                 new Separator(),
                 pauseButton, speedButton, optionsButton,
                 new Separator(),
                 quitButton);
         view.setRight(controlPanel);
+        BorderPane.setMargin(controlPanel, new Insets(0, 0, 10, 0)); // Margin adjusted
 
         // --- Tower Selection Panel (Bottom) ---
-        HBox towerPanel = new HBox(10);
+        HBox towerPanel = new HBox(15);
         towerPanel.setPadding(new Insets(10));
-        towerPanel.setAlignment(Pos.CENTER);
-        towerPanel.setStyle("-fx-border-color: grey; -fx-border-width: 1; -fx-background-color: #f0f0f0;");
+        towerPanel.setAlignment(Pos.CENTER_LEFT);
+        // Dark wood panel style
+        towerPanel.setStyle(
+                "-fx-background-color: #6f4f2f; -fx-border-color: #4a3b2a; -fx-border-width: 2; -fx-background-radius: 5; -fx-border-radius: 5;");
 
-        towerPanel.getChildren().add(new Label("Towers:"));
-        // TODO: Add actual tower buttons/icons
+        Label towersLabel = new Label("Build Tower:");
+        towersLabel.setStyle(labelStyle);
+        towerPanel.getChildren().add(towersLabel);
         for (int i = 1; i <= 3; i++) {
-            Button towerButton = new Button("Tower " + i);
-            towerButton.setPrefSize(80, 50);
+            Button towerButton = createStyledButton("Tower " + i);
+            towerButton.setPrefSize(90, 55); // Adjusted size
             final int towerType = i;
-            // Wire action to controller
             towerButton.setOnAction(e -> controller.handleTowerSelection(towerType));
             towerPanel.getChildren().add(towerButton);
         }
@@ -116,6 +135,16 @@ public class GameScreen {
 
         // Initial UI update is now handled by controller/game loop
         // updateUI(); // Remove initial call from here
+    }
+
+    // Helper for styled buttons
+    private Button createStyledButton(String text) {
+        Button button = new Button(text);
+        button.setStyle(buttonStyle);
+        button.setOnMouseEntered(e -> button.setStyle(buttonHoverStyle));
+        button.setOnMouseExited(e -> button.setStyle(buttonStyle));
+        button.setPrefHeight(30);
+        return button;
     }
 
     /**
