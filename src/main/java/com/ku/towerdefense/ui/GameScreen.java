@@ -518,4 +518,4 @@ public class GameScreen extends BorderPane {
             renderTimer.setMousePosition(0, 0, false);
         });
     }
-} 
+}

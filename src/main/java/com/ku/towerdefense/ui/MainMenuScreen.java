@@ -131,7 +131,7 @@ public class MainMenuScreen extends VBox {
      */
     private void openMapEditor() {
         MapEditorScreen mapEditor = new MapEditorScreen(primaryStage);
-        Scene mapEditorScene = new Scene(mapEditor, 1024, 768);
+        Scene mapEditorScene = new Scene(mapEditor, 1400, 1000);
         try {
             String css = getClass().getResource("/css/style.css").toExternalForm();
             mapEditorScene.getStylesheets().add(css);

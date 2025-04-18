@@ -398,4 +398,4 @@ public class GameMap implements Serializable {
     public int getHeight() {
         return height;
     }
-} 
+}

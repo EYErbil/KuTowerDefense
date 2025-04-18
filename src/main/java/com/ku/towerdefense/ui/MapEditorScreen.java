@@ -5,6 +5,7 @@ import com.ku.towerdefense.model.map.Tile;
 import com.ku.towerdefense.model.map.TileType;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -13,18 +14,27 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
+import javafx.scene.control.Tooltip;
+import javafx.scene.control.Toggle;
+import javafx.scene.control.ScrollPane;
+import javafx.geometry.Point2D;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,8 +46,31 @@ public class MapEditorScreen extends BorderPane {
     private GameMap currentMap;
     private TileType selectedTileType = TileType.GRASS;
     private Canvas mapCanvas;
-    private int tileSize = 32;
+    private int tileSize = 64;
     private File mapsDirectory;
+    private ToggleGroup tileToggleGroup;
+    private VBox leftToolbar;
+    
+    // Define which tile types appear in the editor palette - REORDERED
+    private static final List<TileType> PALETTE_TILE_TYPES = Arrays.asList(
+        // Path Tiles
+        TileType.PATH_V,
+        TileType.PATH_H,
+        TileType.PATH_NE,
+        TileType.PATH_NW,
+        TileType.PATH_SE,
+        TileType.PATH_SW,
+        // Interaction Points
+        TileType.START_POINT,
+        TileType.END_POINT,
+        TileType.TOWER_SLOT,
+        // Terrain & Obstacles
+        TileType.GRASS,
+        TileType.OBSTACLE,
+        // Decorations
+        TileType.DECORATION
+        // Add more decorations like TREE, ROCK here if implemented
+    );
     
     /**
      * Constructor for the map editor screen.
@@ -78,26 +111,35 @@ public class MapEditorScreen extends BorderPane {
         HBox topToolbar = createTopToolbar();
         
         // Left toolbar with tile selection
-        VBox leftToolbar = createTileSelectionToolbar();
+        leftToolbar = createTileSelectionToolbar();
         
         // Canvas for map editing
         mapCanvas = new Canvas(currentMap.getWidth() * tileSize, currentMap.getHeight() * tileSize);
         mapCanvas.setOnMouseClicked(e -> {
             int x = (int) (e.getX() / tileSize);
             int y = (int) (e.getY() / tileSize);
-            if (x >= 0 && x < currentMap.getWidth() && y >= 0 && y < currentMap.getHeight()) {
-                // Handle special cases for start and end points (only one of each allowed)
-                if (selectedTileType == TileType.START_POINT) {
+            ToggleButton selectedToggle = (ToggleButton) tileToggleGroup.getSelectedToggle();
+            if (selectedToggle != null && x >= 0 && x < currentMap.getWidth() && y >= 0 && y < currentMap.getHeight()) {
+                TileType typeToPlace = (TileType) selectedToggle.getUserData();
+                
+                if (typeToPlace == TileType.START_POINT) {
                     clearExistingStartPoint();
-                } else if (selectedTileType == TileType.END_POINT) {
+                } else if (typeToPlace == TileType.END_POINT) {
                     clearExistingEndPoint();
                 }
                 
-                // Set the new tile
-                currentMap.setTileType(x, y, selectedTileType);
+                currentMap.setTileType(x, y, typeToPlace);
                 renderMap();
             }
         });
+        
+        // Wrap Canvas in ScrollPane
+        ScrollPane mapScrollPane = new ScrollPane();
+        mapScrollPane.setContent(mapCanvas);
+        mapScrollPane.setFitToWidth(true); // Allows horizontal scroll if needed
+        mapScrollPane.setFitToHeight(true); // Allows vertical scroll if needed
+        // Set background color to a grassy green
+        mapScrollPane.setStyle("-fx-background: #64B464; -fx-border-color: #444444;"); // Example green, adjust hex code as needed
         
         // Render initial map
         renderMap();
@@ -108,7 +150,7 @@ public class MapEditorScreen extends BorderPane {
         // Set up layout
         setTop(topToolbar);
         setLeft(leftToolbar);
-        setCenter(mapCanvas);
+        setCenter(mapScrollPane);
         setBottom(bottomToolbar);
     }
     
@@ -185,36 +227,145 @@ public class MapEditorScreen extends BorderPane {
     }
     
     /**
-     * Create the tile selection toolbar.
+     * Create the tile selection toolbar with images.
      *
      * @return the tile selection container
      */
     private VBox createTileSelectionToolbar() {
-        VBox tileToolbar = new VBox(10);
-        tileToolbar.setPadding(new Insets(0, 10, 0, 0));
-        tileToolbar.setAlignment(Pos.TOP_CENTER);
-        
-        Label toolsLabel = new Label("Tile Tools");
+        VBox toolbarContainer = new VBox(10);
+        toolbarContainer.setPadding(new Insets(0, 10, 0, 0));
+        toolbarContainer.setAlignment(Pos.TOP_CENTER);
+        toolbarContainer.getStyleClass().add("tile-palette");
+
+        Label toolsLabel = new Label("Tile Palette");
         toolsLabel.getStyleClass().add("section-title");
+        toolbarContainer.getChildren().add(toolsLabel);
+
+        tileToggleGroup = new ToggleGroup();
         
-        // Create a button for each tile type
-        for (TileType type : TileType.values()) {
-            Button tileButton = new Button(type.toString());
-            tileButton.setPrefWidth(120);
-            tileButton.setOnAction(e -> {
-                selectedTileType = type;
-                updateTileButtonStyles(tileToolbar);
-            });
-            
-            // Add a style class to show the selected tile type
-            if (type == selectedTileType) {
-                tileButton.getStyleClass().add("selected-tile");
+        TilePane tilePane = new TilePane();
+        tilePane.setPadding(new Insets(5));
+        tilePane.setHgap(5);
+        tilePane.setVgap(5);
+        tilePane.setPrefColumns(3);
+
+        System.out.println("--- Creating Tile Palette Buttons (Viewport Method v3) ---"); 
+
+        // --- Get static tileset reference once (ensure loaded) --- 
+        // Calling a static method ensures loadImagesIfNeeded runs
+        Image staticTileset = Tile.getBaseImageForType(TileType.GRASS); // Type doesn't matter, just need the tileset
+        if (staticTileset == null) {
+            System.err.println("CRITICAL: Failed to load base tileset for palette!");
+            // Optionally handle this error more gracefully
+        }
+        // --- End Get static tileset --- 
+
+        for (TileType type : PALETTE_TILE_TYPES) { 
+            ToggleButton tileButton = new ToggleButton();
+            tileButton.setToggleGroup(tileToggleGroup);
+            tileButton.setUserData(type);
+            tileButton.setTooltip(new Tooltip(type.toString()));
+            tileButton.getStyleClass().add("tile-option");
+
+            Image imageToShow = null;    // The final image object to display in the button
+            Rectangle2D viewport = null; // The viewport to apply (null if not using tileset slice)
+            String logInfo = "Type: " + type;
+
+            try {
+                // Get the base image source (tileset, castle, or towerslot)
+                Image baseImage = Tile.getBaseImageForType(type);
+                String baseImgId = (baseImage == null) ? "NULL" : Integer.toHexString(System.identityHashCode(baseImage));
+                logInfo += ", BaseImgID: " + baseImgId;
+
+                if (baseImage != null && !baseImage.isError()) {
+                    if (baseImage == staticTileset) { // Is this type derived from the main tileset?
+                        Point2D coords = Tile.getCoordsForType(type);
+                        if (coords != null) {
+                            // Yes, and we have coordinates for it
+                            int col = (int) coords.getX();
+                            int row = (int) coords.getY();
+                            // Calculate the viewport
+                            viewport = new Rectangle2D(col * Tile.SOURCE_TILE_SIZE, row * Tile.SOURCE_TILE_SIZE,
+                                                       Tile.SOURCE_TILE_SIZE, Tile.SOURCE_TILE_SIZE);
+                            imageToShow = baseImage; // Show the tileset...
+                            logInfo += ", Viewport: Calculated";
+                        } else {
+                            // Yes, but missing coordinates (fallback)
+                             logInfo += ", Viewport: NULL (Coords not found!) - Using Fallback";
+                             imageToShow = null; // Trigger fallback graphic
+                        }
+                    } else {
+                        // No, it's a specific image (castle, tower slot)
+                        imageToShow = baseImage; // Show the specific image...
+                        logInfo += ", Viewport: N/A (Specific Image)";
+                        // viewport remains null
+                    }
+                } else {
+                     logInfo += ", BaseImg: NULL or Error - Using Fallback";
+                     imageToShow = null; // Trigger fallback graphic
+                }
+
+            } catch (Exception e) {
+                 logInfo += ", EXCEPTION building palette button: " + e.getMessage();
+                 e.printStackTrace();
+                 imageToShow = null; // Ensure fallback on error
             }
             
-            tileToolbar.getChildren().add(tileButton);
+            System.out.println("    Palette Button - " + logInfo);
+
+            // --- Set Button Graphic --- 
+            if (imageToShow != null) { 
+                ImageView imageView = new ImageView(imageToShow);
+                if (viewport != null) { // Apply viewport ONLY if one was calculated
+                    imageView.setViewport(viewport); 
+                } else {
+                    // Ensure viewport is cleared if we're showing a non-tileset image
+                    // that might have been used in a previous button's ImageView
+                    imageView.setViewport(null); 
+                }
+                // Scale the resulting view 
+                imageView.setFitWidth(tileSize); 
+                imageView.setFitHeight(tileSize);
+                imageView.setPreserveRatio(true);
+                imageView.setSmooth(false); 
+                tileButton.setGraphic(imageView);
+            } else {
+                 // Fallback graphic 
+                 javafx.scene.shape.Rectangle fallbackRect = new javafx.scene.shape.Rectangle(tileSize, tileSize);
+                 fallbackRect.setFill(getColorForTileType(type)); 
+                 javafx.scene.text.Text fallbackText = new javafx.scene.text.Text(type.name().substring(0, 1));
+                 fallbackText.setFill(Color.WHITE);
+                 javafx.scene.layout.StackPane fallbackGraphic = new javafx.scene.layout.StackPane(fallbackRect, fallbackText);
+                 tileButton.setGraphic(fallbackGraphic);
+                 System.err.println("    Palette: Using fallback graphic for tile button: " + type);
+            }
+            // --- End Set Button Graphic --- 
+            
+            // Select the initial tile type (e.g., GRASS)
+            if (type == selectedTileType) {
+                tileButton.setSelected(true);
+            }
+
+            tilePane.getChildren().add(tileButton);
         }
         
-        return tileToolbar;
+        System.out.println("--- Finished Creating Tile Palette Buttons ---");
+        toolbarContainer.getChildren().add(tilePane);
+        return toolbarContainer;
+    }
+    
+    // Helper method to get fallback colors
+    private Color getColorForTileType(TileType type) {
+        return switch (type) {
+            case GRASS -> Color.LIMEGREEN;
+            case PATH, PATH_V, PATH_H, PATH_NE, PATH_NW, PATH_SE, PATH_SW -> Color.SANDYBROWN;
+            case START_POINT -> Color.DODGERBLUE;
+            case END_POINT -> Color.INDIANRED;
+            case TOWER_SLOT -> Color.SLATEGRAY;
+            case DECORATION -> Color.FORESTGREEN;
+            case OBSTACLE -> Color.DARKGRAY;
+            default -> Color.VIOLET;
+        };
     }
     
     /**
@@ -247,45 +398,25 @@ public class MapEditorScreen extends BorderPane {
     }
     
     /**
-     * Update the visual styles of tile buttons to show selection.
-     *
-     * @param toolbar the toolbar containing the buttons
-     */
-    private void updateTileButtonStyles(VBox toolbar) {
-        for (int i = 1; i < toolbar.getChildren().size(); i++) { // Skip label
-            Button button = (Button) toolbar.getChildren().get(i);
-            button.getStyleClass().remove("selected-tile");
-            
-            TileType buttonType = TileType.valueOf(button.getText());
-            if (buttonType == selectedTileType) {
-                button.getStyleClass().add("selected-tile");
-            }
-        }
-    }
-    
-    /**
      * Render the current map on the canvas.
      */
     private void renderMap() {
+        System.out.println("--- renderMap() called ---"); // Log entry
         GraphicsContext gc = mapCanvas.getGraphicsContext2D();
         gc.clearRect(0, 0, mapCanvas.getWidth(), mapCanvas.getHeight());
         
-        // Draw background
-        gc.setFill(Color.DARKGRAY);
-        gc.fillRect(0, 0, mapCanvas.getWidth(), mapCanvas.getHeight());
-        
-        // Draw tiles
+        // Draw tiles using Tile.render()
         for (int y = 0; y < currentMap.getHeight(); y++) {
             for (int x = 0; x < currentMap.getWidth(); x++) {
                 Tile tile = currentMap.getTile(x, y);
                 if (tile != null) {
-                    drawTile(gc, x, y, tile.getType());
+                    tile.render(gc, tileSize);
                 }
             }
         }
         
-        // Draw grid
-        gc.setStroke(Color.BLACK);
+        // Draw grid overlay (optional, can be toggled)
+        gc.setStroke(Color.rgb(0, 0, 0, 0.2)); // Make grid less prominent
         gc.setLineWidth(0.5);
         for (int x = 0; x <= currentMap.getWidth(); x++) {
             gc.strokeLine(x * tileSize, 0, x * tileSize, currentMap.getHeight() * tileSize);
@@ -293,81 +424,7 @@ public class MapEditorScreen extends BorderPane {
         for (int y = 0; y <= currentMap.getHeight(); y++) {
             gc.strokeLine(0, y * tileSize, currentMap.getWidth() * tileSize, y * tileSize);
         }
-    }
-    
-    /**
-     * Draw a single tile on the canvas.
-     *
-     * @param gc the graphics context
-     * @param x x coordinate in tile units
-     * @param y y coordinate in tile units
-     * @param type the tile type to draw
-     */
-    private void drawTile(GraphicsContext gc, int x, int y, TileType type) {
-        switch (type) {
-            case GRASS:
-                gc.setFill(Color.GREEN);
-                break;
-            case PATH:
-                gc.setFill(Color.SANDYBROWN);
-                break;
-            case START_POINT:
-                gc.setFill(Color.BLUE);
-                break;
-            case END_POINT:
-                gc.setFill(Color.RED);
-                break;
-            case TOWER_SLOT:
-                gc.setFill(Color.GRAY);
-                break;
-            case DECORATION:
-                gc.setFill(Color.LIGHTGRAY);
-                break;
-            default:
-                gc.setFill(Color.BLACK);
-        }
-        
-        gc.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
-        
-        // Draw icon or symbol based on tile type
-        if (type == TileType.TOWER_SLOT) {
-            // Draw a simple tower symbol
-            gc.setFill(Color.DARKGRAY);
-            double centerX = x * tileSize + tileSize / 2;
-            double centerY = y * tileSize + tileSize / 2;
-            double radius = tileSize / 4;
-            gc.fillOval(centerX - radius, centerY - radius, radius * 2, radius * 2);
-        } else if (type == TileType.START_POINT) {
-            // Draw an arrow pointing right
-            gc.setFill(Color.WHITE);
-            double[] xPoints = {
-                x * tileSize + tileSize * 0.2, 
-                x * tileSize + tileSize * 0.8, 
-                x * tileSize + tileSize * 0.5
-            };
-            double[] yPoints = {
-                y * tileSize + tileSize * 0.3,
-                y * tileSize + tileSize * 0.5, 
-                y * tileSize + tileSize * 0.7
-            };
-            gc.fillPolygon(xPoints, yPoints, 3);
-        } else if (type == TileType.END_POINT) {
-            // Draw an X
-            gc.setStroke(Color.WHITE);
-            gc.setLineWidth(2);
-            gc.strokeLine(
-                x * tileSize + tileSize * 0.2, 
-                y * tileSize + tileSize * 0.2, 
-                x * tileSize + tileSize * 0.8, 
-                y * tileSize + tileSize * 0.8
-            );
-            gc.strokeLine(
-                x * tileSize + tileSize * 0.8, 
-                y * tileSize + tileSize * 0.2, 
-                x * tileSize + tileSize * 0.2, 
-                y * tileSize + tileSize * 0.8
-            );
-        }
+        System.out.println("--- renderMap() finished ---"); // Log exit
     }
     
     /**
@@ -520,8 +577,8 @@ public class MapEditorScreen extends BorderPane {
             return true;
         }
         
-        // Only follow path tiles or the start point
-        if (tile.getType() != TileType.PATH && tile.getType() != TileType.START_POINT) {
+        // Check if the tile is walkable (using the Tile's own method)
+        if (!tile.isWalkable()) { 
             return false;
         }
         
@@ -593,6 +650,23 @@ public class MapEditorScreen extends BorderPane {
     private void loadMap() {
         // This would be implemented in the MapSelectionScreen class
         System.out.println("Load map functionality not yet implemented");
+        
+        // After loading 'currentMap':
+        if (currentMap != null) {
+             // ... resize canvas ...
+             renderMap();
+             // Update map name field
+             // Potentially update selected tile in palette if needed?
+             // Maybe default back to GRASS after load?
+             selectedTileType = TileType.GRASS; 
+             for (Toggle toggle : tileToggleGroup.getToggles()) {
+                 ToggleButton tb = (ToggleButton) toggle;
+                 if (tb.getUserData() == selectedTileType) {
+                     tb.setSelected(true);
+                     break;
+                 }
+             }
+        }
     }
     
     /**
@@ -604,4 +678,4 @@ public class MapEditorScreen extends BorderPane {
         mainMenuScene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
         primaryStage.setScene(mainMenuScene);
     }
-} 
+}

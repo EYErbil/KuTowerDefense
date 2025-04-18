@@ -37,5 +37,35 @@ public enum TileType {
     /**
      * Obstacle that blocks enemy path and tower placement.
      */
-    OBSTACLE
-} 
+    OBSTACLE,
+    
+    /**
+     * Vertical path segment.
+     */
+    PATH_V,
+    
+    /**
+     * Horizontal path segment.
+     */
+    PATH_H,
+    
+    /**
+     * Corner: Path goes North then East.
+     */
+    PATH_NE,
+    
+    /**
+     * Corner: Path goes North then West.
+     */
+    PATH_NW,
+    
+    /**
+     * Corner: Path goes South then East.
+     */
+    PATH_SE,
+    
+    /**
+     * Corner: Path goes South then West.
+     */
+    PATH_SW
+}

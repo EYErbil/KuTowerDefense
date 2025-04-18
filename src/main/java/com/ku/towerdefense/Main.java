@@ -19,7 +19,6 @@ public class Main extends Application {
         
         // Set up the primary stage
         primaryStage.setTitle("KU Tower Defense");
-        primaryStage.setResizable(false);
         
         // Create and show main menu
         MainMenuScreen mainMenu = new MainMenuScreen(primaryStage);

@@ -1,378 +1,254 @@
 package com.ku.towerdefense.model.map;
 
+import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
+// import javafx.scene.SnapshotParameters; // No longer needed
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.image.WritableImage;
+// import javafx.scene.image.ImageView; // No longer needed in slice
+// import javafx.scene.image.WritableImage; // No longer needed
 import javafx.scene.paint.Color;
+// import javafx.scene.image.PixelReader; // No longer needed
+// import javafx.scene.image.PixelWriter; // No longer needed
 
-import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Map;
 
 /**
- * Represents a single tile in the game map.
+ * Represents a single tile on the map.
  */
 public class Tile implements Serializable {
+
+    /* ─────────────────────────────  Constants  ───────────────────────────── */
+
     private static final long serialVersionUID = 1L;
-    
-    private TileType type;
-    private final int x;
-    private final int y;
-    protected transient Image image;
-    
-    // Static cache for tile images
-    private static Map<TileType, Image> tileImages = new HashMap<>();
-    private static Image castleImage; // Special image for the end point
-    
-    // Static initialization of tile images
+    public static final int SOURCE_TILE_SIZE  = 64;   // size in the atlas
+    private static final int RENDER_TILE_SIZE  = 64;   // we always draw @64 px
+
+    /** Row / column of every sprite in the tileset */
+    private static final Map<TileType, Point2D> TILE_COORDS = new EnumMap<>(TileType.class);
     static {
-        loadTileImages();
+        // TILE_COORDS are likely incorrect given the actual asset sheet layout
+        // Remove specific GRASS mapping as it was wrong
+        // TILE_COORDS.put(TileType.GRASS,       new Point2D(0, 0)); 
+
+        // Keep other mappings for now, though they are also likely wrong
+        TILE_COORDS.put(TileType.PATH,        new Point2D(1, 1)); 
+        TILE_COORDS.put(TileType.PATH_V,      new Point2D(0, 1));
+        TILE_COORDS.put(TileType.PATH_H,      new Point2D(2, 1));
+        TILE_COORDS.put(TileType.PATH_NE,     new Point2D(1, 0));
+        TILE_COORDS.put(TileType.PATH_NW,     new Point2D(1, 2));
+        TILE_COORDS.put(TileType.PATH_SE,     new Point2D(0, 2));
+        TILE_COORDS.put(TileType.PATH_SW,     new Point2D(0, 0));
+        TILE_COORDS.put(TileType.DECORATION,  new Point2D(0, 3)); // Assumed Tree
+        TILE_COORDS.put(TileType.OBSTACLE,    new Point2D(0, 4)); // Assumed Rock
+        TILE_COORDS.put(TileType.START_POINT, new Point2D(2, 2)); // Needs clarification
     }
-    
-    /**
-     * Load all tile images from the asset pack
-     */
-    private static void loadTileImages() {
-        try {
-            String basePath = System.getProperty("user.dir") + File.separator + "Asset_pack" + File.separator;
-            String tilesPath = basePath + "Tiles" + File.separator;
-            String towersPath = basePath + "Towers" + File.separator;
-            
-            // Load tileset
-            File tilesetFile = new File(tilesPath + "Tileset 64x64.png");
-            
-            // Load castle for end point
-            File castleFile = new File(towersPath + "Castle128.png");
-            if (castleFile.exists()) {
-                castleImage = new Image(castleFile.toURI().toString(), 32, 32, true, true);
-                System.out.println("Loaded castle image for end point");
-            } else {
-                System.err.println("Castle image not found at: " + castleFile.getAbsolutePath());
-            }
-            
-            if (tilesetFile.exists()) {
-                Image tileset = new Image(tilesetFile.toURI().toString());
-                
-                // Define viewport coordinates for each tile type from the tileset
-                // These coordinates are based on a 64x64 tileset grid
-                
-                // GRASS - use green grass tile (row 0, column 0)
-                extractTileFromTileset(tileset, TileType.GRASS, 0, 0);
-                
-                // PATH - use dirt/road tile (row 1, column 1)
-                extractTileFromTileset(tileset, TileType.PATH, 1, 1);
-                
-                // START_POINT - use a special blue tile (row 2, column 2)
-                extractTileFromTileset(tileset, TileType.START_POINT, 2, 2);
-                
-                // We'll use the castle image for END_POINT instead of a tileset extraction
-                
-                // TOWER_SLOT - use stone platform tile (row 3, column 1)
-                extractTileFromTileset(tileset, TileType.TOWER_SLOT, 3, 1);
-                
-                // DECORATION - use decorative tile (row 0, column 3)
-                extractTileFromTileset(tileset, TileType.DECORATION, 0, 3);
-                
-                System.out.println("Loaded tileset images successfully");
-            } else {
-                System.err.println("Tileset file not found at: " + tilesetFile.getAbsolutePath());
-            }
-        } catch (Exception e) {
-            System.err.println("Failed to load tile images: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-    
-    /**
-     * Extract a tile from the tileset based on row and column
-     * 
-     * @param tileset the source tileset image
-     * @param tileType the tile type to associate with this image
-     * @param row the row in the tileset (0-based)
-     * @param col the column in the tileset (0-based)
-     */
-    private static void extractTileFromTileset(Image tileset, TileType tileType, int row, int col) {
-        try {
-            // Each tile in the tileset is 64x64 pixels
-            int tileSize = 64;
-            
-            // Calculate the viewport (the section of the tileset to use)
-            Rectangle2D viewport = new Rectangle2D(
-                col * tileSize,     // x position in the tileset
-                row * tileSize,     // y position in the tileset
-                tileSize,           // width of the tile
-                tileSize            // height of the tile
-            );
-            
-            // Create image view to extract the specific tile
-            ImageView imageView = new ImageView(tileset);
-            imageView.setViewport(viewport);
-            imageView.setFitWidth(32);  // Scale down to 32x32 for our game
-            imageView.setFitHeight(32);
-            imageView.setSmooth(true);  // Enable smoother scaling
-            
-            // Create a snapshot of just this part of the tileset
-            WritableImage extractedTile = new WritableImage(32, 32);
-            imageView.snapshot(null, extractedTile);
-            
-            // Store in our image cache
-            tileImages.put(tileType, extractedTile);
-            
-            System.out.println("Extracted tile for type " + tileType);
-        } catch (Exception e) {
-            System.err.println("Error extracting tile for type " + tileType + ": " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-    
-    /**
-     * Constructor for a new tile.
-     * 
-     * @param x x coordinate
-     * @param y y coordinate
-     * @param type type of the tile
-     */
+
+    /* ──────────────────────────  Static Resources  ───────────────────────── */
+
+    private static boolean  imagesLoaded = false;
+    private static Image    tileset;       // The whole atlas
+    private static Image    castleImage;   // Specific image for end point
+    private static Image    towerSlotImage; // Specific image for tower slot
+    // private static final Map<TileType, Image> CACHE = new EnumMap<>(TileType.class); // REMOVED CACHE
+
+    /* ──────────────────────────────  Fields  ─────────────────────────────── */
+
+    private final int  x, y;
+    private TileType   type;
+    // No longer need transient image instance field, will draw directly using static images + viewport
+    // private transient Image image;
+
+    /* ─────────────────────────────  Public API  ──────────────────────────── */
+
     public Tile(int x, int y, TileType type) {
-        this.x = x;
-        this.y = y;
+        this.x    = x;
+        this.y    = y;
         this.type = type;
-        this.image = (type == TileType.END_POINT) ? castleImage : tileImages.get(type);
+        loadImagesIfNeeded(); // Ensure static images are loaded when a tile is created
+        // initTransientFields(); // No longer needed
     }
-    
-    /**
-     * Render the tile on the canvas.
-     * 
-     * @param gc the graphics context to draw on
-     * @param tileSize the size of the tile in pixels
-     */
-    public void render(GraphicsContext gc, int tileSize) {
-        Image tileImage = (type == TileType.END_POINT) ? castleImage : tileImages.get(type);
-        
-        if (tileImage != null && !tileImage.isError()) {
-            // Draw the tile image
-            gc.drawImage(tileImage, x * tileSize, y * tileSize, tileSize, tileSize);
-            
-            // Add a visual indicator for special tiles
-            if (type == TileType.START_POINT) {
-                gc.setFill(Color.BLUE);
-                gc.setGlobalAlpha(0.3);
-                gc.fillOval(x * tileSize + 8, y * tileSize + 8, tileSize - 16, tileSize - 16);
-                gc.setGlobalAlpha(1.0);
-            } else if (type == TileType.TOWER_SLOT) {
-                gc.setStroke(Color.YELLOW);
-                gc.setGlobalAlpha(0.4);
-                gc.strokeRect(x * tileSize + 4, y * tileSize + 4, tileSize - 8, tileSize - 8);
-                gc.setGlobalAlpha(1.0);
-            }
-        } else {
-            // Fallback rendering based on tile type with better colors
-            switch (type) {
-                case GRASS:
-                    // Draw a nice grass texture
-                    gc.setFill(Color.rgb(100, 180, 100));
-                    gc.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
-                    
-                    // Add some variation with little dots
-                    gc.setFill(Color.rgb(80, 160, 80));
-                    for (int i = 0; i < 5; i++) {
-                        double dotX = x * tileSize + Math.random() * tileSize;
-                        double dotY = y * tileSize + Math.random() * tileSize;
-                        gc.fillOval(dotX, dotY, 2, 2);
-                    }
-                    break;
-                    
-                case PATH:
-                    // Draw a dirt path
-                    gc.setFill(Color.rgb(180, 140, 100));
-                    gc.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
-                    
-                    // Add some path texture
-                    gc.setStroke(Color.rgb(160, 120, 80));
-                    gc.setLineWidth(0.5);
-                    gc.strokeLine(x * tileSize, y * tileSize, (x + 1) * tileSize, (y + 1) * tileSize);
-                    gc.strokeLine((x + 1) * tileSize, y * tileSize, x * tileSize, (y + 1) * tileSize);
-                    break;
-                    
-                case START_POINT:
-                    // Draw a nicer start point
-                    gc.setFill(Color.rgb(80, 180, 250));
-                    gc.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
-                    
-                    // Add an arrow or symbol
-                    gc.setFill(Color.WHITE);
-                    double[] xPoints = {
-                        x * tileSize + tileSize * 0.2, 
-                        x * tileSize + tileSize * 0.8, 
-                        x * tileSize + tileSize * 0.5
-                    };
-                    double[] yPoints = {
-                        y * tileSize + tileSize * 0.2, 
-                        y * tileSize + tileSize * 0.2, 
-                        y * tileSize + tileSize * 0.8
-                    };
-                    gc.fillPolygon(xPoints, yPoints, 3);
-                    break;
-                    
-                case END_POINT:
-                    // Draw a nicer end point with castle-like appearance
-                    gc.setFill(Color.rgb(250, 80, 80));
-                    gc.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
-                    
-                    // Draw a simple castle
-                    gc.setFill(Color.DARKGRAY);
-                    gc.fillRect(x * tileSize + 6, y * tileSize + 10, tileSize - 12, tileSize - 14);
-                    
-                    // Castle towers
-                    gc.fillRect(x * tileSize + 4, y * tileSize + 6, 6, 8);
-                    gc.fillRect(x * tileSize + tileSize - 10, y * tileSize + 6, 6, 8);
-                    
-                    // Castle door
-                    gc.setFill(Color.BLACK);
-                    gc.fillRect(x * tileSize + (tileSize/2) - 3, y * tileSize + tileSize - 12, 6, 8);
-                    break;
-                    
-                case DECORATION:
-                    // Decoration tiles (rocks, trees, etc)
-                    gc.setFill(Color.rgb(200, 200, 200));
-                    gc.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
-                    
-                    // Add some rock-like texture
-                    gc.setFill(Color.rgb(150, 150, 150));
-                    gc.fillOval(x * tileSize + tileSize * 0.25, y * tileSize + tileSize * 0.25, tileSize * 0.5, tileSize * 0.5);
-                    break;
-                    
-                case TOWER_SLOT:
-                    // Tower placement slots
-                    gc.setFill(Color.rgb(150, 150, 200));
-                    gc.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
-                    
-                    // Add a platform-like pattern
-                    gc.setStroke(Color.rgb(100, 100, 150));
-                    gc.setLineWidth(1);
-                    gc.strokeRect(x * tileSize + 2, y * tileSize + 2, tileSize - 4, tileSize - 4);
-                    break;
-                    
-                default:
-                    // Unknown tile types
-                    gc.setFill(Color.BLACK);
-                    gc.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
-            }
-        }
-    }
-    
-    /**
-     * Initialize any transient fields after deserialization.
-     */
-    public void initTransientFields() {
-        if (tileImages.isEmpty()) {
-            loadTileImages();
-        }
-        this.image = tileImages.get(type);
-    }
-    
-    /**
-     * Get the tile image.
-     * 
-     * @return the tile image
-     */
-    public Image getImage() {
-        return image;
-    }
-    
-    /**
-     * Set the tile image.
-     * 
-     * @param image the image to set
-     */
-    public void setImage(Image image) {
-        this.image = image;
-    }
-    
-    /**
-     * Get the x coordinate.
-     * 
-     * @return x coordinate
-     */
-    public int getX() {
-        return x;
-    }
-    
-    /**
-     * Get the y coordinate.
-     * 
-     * @return y coordinate
-     */
-    public int getY() {
-        return y;
-    }
-    
-    /**
-     * Get the tile type.
-     * 
-     * @return the type of this tile
-     */
-    public TileType getType() {
-        return type;
-    }
-    
-    /**
-     * Set the tile type.
-     * 
-     * @param type the new type to set
-     */
+
+    public int getX() { return x; }
+    public int getY() { return y; }
+
+    public TileType getType() { return type; }
+
     public void setType(TileType type) {
-        this.type = type;
+        if (this.type != type) {
+            this.type = type;
+            // No transient fields to init
+        }
     }
-    
-    /**
-     * Check if a tower can be placed on this tile.
-     * 
-     * @return true if a tower can be placed, false otherwise
-     */
+
     public boolean canPlaceTower() {
-        // Towers can only be placed on grass tiles
-        return type == TileType.GRASS;
+        return type == TileType.TOWER_SLOT;
     }
-    
-    /**
-     * Check if enemies can walk on this tile.
-     * 
-     * @return true if enemies can walk on this tile, false otherwise
-     */
+
     public boolean isWalkable() {
-        // Enemies can walk on path, start point, and end point tiles
-        return type == TileType.PATH || 
-               type == TileType.START_POINT || 
-               type == TileType.END_POINT;
+        return switch (type) {
+            case START_POINT, END_POINT, PATH, PATH_V, PATH_H, PATH_NE,
+                 PATH_NW, PATH_SE, PATH_SW -> true;
+            default -> false;
+        };
     }
-    
-    /**
-     * Check if this tile is a start point.
-     * 
-     * @return true if this is a start point, false otherwise
+
+    /** Gets the correct static Image object for this tile's type */
+    public Image getBaseImage() {
+         loadImagesIfNeeded(); 
+         return getBaseImageForType(this.type);
+    }
+
+    /** Gets the source viewport Rectangle2D within the atlas for this tile's type */
+    public Rectangle2D getSourceViewport() {
+        Point2D coords = getCoordsForType(this.type);
+        if (coords != null && type != TileType.END_POINT && type != TileType.TOWER_SLOT) {
+            int col = (int) coords.getX();
+            int row = (int) coords.getY();
+            return new Rectangle2D(col * SOURCE_TILE_SIZE, row * SOURCE_TILE_SIZE,
+                                   SOURCE_TILE_SIZE, SOURCE_TILE_SIZE);
+        } else {
+            return null; 
+        }
+    }
+
+    /** 
+     * Gets the correct base static Image object for a given tile type.
+     * Ensures images are loaded.
      */
-    public boolean isStartPoint() {
-        return type == TileType.START_POINT;
+    public static Image getBaseImageForType(TileType type) {
+        loadImagesIfNeeded(); // Ensure images are loaded
+        return switch (type) {
+            case END_POINT   -> castleImage;
+            case TOWER_SLOT  -> towerSlotImage;
+            default          -> tileset; // Assume others use tileset
+        };
     }
-    
-    /**
-     * Check if this tile is an end point.
-     * 
-     * @return true if this is an end point, false otherwise
-     */
-    public boolean isEndPoint() {
-        return type == TileType.END_POINT;
+
+    /** Gets the defined Point2D coordinates (col, row) for a TileType from the TILE_COORDS map. */
+    public static Point2D getCoordsForType(TileType type) {
+         return TILE_COORDS.get(type); // Return null if not mapped
     }
-    
-    @Override
-    public String toString() {
-        return "Tile{" +
-                "type=" + type +
-                ", x=" + x +
-                ", y=" + y +
-                '}';
+
+    public void render(GraphicsContext gc, int renderTileSize) {
+        Image baseImage = getBaseImage(); // Get castle, tower slot, or main tileset
+
+        if (baseImage != null && !baseImage.isError()) {
+            Rectangle2D viewport = getSourceViewport(); // Get viewport if applicable
+
+            if (viewport != null) {
+                // Draw from tileset using source viewport
+                gc.drawImage(baseImage, 
+                             viewport.getMinX(), viewport.getMinY(), // Source X, Y
+                             viewport.getWidth(), viewport.getHeight(), // Source W, H
+                             x * renderTileSize, y * renderTileSize, // Dest X, Y
+                             renderTileSize, renderTileSize); // Dest W, H
+            } else {
+                // Draw the whole image (castle, tower slot)
+                gc.drawImage(baseImage, x * renderTileSize, y * renderTileSize,
+                                     renderTileSize, renderTileSize);
+            }
+        } else {             // fail‑safe fallback
+            gc.setFill(Color.MAGENTA);
+            gc.fillRect(x * renderTileSize, y * renderTileSize,
+                    renderTileSize, renderTileSize);
+        }
     }
-} 
+
+    /* ─────────────────────────  Private Helpers  ────────────────────────── */
+    // Removed initTransientFields
+
+    private static synchronized void loadImagesIfNeeded() {
+        if (imagesLoaded) return;
+        System.out.println("--> Entering loadImagesIfNeeded...");
+        try {
+            System.out.println("    Loading tileset...");
+            tileset = loadPNG("/Asset_pack/Tiles/Tileset 64x64.png"); // Load at native size
+            if (tileset == null) System.err.println("    -> Tileset load returned NULL");
+            else System.out.println("    -> Tileset loaded successfully. ID: " + Integer.toHexString(System.identityHashCode(tileset)));
+
+            System.out.println("    Loading castle image...");
+            castleImage = loadPNG("/Asset_pack/Towers/Castle128.png", RENDER_TILE_SIZE);
+            if (castleImage == null) System.err.println("    -> Castle image load returned NULL");
+            else System.out.println("    -> Castle image loaded successfully. ID: " + Integer.toHexString(System.identityHashCode(castleImage)));
+
+            String towerSlotFilename = "TowerSlotwithoutbackground128.png"; 
+            System.out.println("    Loading tower slot image (" + towerSlotFilename + ")...");
+            towerSlotImage = loadPNG("/Asset_pack/Towers/" + towerSlotFilename, RENDER_TILE_SIZE);
+            if (towerSlotImage == null) System.err.println("    -> Tower slot image load returned NULL");
+            else System.out.println("    -> Tower slot image loaded successfully. ID: " + Integer.toHexString(System.identityHashCode(towerSlotImage)));
+            
+            // NO SLICING OR CACHING NEEDED HERE ANYMORE
+            
+            System.out.println("--> Base Tile images loading process finished.");
+            imagesLoaded = true;
+
+        } catch (Exception ex) {
+            System.err.println("‼‼ UNCAUGHT EXCEPTION in loadImagesIfNeeded: " + ex.getMessage());
+            ex.printStackTrace();
+        } finally {
+             System.out.println("<-- Exiting loadImagesIfNeeded. imagesLoaded = " + imagesLoaded);
+        }
+    }
+
+    /* ───────────────────  Static utility methods  ─────────────────── */
+
+    private static Image loadPNG(String classpath, int target) {
+        // System.out.println("      Attempting loadPNG: " + classpath); // Optional: verbose
+        InputStream in = Tile.class.getResourceAsStream(classpath);
+        if (in == null) {
+            System.err.println("      -> PNG stream NULL for: " + classpath);
+            return null;
+        }
+        try {
+            // Load image, optionally resizing if target != source size (though here target is likely render size)
+            Image img = new Image(in, target, target, true, true); 
+            if (img.isError()) {
+                 System.err.println("      -> Image error after loading stream: " + classpath + " Error: " + img.getException());
+                 img.getException().printStackTrace();
+                 return null; 
+            }
+            // System.out.println("      -> loadPNG successful: " + classpath); // Optional: verbose
+            return img;
+        } catch (Exception e) {
+             System.err.println("      -> EXCEPTION during new Image() for: " + classpath + " Error: " + e.getMessage());
+             e.printStackTrace();
+             return null;
+        } finally {
+            try { in.close(); } catch (IOException ioex) { /* ignore close exception */ }
+        }
+    }
+    // Load PNG at its native size unless target is specified
+    private static Image loadPNG(String classpath) { 
+         InputStream in = Tile.class.getResourceAsStream(classpath);
+        if (in == null) {
+            System.err.println("      -> PNG stream NULL for: " + classpath);
+            return null;
+        }
+        try {
+            Image img = new Image(in); // Load native size
+            if (img.isError()) {
+                 System.err.println("      -> Image error after loading stream: " + classpath + " Error: " + img.getException());
+                 img.getException().printStackTrace();
+                 return null; 
+            }
+            return img;
+        } catch (Exception e) {
+             System.err.println("      -> EXCEPTION during new Image() for: " + classpath + " Error: " + e.getMessage());
+             e.printStackTrace();
+             return null;
+        } finally {
+            try { in.close(); } catch (IOException ioex) { /* ignore close exception */ }
+        }
+    }
+
+    /* ───────────────────────────── toString()  ───────────────────────────── */
+
+    @Override public String toString() {
+        return "Tile{" + type + " (" + x + "," + y + ")}";
+    }
+}
