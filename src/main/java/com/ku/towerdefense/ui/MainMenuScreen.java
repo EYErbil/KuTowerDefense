@@ -24,12 +24,18 @@ public class MainMenuScreen extends VBox {
     private final Stage primaryStage;
     
     /**
-     * Constructor for the main menu screen.
-     * 
-     * @param primaryStage the primary stage of the application
+     * Constructor for the main menu.
+     *
+     * @param primaryStage the primary stage
      */
     public MainMenuScreen(Stage primaryStage) {
         this.primaryStage = primaryStage;
+        
+        // Make the window properly resizable with minimum dimensions
+        primaryStage.setResizable(true);
+        primaryStage.setMinWidth(800);
+        primaryStage.setMinHeight(600);
+        
         initializeUI();
     }
     

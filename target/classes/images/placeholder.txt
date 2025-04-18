@@ -1,2 +1,0 @@
-This is a placeholder file to ensure the images directory is created.
-Add your game images (such as menu_background.jpg, logo.png, tower sprites, enemy sprites, etc.) here. 
