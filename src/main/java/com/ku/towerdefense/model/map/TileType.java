@@ -92,5 +92,25 @@ public enum TileType {
     /**
      * Rock type 2 obstacle.
      */
-    ROCK2
+    ROCK2,
+    
+    /**
+     * Water well decoration.
+     */
+    WELL,
+    
+    /**
+     * Wooden house decoration.
+     */
+    HOUSE,
+    
+    /**
+     * Wood pile decoration.
+     */
+    WOOD_PILE,
+    
+    /**
+     * Barrel decoration.
+     */
+    BARREL
 }

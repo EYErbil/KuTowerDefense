@@ -2,14 +2,14 @@ package com.ku.towerdefense.model.map;
 
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
-// import javafx.scene.SnapshotParameters; // No longer needed
+import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
-// import javafx.scene.image.ImageView; // No longer needed in slice
-// import javafx.scene.image.WritableImage; // No longer needed
+import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
-// import javafx.scene.image.PixelReader; // No longer needed
-// import javafx.scene.image.PixelWriter; // No longer needed
+import javafx.scene.image.PixelReader;
+import javafx.scene.image.PixelWriter;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,38 +25,47 @@ public class Tile implements Serializable {
     /* ─────────────────────────────  Constants  ───────────────────────────── */
 
     private static final long serialVersionUID = 1L;
-    // No longer assuming a fixed source grid size for all tiles in atlas
-    // public static final int SOURCE_TILE_SIZE  = 64; 
+    public static final int SOURCE_TILE_SIZE  = 64;   // source atlas images are 64px
     private static final int RENDER_TILE_SIZE  = 64;   // we always draw @64 px
 
-    /** Stores precise source Rectangles (X, Y, Width, Height) within the atlas for each type */
-    // Rename TILE_COORDS to SOURCE_RECTANGLES
-    private static final Map<TileType, Rectangle2D> SOURCE_RECTANGLES = new EnumMap<>(TileType.class);
+    /** Stores coordinate points (x, y) for tile types within the tileset **/
+    private static final Map<TileType, Point2D> TILE_COORDS = new EnumMap<>(TileType.class);
     static {
-        // Updated with actual measured pixel coordinates from tileset image
-        SOURCE_RECTANGLES.put(TileType.GRASS,       new Rectangle2D(192, 0, 64, 64));    // Clean grass patch top right
-        SOURCE_RECTANGLES.put(TileType.PATH,        new Rectangle2D(128, 64, 64, 64));   // Center circular path blob
-        SOURCE_RECTANGLES.put(TileType.PATH_V,      new Rectangle2D(64, 64, 64, 64));    // Vertical path
-        SOURCE_RECTANGLES.put(TileType.PATH_H,      new Rectangle2D(192, 128, 64, 64));  // Horizontal path
-        SOURCE_RECTANGLES.put(TileType.PATH_NE,     new Rectangle2D(128, 0, 64, 64));    // Northeast corner
-        SOURCE_RECTANGLES.put(TileType.PATH_NW,     new Rectangle2D(64, 0, 64, 64));     // Northwest corner
-        SOURCE_RECTANGLES.put(TileType.PATH_SE,     new Rectangle2D(0, 128, 64, 64));    // Southeast corner
-        SOURCE_RECTANGLES.put(TileType.PATH_SW,     new Rectangle2D(64, 128, 64, 64));   // Southwest corner
+        // Updated coordinates based on the tileset image
+        // First row (top) in tileset
+        TILE_COORDS.put(TileType.GRASS,       new Point2D(0, 0));    // Green grass (center of the circular path)
         
-        // Tree decorations with proper grass backgrounds
-        SOURCE_RECTANGLES.put(TileType.DECORATION,  new Rectangle2D(0, 192, 64, 64));    // Generic decoration (tree)
-        SOURCE_RECTANGLES.put(TileType.TREE1,       new Rectangle2D(0, 192, 64, 64));    // Tree 1
-        SOURCE_RECTANGLES.put(TileType.TREE2,       new Rectangle2D(64, 192, 64, 64));   // Tree 2
-        SOURCE_RECTANGLES.put(TileType.TREE3,       new Rectangle2D(128, 192, 64, 64));  // Tree 3
+        // Path tiles (from the upper half of the tileset)
+        TILE_COORDS.put(TileType.PATH,        new Point2D(0, 0));    // Circular path (full circle) 
+        TILE_COORDS.put(TileType.PATH_H,      new Point2D(1, 0));    // Horizontal path
+        TILE_COORDS.put(TileType.PATH_V,      new Point2D(2, 0));    // Vertical path
+        TILE_COORDS.put(TileType.PATH_NE,     new Point2D(0, 1));    // Northeast corner path
+        TILE_COORDS.put(TileType.PATH_NW,     new Point2D(1, 1));    // Northwest corner path
+        TILE_COORDS.put(TileType.PATH_SE,     new Point2D(0, 2));    // Southeast corner path
+        TILE_COORDS.put(TileType.PATH_SW,     new Point2D(1, 2));    // Southwest corner path
         
-        // Rock/obstacle decorations with proper grass backgrounds
-        SOURCE_RECTANGLES.put(TileType.OBSTACLE,    new Rectangle2D(192, 192, 64, 64));  // Generic obstacle (rock)
-        SOURCE_RECTANGLES.put(TileType.ROCK1,       new Rectangle2D(192, 192, 64, 64));  // Rock 1
-        SOURCE_RECTANGLES.put(TileType.ROCK2,       new Rectangle2D(256, 192, 64, 64));  // Rock 2 - adjusted x-coordinate
+        // Character/start point
+        TILE_COORDS.put(TileType.START_POINT, new Point2D(2, 2));    // Character on path
         
-        // Special tiles
-        SOURCE_RECTANGLES.put(TileType.START_POINT, new Rectangle2D(256, 128, 64, 64));  // More distinctive start point
-        // END_POINT and TOWER_SLOT use separate images, not mapped here.
+        // Trees (from the lower half of the tileset)
+        TILE_COORDS.put(TileType.TREE1,       new Point2D(0, 3));    // First tree
+        TILE_COORDS.put(TileType.TREE2,       new Point2D(1, 3));    // Second tree
+        TILE_COORDS.put(TileType.TREE3,       new Point2D(2, 3));    // Third tree
+        TILE_COORDS.put(TileType.DECORATION,  new Point2D(0, 3));    // Default decoration (first tree)
+        
+        // Obstacles
+        TILE_COORDS.put(TileType.ROCK1,       new Point2D(3, 3));    // First rock
+        TILE_COORDS.put(TileType.ROCK2,       new Point2D(3, 4));    // Second rock
+        TILE_COORDS.put(TileType.OBSTACLE,    new Point2D(3, 3));    // Default obstacle (first rock)
+        
+        // Buildings and props
+        TILE_COORDS.put(TileType.WELL,        new Point2D(2, 4));    // Water well
+        TILE_COORDS.put(TileType.HOUSE,       new Point2D(2, 5));    // House
+        TILE_COORDS.put(TileType.WOOD_PILE,   new Point2D(3, 5));    // Wood pile
+        TILE_COORDS.put(TileType.BARREL,      new Point2D(0, 4));    // Barrel
+        
+        // Special tiles that use separate images
+        // END_POINT (castle) and TOWER_SLOT - these use separate images, not mapped here
     }
 
     /* ──────────────────────────  Static Resources  ───────────────────────── */
@@ -65,14 +74,13 @@ public class Tile implements Serializable {
     private static Image    tileset;       // The whole atlas
     private static Image    castleImage;   // Specific image for end point
     private static Image    towerSlotImage; // Specific image for tower slot
-    // private static final Map<TileType, Image> CACHE = new EnumMap<>(TileType.class); // REMOVED CACHE
+    private static final Map<TileType, Image> CACHE = new EnumMap<>(TileType.class);
 
     /* ──────────────────────────────  Fields  ─────────────────────────────── */
 
     private final int  x, y;
     private TileType   type;
-    // No longer need transient image instance field, will draw directly using static images + viewport
-    // private transient Image image;
+    private transient Image image;
 
     /* ─────────────────────────────  Public API  ──────────────────────────── */
 
@@ -80,8 +88,8 @@ public class Tile implements Serializable {
         this.x    = x;
         this.y    = y;
         this.type = type;
-        loadImagesIfNeeded(); // Ensure static images are loaded when a tile is created
-        // initTransientFields(); // No longer needed
+        loadImagesIfNeeded();
+        initTransientFields();
     }
 
     public int getX() { return x; }
@@ -92,7 +100,7 @@ public class Tile implements Serializable {
     public void setType(TileType type) {
         if (this.type != type) {
             this.type = type;
-            // No transient fields to init
+            initTransientFields();
         }
     }
 
@@ -111,57 +119,50 @@ public class Tile implements Serializable {
         };
     }
 
-    /** Gets the correct static Image object for this tile's type */
-    public Image getBaseImage() {
-         loadImagesIfNeeded(); 
-         return getBaseImageForType(this.type);
+    public Image getImage() {
+        return image;
     }
 
-    /** Gets the source viewport Rectangle2D within the atlas for this tile's type */
-    // Now uses the SOURCE_RECTANGLES map directly
-    public Rectangle2D getSourceViewport() {
-        // Return the pre-defined rectangle for this type, if it exists in the map
-        // Returns null for types not in the map (like END_POINT, TOWER_SLOT)
-        return SOURCE_RECTANGLES.get(this.type);
-    }
-
-    /** 
-     * Gets the correct base static Image object for a given tile type.
-     * Ensures images are loaded.
-     */
     public static Image getBaseImageForType(TileType type) {
-        loadImagesIfNeeded(); // Ensure images are loaded
+        loadImagesIfNeeded();
         return switch (type) {
-            case END_POINT   -> castleImage;
-            case TOWER_SLOT  -> towerSlotImage;
-            default          -> tileset; // Assume others use tileset
+            case END_POINT -> castleImage;
+            case TOWER_SLOT -> towerSlotImage;
+            default -> tileset;
         };
     }
 
-    /** Gets the source viewport Rectangle2D within the atlas for this tile's type from the static map */
+    public Rectangle2D getSourceViewport() {
+        Point2D coords = TILE_COORDS.get(type);
+        if (coords != null) {
+            return new Rectangle2D(
+                coords.getX() * SOURCE_TILE_SIZE,
+                coords.getY() * SOURCE_TILE_SIZE,
+                SOURCE_TILE_SIZE,
+                SOURCE_TILE_SIZE
+            );
+        }
+        return null;
+    }
+
     public static Rectangle2D getSourceViewportForType(TileType type) {
-         return SOURCE_RECTANGLES.get(type);
+        Point2D coords = TILE_COORDS.get(type);
+        if (coords != null) {
+            return new Rectangle2D(
+                coords.getX() * SOURCE_TILE_SIZE,
+                coords.getY() * SOURCE_TILE_SIZE,
+                SOURCE_TILE_SIZE,
+                SOURCE_TILE_SIZE
+            );
+        }
+        return null;
     }
 
     public void render(GraphicsContext gc, int renderTileSize) {
-        Image baseImage = getBaseImage(); // Get castle, tower slot, or main tileset
-
-        if (baseImage != null && !baseImage.isError()) {
-            Rectangle2D viewport = getSourceViewport(); // Get viewport if applicable
-
-            if (viewport != null) {
-                // Draw from tileset using source viewport
-                gc.drawImage(baseImage, 
-                             viewport.getMinX(), viewport.getMinY(), // Source X, Y
-                             viewport.getWidth(), viewport.getHeight(), // Source W, H
-                             x * renderTileSize, y * renderTileSize, // Dest X, Y
-                             renderTileSize, renderTileSize); // Dest W, H
-            } else {
-                // Draw the whole image (castle, tower slot)
-                gc.drawImage(baseImage, x * renderTileSize, y * renderTileSize,
-                                     renderTileSize, renderTileSize);
-            }
-        } else {             // fail‑safe fallback
+        if (image != null && !image.isError()) {
+            gc.drawImage(image, x * renderTileSize, y * renderTileSize,
+                    renderTileSize, renderTileSize);
+        } else {
             gc.setFill(Color.MAGENTA);
             gc.fillRect(x * renderTileSize, y * renderTileSize,
                     renderTileSize, renderTileSize);
@@ -169,31 +170,89 @@ public class Tile implements Serializable {
     }
 
     /* ─────────────────────────  Private Helpers  ────────────────────────── */
-    // Removed initTransientFields
+
+    private void initTransientFields() {
+        // Try to get pre-sliced image from cache
+        image = CACHE.get(type);
+        if (image == null) {
+            // Get the base image based on type
+            Image baseImage = getBaseImageForType(type);
+            
+            if (baseImage != null && !baseImage.isError()) {
+                if (baseImage == tileset) { // Is this type derived from the main tileset?
+                    // Slice from tileset using coordinates
+                    Point2D coords = TILE_COORDS.get(type);
+                    if (coords != null) {
+                        ImageView view = new ImageView(baseImage);
+                        view.setViewport(new Rectangle2D(
+                                coords.getX() * SOURCE_TILE_SIZE,
+                                coords.getY() * SOURCE_TILE_SIZE,
+                                SOURCE_TILE_SIZE,
+                                SOURCE_TILE_SIZE));
+                                
+                        // Create snapshot of the sliced image
+                        SnapshotParameters params = new SnapshotParameters();
+                        params.setFill(Color.TRANSPARENT);
+                        image = view.snapshot(params, null);
+                        
+                        // Cache for future use
+                        CACHE.put(type, image);
+                    }
+                } else {
+                    // For special images like castle or tower slot, use as is
+                    image = baseImage;
+                }
+            }
+        }
+    }
 
     private static synchronized void loadImagesIfNeeded() {
         if (imagesLoaded) return;
         System.out.println("--> Entering loadImagesIfNeeded...");
         try {
             System.out.println("    Loading tileset...");
-            tileset = loadPNG("/Asset_pack/Tiles/Tileset 64x64.png"); // Load at native size
-            if (tileset == null) System.err.println("    -> Tileset load returned NULL");
-            else System.out.println("    -> Tileset loaded successfully. ID: " + Integer.toHexString(System.identityHashCode(tileset)));
+            // Make sure we use the tileset with the character, castle and other elements
+            tileset = loadPNG("/Asset_pack/Tiles/Tileset 64x64.png");
+            if (tileset == null) {
+                System.err.println("    -> Tileset load returned NULL, trying alternative tileset");
+                // Try loading from the other tilesets as backup
+                tileset = loadPNG("/Asset_pack/Tiles/Tileset 96x96.png");
+                if (tileset == null) {
+                    tileset = loadPNG("/Asset_pack/Tiles/Tileset 128x128.png");
+                    if (tileset == null) {
+                        System.err.println("    -> All tileset load attempts failed");
+                    } else {
+                        System.out.println("    -> Alternative tileset 128x128 loaded");
+                    }
+                } else {
+                    System.out.println("    -> Alternative tileset 96x96 loaded");
+                }
+            } else {
+                System.out.println("    -> Tileset loaded successfully. ID: " + Integer.toHexString(System.identityHashCode(tileset)));
+            }
 
             System.out.println("    Loading castle image...");
             castleImage = loadPNG("/Asset_pack/Towers/Castle128.png", RENDER_TILE_SIZE);
             if (castleImage == null) System.err.println("    -> Castle image load returned NULL");
             else System.out.println("    -> Castle image loaded successfully. ID: " + Integer.toHexString(System.identityHashCode(castleImage)));
 
-            // Use the tower slot with proper transparent background
-            String towerSlotFilename = "TowerSlotwithoutbackground128.png"; 
+            // Try to load the tower slot with transparent background
+            String towerSlotFilename = "TowerSlotwithoutbackground128.png";
             System.out.println("    Loading tower slot image (" + towerSlotFilename + ")...");
             towerSlotImage = loadPNG("/Asset_pack/Towers/" + towerSlotFilename, RENDER_TILE_SIZE);
-            if (towerSlotImage == null) System.err.println("    -> Tower slot image load returned NULL");
-            else System.out.println("    -> Tower slot image loaded successfully. ID: " + Integer.toHexString(System.identityHashCode(towerSlotImage)));
-            
-            // NO SLICING OR CACHING NEEDED HERE ANYMORE
-            
+            if (towerSlotImage == null) {
+                System.err.println("    -> Tower slot image load returned NULL, trying alternate...");
+                // Try an alternate image if available
+                towerSlotImage = loadPNG("/Asset_pack/Towers/TowerSlot128.png", RENDER_TILE_SIZE);
+                if (towerSlotImage == null) {
+                    System.err.println("    -> Alternate tower slot image also failed");
+                } else {
+                    System.out.println("    -> Alternate tower slot image loaded successfully");
+                }
+            } else {
+                System.out.println("    -> Tower slot image loaded successfully. ID: " + Integer.toHexString(System.identityHashCode(towerSlotImage)));
+            }
+
             System.out.println("--> Base Tile images loading process finished.");
             imagesLoaded = true;
 
@@ -208,57 +267,34 @@ public class Tile implements Serializable {
     /* ───────────────────  Static utility methods  ─────────────────── */
 
     private static Image loadPNG(String classpath, int target) {
-        // System.out.println("      Attempting loadPNG: " + classpath); // Optional: verbose
         InputStream in = Tile.class.getResourceAsStream(classpath);
         if (in == null) {
             System.err.println("      -> PNG stream NULL for: " + classpath);
             return null;
         }
         try {
-            // Load image, optionally resizing if target != source size (though here target is likely render size)
-            Image img = new Image(in, target, target, true, true); 
+            Image img = new Image(in, target, target, true, true);
             if (img.isError()) {
-                 System.err.println("      -> Image error after loading stream: " + classpath + " Error: " + img.getException());
-                 img.getException().printStackTrace();
-                 return null; 
+                System.err.println("      -> Failed to load image: " + classpath);
+                return null;
             }
-            // System.out.println("      -> loadPNG successful: " + classpath); // Optional: verbose
             return img;
         } catch (Exception e) {
-             System.err.println("      -> EXCEPTION during new Image() for: " + classpath + " Error: " + e.getMessage());
-             e.printStackTrace();
-             return null;
-        } finally {
-            try { in.close(); } catch (IOException ioex) { /* ignore close exception */ }
-        }
-    }
-    // Load PNG at its native size unless target is specified
-    private static Image loadPNG(String classpath) { 
-         InputStream in = Tile.class.getResourceAsStream(classpath);
-        if (in == null) {
-            System.err.println("      -> PNG stream NULL for: " + classpath);
+            System.err.println("      -> Exception loading image: " + e.getMessage());
             return null;
-        }
-        try {
-            Image img = new Image(in); // Load native size
-            if (img.isError()) {
-                 System.err.println("      -> Image error after loading stream: " + classpath + " Error: " + img.getException());
-                 img.getException().printStackTrace();
-                 return null; 
-            }
-            return img;
-        } catch (Exception e) {
-             System.err.println("      -> EXCEPTION during new Image() for: " + classpath + " Error: " + e.getMessage());
-             e.printStackTrace();
-             return null;
         } finally {
-            try { in.close(); } catch (IOException ioex) { /* ignore close exception */ }
+            try { in.close(); } catch (IOException e) { 
+                System.err.println("      -> Exception closing stream: " + e.getMessage());
+            }
         }
     }
 
-    /* ───────────────────────────── toString()  ───────────────────────────── */
+    private static Image loadPNG(String classpath) {
+        return loadPNG(classpath, 0); // 0 = use native size
+    }
 
-    @Override public String toString() {
-        return "Tile{" + type + " (" + x + "," + y + ")}";
+    @Override
+    public String toString() {
+        return "Tile[x=" + x + ", y=" + y + ", type=" + type + "]";
     }
 }
