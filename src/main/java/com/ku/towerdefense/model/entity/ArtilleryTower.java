@@ -27,10 +27,8 @@ public class ArtilleryTower extends Tower implements Serializable {
               GameSettings.getInstance().getArtilleryTowerCost(),
               DamageType.EXPLOSIVE);
         
-        // Set image file from assets
-        String imagePath = System.getProperty("user.dir") + File.separator + 
-                          "Asset_pack" + File.separator + "Towers" + File.separator + 
-                          "Tower_bomb128.png";
+        // Set image file from assets - using classpath reference instead of absolute path
+        String imagePath = "/Asset_pack/Towers/Tower_bomb128.png";
         setImageFile(imagePath);
     }
     

@@ -105,21 +105,27 @@ public abstract class Enemy extends Entity implements Serializable {
      * Load all enemy images into the static cache
      */
     private static void loadEnemyImages() {
-        String basePath = System.getProperty("user.dir") + File.separator + "Asset_pack" + File.separator + "Enemies" + File.separator;
-        
         try {
-            // Goblin
-            File goblinFile = new File(basePath + "Goblin_Red.png");
-            if (goblinFile.exists()) {
-                ENEMY_IMAGES.put(EnemyType.GOBLIN, new Image(goblinFile.toURI().toString()));
-                System.out.println("Loaded Goblin image");
+            // Load from classpath resources
+            String goblinPath = "/Asset_pack/Enemies/Goblin_Red.png";
+            java.io.InputStream goblinStream = Enemy.class.getResourceAsStream(goblinPath);
+            if (goblinStream != null) {
+                ENEMY_IMAGES.put(EnemyType.GOBLIN, new Image(goblinStream));
+                goblinStream.close();
+                System.out.println("Loaded Goblin image from classpath");
+            } else {
+                System.err.println("Goblin image not found in classpath: " + goblinPath);
             }
             
             // Knight
-            File knightFile = new File(basePath + "Warrior_Blue.png");
-            if (knightFile.exists()) {
-                ENEMY_IMAGES.put(EnemyType.KNIGHT, new Image(knightFile.toURI().toString()));
-                System.out.println("Loaded Knight image");
+            String knightPath = "/Asset_pack/Enemies/Warrior_Blue.png";
+            java.io.InputStream knightStream = Enemy.class.getResourceAsStream(knightPath);
+            if (knightStream != null) {
+                ENEMY_IMAGES.put(EnemyType.KNIGHT, new Image(knightStream));
+                knightStream.close();
+                System.out.println("Loaded Knight image from classpath");
+            } else {
+                System.err.println("Knight image not found in classpath: " + knightPath);
             }
         } catch (Exception e) {
             System.err.println("Error loading enemy images: " + e.getMessage());

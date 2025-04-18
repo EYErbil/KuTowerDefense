@@ -168,16 +168,49 @@ public abstract class Tower extends Entity implements Serializable {
      */
     protected void loadImage() {
         try {
+            // First try loading from file path
             File file = new File(imageFile);
             if (file.exists()) {
                 image = new Image(file.toURI().toString());
                 System.out.println("Loaded image for " + getClass().getSimpleName() + ": " + imageFile);
             } else {
-                System.err.println("Image file not found: " + imageFile);
+                // If not found, try as a classpath resource
+                String resourcePath = imageFile;
+                if (!resourcePath.startsWith("/")) {
+                    resourcePath = "/" + resourcePath;
+                }
+                
+                // Try to load as classpath resource
+                if (loadFromClasspath(resourcePath)) {
+                    System.out.println("Loaded image for " + getClass().getSimpleName() + " from classpath: " + resourcePath);
+                } else {
+                    System.err.println("Image not found in file path or classpath: " + imageFile);
+                }
             }
         } catch (Exception e) {
             System.err.println("Error loading image " + imageFile + ": " + e.getMessage());
+            e.printStackTrace();
         }
+    }
+    
+    /**
+     * Load an image from classpath
+     * 
+     * @param resourcePath the classpath resource path
+     * @return true if loaded successfully, false otherwise
+     */
+    private boolean loadFromClasspath(String resourcePath) {
+        try {
+            java.io.InputStream in = getClass().getResourceAsStream(resourcePath);
+            if (in != null) {
+                image = new Image(in);
+                in.close();
+                return !image.isError();
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading image from classpath " + resourcePath + ": " + e.getMessage());
+        }
+        return false;
     }
     
     /**

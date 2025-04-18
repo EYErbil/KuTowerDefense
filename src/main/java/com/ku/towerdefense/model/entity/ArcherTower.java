@@ -27,10 +27,8 @@ public class ArcherTower extends Tower implements Serializable {
               GameSettings.getInstance().getArcherTowerCost(),
               DamageType.ARROW);
         
-        // Set image file from assets
-        String imagePath = System.getProperty("user.dir") + File.separator + 
-                          "Asset_pack" + File.separator + "Towers" + File.separator + 
-                          "Tower_archer128.png";
+        // Set image file from assets - using classpath reference instead of absolute path
+        String imagePath = "/Asset_pack/Towers/Tower_archer128.png";
         setImageFile(imagePath);
     }
     

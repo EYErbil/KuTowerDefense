@@ -67,9 +67,13 @@ public class MapEditorScreen extends BorderPane {
         // Terrain & Obstacles
         TileType.GRASS,
         TileType.OBSTACLE,
+        TileType.ROCK1,
+        TileType.ROCK2,
         // Decorations
-        TileType.DECORATION
-        // Add more decorations like TREE, ROCK here if implemented
+        TileType.DECORATION,
+        TileType.TREE1,
+        TileType.TREE2,
+        TileType.TREE3
     );
     
     /**
@@ -249,53 +253,42 @@ public class MapEditorScreen extends BorderPane {
         tilePane.setVgap(5);
         tilePane.setPrefColumns(3);
 
-        System.out.println("--- Creating Tile Palette Buttons (Viewport Method v3) ---"); 
+        System.out.println("--- Creating Tile Palette Buttons (Precise Viewport Method v2) ---");
 
-        // --- Get static tileset reference once (ensure loaded) --- 
-        // Calling a static method ensures loadImagesIfNeeded runs
-        Image staticTileset = Tile.getBaseImageForType(TileType.GRASS); // Type doesn't matter, just need the tileset
+        Image staticTileset = Tile.getBaseImageForType(TileType.GRASS); // Get base tileset ref
         if (staticTileset == null) {
             System.err.println("CRITICAL: Failed to load base tileset for palette!");
             // Optionally handle this error more gracefully
         }
-        // --- End Get static tileset --- 
 
-        for (TileType type : PALETTE_TILE_TYPES) { 
+        for (TileType type : PALETTE_TILE_TYPES) {
             ToggleButton tileButton = new ToggleButton();
             tileButton.setToggleGroup(tileToggleGroup);
             tileButton.setUserData(type);
             tileButton.setTooltip(new Tooltip(type.toString()));
             tileButton.getStyleClass().add("tile-option");
 
-            Image imageToShow = null;    // The final image object to display in the button
-            Rectangle2D viewport = null; // The viewport to apply (null if not using tileset slice)
+            Image imageToShow = null;    
+            Rectangle2D viewport = null; 
             String logInfo = "Type: " + type;
 
             try {
-                // Get the base image source (tileset, castle, or towerslot)
                 Image baseImage = Tile.getBaseImageForType(type);
                 String baseImgId = (baseImage == null) ? "NULL" : Integer.toHexString(System.identityHashCode(baseImage));
                 logInfo += ", BaseImgID: " + baseImgId;
 
                 if (baseImage != null && !baseImage.isError()) {
                     if (baseImage == staticTileset) { // Is this type derived from the main tileset?
-                        Point2D coords = Tile.getCoordsForType(type);
-                        if (coords != null) {
-                            // Yes, and we have coordinates for it
-                            int col = (int) coords.getX();
-                            int row = (int) coords.getY();
-                            // Calculate the viewport
-                            viewport = new Rectangle2D(col * Tile.SOURCE_TILE_SIZE, row * Tile.SOURCE_TILE_SIZE,
-                                                       Tile.SOURCE_TILE_SIZE, Tile.SOURCE_TILE_SIZE);
+                        // Get the precise viewport rectangle directly from the static map
+                        viewport = Tile.getSourceViewportForType(type); // Use new static helper
+                        if (viewport != null) {
                             imageToShow = baseImage; // Show the tileset...
-                            logInfo += ", Viewport: Calculated";
+                            logInfo += ", Viewport: Mapped Rect [" + viewport.getMinX() + "," + viewport.getMinY() + " "+ viewport.getWidth() + "x" + viewport.getHeight() + "]";
                         } else {
-                            // Yes, but missing coordinates (fallback)
-                             logInfo += ", Viewport: NULL (Coords not found!) - Using Fallback";
+                             logInfo += ", Viewport: NULL (Rect not found!) - Using Fallback";
                              imageToShow = null; // Trigger fallback graphic
                         }
-                    } else {
-                        // No, it's a specific image (castle, tower slot)
+                    } else { // Castle or Tower Slot
                         imageToShow = baseImage; // Show the specific image...
                         logInfo += ", Viewport: N/A (Specific Image)";
                         // viewport remains null
@@ -316,17 +309,15 @@ public class MapEditorScreen extends BorderPane {
             // --- Set Button Graphic --- 
             if (imageToShow != null) { 
                 ImageView imageView = new ImageView(imageToShow);
-                if (viewport != null) { // Apply viewport ONLY if one was calculated
+                if (viewport != null) { // Apply viewport ONLY if one was retrieved from the map
                     imageView.setViewport(viewport); 
                 } else {
-                    // Ensure viewport is cleared if we're showing a non-tileset image
-                    // that might have been used in a previous button's ImageView
-                    imageView.setViewport(null); 
+                    imageView.setViewport(null); // Ensure viewport is null for non-atlas images
                 }
                 // Scale the resulting view 
                 imageView.setFitWidth(tileSize); 
                 imageView.setFitHeight(tileSize);
-                imageView.setPreserveRatio(true);
+                imageView.setPreserveRatio(true); // Keep aspect ratio
                 imageView.setSmooth(false); 
                 tileButton.setGraphic(imageView);
             } else {
@@ -362,8 +353,8 @@ public class MapEditorScreen extends BorderPane {
             case START_POINT -> Color.DODGERBLUE;
             case END_POINT -> Color.INDIANRED;
             case TOWER_SLOT -> Color.SLATEGRAY;
-            case DECORATION -> Color.FORESTGREEN;
-            case OBSTACLE -> Color.DARKGRAY;
+            case DECORATION, TREE1, TREE2, TREE3 -> Color.FORESTGREEN;
+            case OBSTACLE, ROCK1, ROCK2 -> Color.DARKGRAY;
             default -> Color.VIOLET;
         };
     }

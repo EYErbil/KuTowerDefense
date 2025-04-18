@@ -25,27 +25,38 @@ public class Tile implements Serializable {
     /* ─────────────────────────────  Constants  ───────────────────────────── */
 
     private static final long serialVersionUID = 1L;
-    public static final int SOURCE_TILE_SIZE  = 64;   // size in the atlas
+    // No longer assuming a fixed source grid size for all tiles in atlas
+    // public static final int SOURCE_TILE_SIZE  = 64; 
     private static final int RENDER_TILE_SIZE  = 64;   // we always draw @64 px
 
-    /** Row / column of every sprite in the tileset */
-    private static final Map<TileType, Point2D> TILE_COORDS = new EnumMap<>(TileType.class);
+    /** Stores precise source Rectangles (X, Y, Width, Height) within the atlas for each type */
+    // Rename TILE_COORDS to SOURCE_RECTANGLES
+    private static final Map<TileType, Rectangle2D> SOURCE_RECTANGLES = new EnumMap<>(TileType.class);
     static {
-        // TILE_COORDS are likely incorrect given the actual asset sheet layout
-        // Remove specific GRASS mapping as it was wrong
-        // TILE_COORDS.put(TileType.GRASS,       new Point2D(0, 0)); 
-
-        // Keep other mappings for now, though they are also likely wrong
-        TILE_COORDS.put(TileType.PATH,        new Point2D(1, 1)); 
-        TILE_COORDS.put(TileType.PATH_V,      new Point2D(0, 1));
-        TILE_COORDS.put(TileType.PATH_H,      new Point2D(2, 1));
-        TILE_COORDS.put(TileType.PATH_NE,     new Point2D(1, 0));
-        TILE_COORDS.put(TileType.PATH_NW,     new Point2D(1, 2));
-        TILE_COORDS.put(TileType.PATH_SE,     new Point2D(0, 2));
-        TILE_COORDS.put(TileType.PATH_SW,     new Point2D(0, 0));
-        TILE_COORDS.put(TileType.DECORATION,  new Point2D(0, 3)); // Assumed Tree
-        TILE_COORDS.put(TileType.OBSTACLE,    new Point2D(0, 4)); // Assumed Rock
-        TILE_COORDS.put(TileType.START_POINT, new Point2D(2, 2)); // Needs clarification
+        // Updated with actual measured pixel coordinates from tileset image
+        SOURCE_RECTANGLES.put(TileType.GRASS,       new Rectangle2D(192, 0, 64, 64));    // Clean grass patch top right
+        SOURCE_RECTANGLES.put(TileType.PATH,        new Rectangle2D(128, 64, 64, 64));   // Center circular path blob
+        SOURCE_RECTANGLES.put(TileType.PATH_V,      new Rectangle2D(64, 64, 64, 64));    // Vertical path
+        SOURCE_RECTANGLES.put(TileType.PATH_H,      new Rectangle2D(192, 128, 64, 64));  // Horizontal path
+        SOURCE_RECTANGLES.put(TileType.PATH_NE,     new Rectangle2D(128, 0, 64, 64));    // Northeast corner
+        SOURCE_RECTANGLES.put(TileType.PATH_NW,     new Rectangle2D(64, 0, 64, 64));     // Northwest corner
+        SOURCE_RECTANGLES.put(TileType.PATH_SE,     new Rectangle2D(0, 128, 64, 64));    // Southeast corner
+        SOURCE_RECTANGLES.put(TileType.PATH_SW,     new Rectangle2D(64, 128, 64, 64));   // Southwest corner
+        
+        // Tree decorations
+        SOURCE_RECTANGLES.put(TileType.DECORATION,  new Rectangle2D(0, 192, 64, 64));    // Tree (default decoration)
+        SOURCE_RECTANGLES.put(TileType.TREE1,       new Rectangle2D(0, 192, 64, 64));    // Tree 1
+        SOURCE_RECTANGLES.put(TileType.TREE2,       new Rectangle2D(64, 192, 64, 64));   // Tree 2
+        SOURCE_RECTANGLES.put(TileType.TREE3,       new Rectangle2D(128, 192, 64, 64));  // Tree 3
+        
+        // Rock/obstacle decorations
+        SOURCE_RECTANGLES.put(TileType.OBSTACLE,    new Rectangle2D(192, 192, 64, 64));  // Rock (default obstacle)
+        SOURCE_RECTANGLES.put(TileType.ROCK1,       new Rectangle2D(192, 192, 64, 64));  // Rock 1
+        SOURCE_RECTANGLES.put(TileType.ROCK2,       new Rectangle2D(0, 256, 64, 64));    // Rock 2
+        
+        // Special tiles
+        SOURCE_RECTANGLES.put(TileType.START_POINT, new Rectangle2D(64, 256, 64, 64));   // Distinctive start point
+        // END_POINT and TOWER_SLOT use separate images, not mapped here.
     }
 
     /* ──────────────────────────  Static Resources  ───────────────────────── */
@@ -93,6 +104,9 @@ public class Tile implements Serializable {
         return switch (type) {
             case START_POINT, END_POINT, PATH, PATH_V, PATH_H, PATH_NE,
                  PATH_NW, PATH_SE, PATH_SW -> true;
+            case GRASS -> true; // Grass is walkable but allows tower placement
+            case TOWER_SLOT, DECORATION, OBSTACLE, 
+                 TREE1, TREE2, TREE3, ROCK1, ROCK2 -> false; // These block movement
             default -> false;
         };
     }
@@ -104,16 +118,11 @@ public class Tile implements Serializable {
     }
 
     /** Gets the source viewport Rectangle2D within the atlas for this tile's type */
+    // Now uses the SOURCE_RECTANGLES map directly
     public Rectangle2D getSourceViewport() {
-        Point2D coords = getCoordsForType(this.type);
-        if (coords != null && type != TileType.END_POINT && type != TileType.TOWER_SLOT) {
-            int col = (int) coords.getX();
-            int row = (int) coords.getY();
-            return new Rectangle2D(col * SOURCE_TILE_SIZE, row * SOURCE_TILE_SIZE,
-                                   SOURCE_TILE_SIZE, SOURCE_TILE_SIZE);
-        } else {
-            return null; 
-        }
+        // Return the pre-defined rectangle for this type, if it exists in the map
+        // Returns null for types not in the map (like END_POINT, TOWER_SLOT)
+        return SOURCE_RECTANGLES.get(this.type);
     }
 
     /** 
@@ -129,9 +138,9 @@ public class Tile implements Serializable {
         };
     }
 
-    /** Gets the defined Point2D coordinates (col, row) for a TileType from the TILE_COORDS map. */
-    public static Point2D getCoordsForType(TileType type) {
-         return TILE_COORDS.get(type); // Return null if not mapped
+    /** Gets the source viewport Rectangle2D within the atlas for this tile's type from the static map */
+    public static Rectangle2D getSourceViewportForType(TileType type) {
+         return SOURCE_RECTANGLES.get(type);
     }
 
     public void render(GraphicsContext gc, int renderTileSize) {

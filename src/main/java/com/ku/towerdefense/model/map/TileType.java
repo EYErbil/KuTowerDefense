@@ -25,7 +25,7 @@ public enum TileType {
     END_POINT,
     
     /**
-     * Decoration tile that doesn't affect gameplay (rocks, trees, etc).
+     * Decoration tile that doesn't affect gameplay (generic decoration).
      */
     DECORATION,
     
@@ -67,5 +67,30 @@ public enum TileType {
     /**
      * Corner: Path goes South then West.
      */
-    PATH_SW
+    PATH_SW,
+    
+    /**
+     * Tree type 1 decoration.
+     */
+    TREE1,
+    
+    /**
+     * Tree type 2 decoration.
+     */
+    TREE2,
+    
+    /**
+     * Tree type 3 decoration.
+     */
+    TREE3,
+    
+    /**
+     * Rock type 1 obstacle.
+     */
+    ROCK1,
+    
+    /**
+     * Rock type 2 obstacle.
+     */
+    ROCK2
 }
