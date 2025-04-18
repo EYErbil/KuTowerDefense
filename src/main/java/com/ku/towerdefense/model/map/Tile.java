@@ -43,19 +43,19 @@ public class Tile implements Serializable {
         SOURCE_RECTANGLES.put(TileType.PATH_SE,     new Rectangle2D(0, 128, 64, 64));    // Southeast corner
         SOURCE_RECTANGLES.put(TileType.PATH_SW,     new Rectangle2D(64, 128, 64, 64));   // Southwest corner
         
-        // Tree decorations
-        SOURCE_RECTANGLES.put(TileType.DECORATION,  new Rectangle2D(0, 192, 64, 64));    // Tree (default decoration)
+        // Tree decorations with proper grass backgrounds
+        SOURCE_RECTANGLES.put(TileType.DECORATION,  new Rectangle2D(0, 192, 64, 64));    // Generic decoration (tree)
         SOURCE_RECTANGLES.put(TileType.TREE1,       new Rectangle2D(0, 192, 64, 64));    // Tree 1
         SOURCE_RECTANGLES.put(TileType.TREE2,       new Rectangle2D(64, 192, 64, 64));   // Tree 2
         SOURCE_RECTANGLES.put(TileType.TREE3,       new Rectangle2D(128, 192, 64, 64));  // Tree 3
         
-        // Rock/obstacle decorations
-        SOURCE_RECTANGLES.put(TileType.OBSTACLE,    new Rectangle2D(192, 192, 64, 64));  // Rock (default obstacle)
+        // Rock/obstacle decorations with proper grass backgrounds
+        SOURCE_RECTANGLES.put(TileType.OBSTACLE,    new Rectangle2D(192, 192, 64, 64));  // Generic obstacle (rock)
         SOURCE_RECTANGLES.put(TileType.ROCK1,       new Rectangle2D(192, 192, 64, 64));  // Rock 1
-        SOURCE_RECTANGLES.put(TileType.ROCK2,       new Rectangle2D(0, 256, 64, 64));    // Rock 2
+        SOURCE_RECTANGLES.put(TileType.ROCK2,       new Rectangle2D(256, 192, 64, 64));  // Rock 2 - adjusted x-coordinate
         
         // Special tiles
-        SOURCE_RECTANGLES.put(TileType.START_POINT, new Rectangle2D(64, 256, 64, 64));   // Distinctive start point
+        SOURCE_RECTANGLES.put(TileType.START_POINT, new Rectangle2D(256, 128, 64, 64));  // More distinctive start point
         // END_POINT and TOWER_SLOT use separate images, not mapped here.
     }
 
@@ -185,6 +185,7 @@ public class Tile implements Serializable {
             if (castleImage == null) System.err.println("    -> Castle image load returned NULL");
             else System.out.println("    -> Castle image loaded successfully. ID: " + Integer.toHexString(System.identityHashCode(castleImage)));
 
+            // Use the tower slot with proper transparent background
             String towerSlotFilename = "TowerSlotwithoutbackground128.png"; 
             System.out.println("    Loading tower slot image (" + towerSlotFilename + ")...");
             towerSlotImage = loadPNG("/Asset_pack/Towers/" + towerSlotFilename, RENDER_TILE_SIZE);

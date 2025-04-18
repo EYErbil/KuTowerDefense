@@ -265,7 +265,18 @@ public class MapEditorScreen extends BorderPane {
             ToggleButton tileButton = new ToggleButton();
             tileButton.setToggleGroup(tileToggleGroup);
             tileButton.setUserData(type);
-            tileButton.setTooltip(new Tooltip(type.toString()));
+            
+            // Enhanced tooltips for special tiles
+            String tooltipText = switch(type) {
+                case START_POINT -> "Start Point - Where enemies spawn. Must be placed at map edge.";
+                case END_POINT -> "End Point - Where enemies try to reach. Must be placed at map edge.";
+                case TOWER_SLOT -> "Tower Slot - Where players can build towers.";
+                case PATH_V, PATH_H, PATH_NE, PATH_NW, PATH_SE, PATH_SW -> "Path Segment - Connect start to end for enemies to follow.";
+                case ROCK1, ROCK2 -> "Rock Obstacle - Blocks both path and tower placement.";
+                case TREE1, TREE2, TREE3 -> "Tree Decoration - Visual element, blocks tower placement.";
+                default -> type.toString();
+            };
+            tileButton.setTooltip(new Tooltip(tooltipText));
             tileButton.getStyleClass().add("tile-option");
 
             Image imageToShow = null;    
@@ -402,6 +413,35 @@ public class MapEditorScreen extends BorderPane {
                 Tile tile = currentMap.getTile(x, y);
                 if (tile != null) {
                     tile.render(gc, tileSize);
+                    
+                    // Add visual indicator for START_POINT
+                    if (tile.getType() == TileType.START_POINT) {
+                        // Draw "SPAWN" text with glow effect
+                        gc.setGlobalAlpha(0.7);
+                        gc.setFill(Color.DARKGREEN);
+                        gc.fillText("SPAWN", x * tileSize + 5, y * tileSize + 15, tileSize - 10);
+                        gc.setStroke(Color.WHITE);
+                        gc.setLineWidth(0.5);
+                        gc.strokeText("SPAWN", x * tileSize + 5, y * tileSize + 15, tileSize - 10);
+                        gc.setGlobalAlpha(1.0);
+                        
+                        // Add arrow indicators around the tile
+                        gc.setStroke(Color.YELLOW);
+                        gc.setLineWidth(2);
+                        double margin = 5;
+                        double arrowSize = 8;
+                        
+                        // Draw arrows pointing to the start point
+                        if (x == 0) { // Left edge
+                            drawArrow(gc, x * tileSize - margin, y * tileSize + tileSize/2, x * tileSize + margin, y * tileSize + tileSize/2, arrowSize);
+                        } else if (x == currentMap.getWidth() - 1) { // Right edge
+                            drawArrow(gc, (x+1) * tileSize + margin, y * tileSize + tileSize/2, (x+1) * tileSize - margin, y * tileSize + tileSize/2, arrowSize);
+                        } else if (y == 0) { // Top edge
+                            drawArrow(gc, x * tileSize + tileSize/2, y * tileSize - margin, x * tileSize + tileSize/2, y * tileSize + margin, arrowSize);
+                        } else if (y == currentMap.getHeight() - 1) { // Bottom edge
+                            drawArrow(gc, x * tileSize + tileSize/2, (y+1) * tileSize + margin, x * tileSize + tileSize/2, (y+1) * tileSize - margin, arrowSize);
+                        }
+                    }
                 }
             }
         }
@@ -416,6 +456,24 @@ public class MapEditorScreen extends BorderPane {
             gc.strokeLine(0, y * tileSize, currentMap.getWidth() * tileSize, y * tileSize);
         }
         System.out.println("--- renderMap() finished ---"); // Log exit
+    }
+    
+    /**
+     * Draw an arrow from (x1, y1) to (x2, y2) with the specified head size.
+     */
+    private void drawArrow(GraphicsContext gc, double x1, double y1, double x2, double y2, double headSize) {
+        // Draw the main line
+        gc.strokeLine(x1, y1, x2, y2);
+        
+        // Calculate angle of the line
+        double angle = Math.atan2(y2 - y1, x2 - x1);
+        
+        // Draw the arrow head
+        double headAngle1 = angle + Math.PI / 6; // 30 degrees
+        double headAngle2 = angle - Math.PI / 6; // -30 degrees
+        
+        gc.strokeLine(x2, y2, x2 - headSize * Math.cos(headAngle1), y2 - headSize * Math.sin(headAngle1));
+        gc.strokeLine(x2, y2, x2 - headSize * Math.cos(headAngle2), y2 - headSize * Math.sin(headAngle2));
     }
     
     /**
