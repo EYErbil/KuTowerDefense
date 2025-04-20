@@ -1,80 +1,106 @@
-@startuml KUDefensePackageDiagram
+@startuml KUDefenseTower_PackageDiagram
 
-' Layer 1 - UI
+skinparam packageStyle rectangle
+title KUDefenseTower - Logical Architecture (Package Diagram)
+
+' ---------------- UI Layer ----------------
 package "UI" {
-  package "view.screens" {
-    class GameScreen
-    class MapEditorScreen
-    class OptionScreen
-    class MainMenuScreen
+  package "Swing" {
+    [MainMenuScreen]
+    [OptionsScreen]
+    [MapEditorScreen]
+    [GameScreen]
+    [GameOverScreen]
+    [MapGrid]
+    [TileSelector]
+    [EditorToolPanel]
+    [TowerPanel]
+    [WaveIndicator]
+    [TowerRangeIndicator]
+    [GameControlPanel]
+    [ResourcePanel]
   }
 
-  package "view.components" {
-    class TowerPanel
-    class MapGrid
-    class GameControlPanel
+  package "Renderer" {
+    [TileRenderer]
+    [TowerRenderer]
+    [EnemyRenderer]
+    [ProjectileRenderer]
+    [Animation]
+    [Direction]
   }
 
-  package "view.animations" {
-    class ProjectileAnimation
-    class ExplosionAnimation
-  }
+  [ScreenFactory]
+  [ScreenType]
 }
 
-' Layer 2 - Domain
+' ---------------- Domain Layer ----------------
 package "Domain" {
   package "model.map" {
-    class Map
-    class Tile
-    class Path
-    class TowerSlot
+    [Map]
+    [Tile]
+    [Path]
+    [TowerSlot]
+    [TileType]
   }
 
   package "model.entities" {
-    class Enemy
-    class Goblin
-    class Knight
-    class Wave
-    class Group
-    class Projectile
-    class Tower
-    class ArcherTower
-    class ArtilleryTower
-    class MageTower
-    class TowerType
+    [Enemy]
+    [Goblin]
+    [Knight]
+    [EnemyType]
+    [Wave]
+    [Group]
+  }
+
+  package "model.projectiles" {
+    [Projectile]
+    [Arrow]
+    [ArtilleryShell]
+    [Spell]
+    [ProjectileType]
+  }
+
+  package "model.towers" {
+    [Tower]
+    [ArcherTower]
+    [MageTower]
+    [ArtilleryTower]
+    [TowerType]
   }
 
   package "model.game" {
-    class GameSession
-    class Player
-    class GameOptions
+    [GameSession]
+    [Player]
+    [GameOptions]
   }
 
   package "controller" {
-    class GameController
-    class MapEditorController
-    class OptionsController
+    [Application]
+    [GameController]
+    [MapEditorController]
+    [OptionsController]
+    [InputHandler]
   }
 }
 
-' Layer 3 - Technical Services
-package "Technical Services" {
-  package "persistence" {
-    class MapSerializer
-    class OptionsSerializer
-    class FileManager
-  }
-
-  package "util" {
-    class PathFinder
-    class MathUtils
-    class GameClock
-    class ResourceLoader
-  }
+' ---------------- Technical Services Layer ----------------
+package "Technical Service" {
+  [MapSerializer]
+  [OptionsSerializer]
+  [FileManager]
+  [PathFinder]
+  [GameClock]
+  [MathUtils]
+  [ResourceLoader]
+  [ValidationService]
+  [WaveFactory]
+  [WaveConfiguration]
+  [GroupConfiguration]
 }
 
-' Dependencies
-"UI" ..> "Domain" : observes
-"Domain" ..> "Technical Services" : uses
+' ---------------- Dependencies ----------------
+"UI" ..> "Domain"
+"Domain" ..> "Technical Service"
 
 @enduml
