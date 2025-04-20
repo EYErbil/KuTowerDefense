@@ -1,0 +1,32 @@
+[33m3ec198a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mD1-Submission20/4/2025[m[33m, [m[1;31morigin/3-EditorMap[m[33m, [m[1;32m3-EditorMap[m[33m)[m HEAD@{0}: checkout: moving from Develop-Ege to D1-Submission20/4/2025
+[33m7198991[m[33m ([m[1;31morigin/Develop-Ege[m[33m, [m[1;31morigin/D1-Submission20/4/2025[m[33m, [m[1;32mDevelop-Ege[m[33m)[m HEAD@{1}: checkout: moving from Develop-Ege to Develop-Ege
+[33m7198991[m[33m ([m[1;31morigin/Develop-Ege[m[33m, [m[1;31morigin/D1-Submission20/4/2025[m[33m, [m[1;32mDevelop-Ege[m[33m)[m HEAD@{2}: checkout: moving from main to Develop-Ege
+[33m25f7281[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{3}: merge Develop-Ege: Merge made by the 'ort' strategy.
+[33m16d7bf7[m HEAD@{4}: reset: moving to HEAD
+[33m16d7bf7[m HEAD@{5}: merge Develop-Ege: updating HEAD
+[33m16d7bf7[m HEAD@{6}: reset: moving to origin/main
+[33mc099756[m HEAD@{7}: checkout: moving from main to main
+[33mc099756[m HEAD@{8}: commit: mainpush
+[33m7198991[m[33m ([m[1;31morigin/Develop-Ege[m[33m, [m[1;31morigin/D1-Submission20/4/2025[m[33m, [m[1;32mDevelop-Ege[m[33m)[m HEAD@{9}: merge Develop-Ege: Fast-forward
+[33m3ec198a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mD1-Submission20/4/2025[m[33m, [m[1;31morigin/3-EditorMap[m[33m, [m[1;32m3-EditorMap[m[33m)[m HEAD@{10}: checkout: moving from Develop-Ege to main
+[33m7198991[m[33m ([m[1;31morigin/Develop-Ege[m[33m, [m[1;31morigin/D1-Submission20/4/2025[m[33m, [m[1;32mDevelop-Ege[m[33m)[m HEAD@{11}: pull origin Develop-Ege: Fast-forward
+[33m230603b[m[33m ([m[1;31morigin/2-EditorMap[m[33m, [m[1;32m2-EditorMap[m[33m)[m HEAD@{12}: checkout: moving from D1-Submission20/4/2025 to Develop-Ege
+[33m3ec198a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mD1-Submission20/4/2025[m[33m, [m[1;31morigin/3-EditorMap[m[33m, [m[1;32m3-EditorMap[m[33m)[m HEAD@{13}: checkout: moving from 3-EditorMap to D1-Submission20/4/2025
+[33m3ec198a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mD1-Submission20/4/2025[m[33m, [m[1;31morigin/3-EditorMap[m[33m, [m[1;32m3-EditorMap[m[33m)[m HEAD@{14}: checkout: moving from D1-Submission20/4/2025 to 3-EditorMap
+[33m3ec198a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mD1-Submission20/4/2025[m[33m, [m[1;31morigin/3-EditorMap[m[33m, [m[1;32m3-EditorMap[m[33m)[m HEAD@{15}: checkout: moving from 3-EditorMap to D1-Submission20/4/2025
+[33m3ec198a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mD1-Submission20/4/2025[m[33m, [m[1;31morigin/3-EditorMap[m[33m, [m[1;32m3-EditorMap[m[33m)[m HEAD@{16}: commit: still buggy
+[33m1739eb5[m HEAD@{17}: commit: still buggy
+[33m230603b[m[33m ([m[1;31morigin/2-EditorMap[m[33m, [m[1;32m2-EditorMap[m[33m)[m HEAD@{18}: reset: moving to origin/3-EditorMap
+[33m230603b[m[33m ([m[1;31morigin/2-EditorMap[m[33m, [m[1;32m2-EditorMap[m[33m)[m HEAD@{19}: checkout: moving from Develop-Ege to 3-EditorMap
+[33m230603b[m[33m ([m[1;31morigin/2-EditorMap[m[33m, [m[1;32m2-EditorMap[m[33m)[m HEAD@{20}: checkout: moving from 3-EditorMap to Develop-Ege
+[33m230603b[m[33m ([m[1;31morigin/2-EditorMap[m[33m, [m[1;32m2-EditorMap[m[33m)[m HEAD@{21}: reset: moving to origin/3-EditorMap
+[33m230603b[m[33m ([m[1;31morigin/2-EditorMap[m[33m, [m[1;32m2-EditorMap[m[33m)[m HEAD@{22}: checkout: moving from 2-EditorMap to 3-EditorMap
+[33m230603b[m[33m ([m[1;31morigin/2-EditorMap[m[33m, [m[1;32m2-EditorMap[m[33m)[m HEAD@{23}: rebase (abort): returning to refs/heads/2-EditorMap
+[33m15f98a2[m HEAD@{24}: rebase (start): checkout origin/Develop-Ege
+[33m230603b[m[33m ([m[1;31morigin/2-EditorMap[m[33m, [m[1;32m2-EditorMap[m[33m)[m HEAD@{25}: commit: Asset_pack_utilize
+[33mbbafdb5[m HEAD@{26}: checkout: moving from 2-EditorMap to 2-EditorMap
+[33mbbafdb5[m HEAD@{27}: commit: EditorMap implementation
+[33m483bbb4[m[33m ([m[1;31morigin/editormap[m[33m, [m[1;32meditormap[m[33m)[m HEAD@{28}: checkout: moving from editormap to 2-EditorMap
+[33m483bbb4[m[33m ([m[1;31morigin/editormap[m[33m, [m[1;32meditormap[m[33m)[m HEAD@{29}: commit: buggy
+[33m4c2bf10[m[33m ([m[1;31morigin/StartScreen[m[33m, [m[1;32mStartScreen[m[33m)[m HEAD@{30}: checkout: moving from StartScreen to editormap
+[33m4c2bf10[m[33m ([m[1;31morigin/StartScreen[m[33m, [m[1;32mStartScreen[m[33m)[m HEAD@{31}: commit (initial): StartScreen Implementation
