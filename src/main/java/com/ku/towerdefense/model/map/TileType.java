@@ -42,7 +42,11 @@ public enum TileType {
     CASTLE3,
     CASTLE4,
     TOWER_BARACK,
-    LOG_PILE
+    LOG_PILE,
+
+    // Logical types (no visual representation from tileset)
+    START_POINT,
+    END_POINT
 }
 
 ;

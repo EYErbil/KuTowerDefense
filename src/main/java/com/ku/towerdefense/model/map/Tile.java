@@ -132,7 +132,7 @@ public class Tile implements Serializable {
     public static Image getBaseImageForType(TileType type) {
         loadImagesIfNeeded();
         return switch (type) {
-            case END_POINT -> castleImage;
+            case CASTLE1, CASTLE2, CASTLE3, CASTLE4 -> castleImage; // Assuming castleImage applies to all castle parts
             case TOWER_SLOT -> towerSlotImage;
             default -> tileset;
         };
