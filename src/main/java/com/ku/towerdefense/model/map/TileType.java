@@ -4,113 +4,45 @@ package com.ku.towerdefense.model.map;
  * Enum representing different types of tiles in the game map.
  */
 public enum TileType {
-    /**
-     * Basic grass tile where towers can be placed.
-     */
+    PATH_CIRCLE_NW,
+    PATH_CIRCLE_N,
+    PATH_CIRCLE_NE,
+    PATH_VERTICAL_N_DE, // DEAD END
+
+    PATH_CIRCLE_E,
     GRASS,
-    
-    /**
-     * Path tile where enemies walk. Towers cannot be placed on paths.
-     */
-    PATH,
-    
-    /**
-     * Starting point for enemies. Only one per map.
-     */
-    START_POINT,
-    
-    /**
-     * Ending point where enemies try to reach. Only one per map.
-     */
-    END_POINT,
-    
-    /**
-     * Decoration tile that doesn't affect gameplay (generic decoration).
-     */
-    DECORATION,
-    
-    /**
-     * Tower slot where towers can be built.
-     */
+    PATH_CIRCLE_SE,
+    PATH_VERTICAL,
+
+    PATH_CIRCLE_S,
+    PATH_CIRCLE_SW,
+    PATH_CIRCLE_W,
+    PATH_VERTICAL_S_DE, // DEAD END
+
+    PATH_HORIZONTAL_W_DE, // DEAD END
+    PATH_HORIZONTAL,
+    PATH_HORIZONTAL_E_DE, // DEAD END
     TOWER_SLOT,
-    
-    /**
-     * Obstacle that blocks enemy path and tower placement.
-     */
-    OBSTACLE,
-    
-    /**
-     * Vertical path segment.
-     */
-    PATH_V,
-    
-    /**
-     * Horizontal path segment.
-     */
-    PATH_H,
-    
-    /**
-     * Corner: Path goes North then East.
-     */
-    PATH_NE,
-    
-    /**
-     * Corner: Path goes North then West.
-     */
-    PATH_NW,
-    
-    /**
-     * Corner: Path goes South then East.
-     */
-    PATH_SE,
-    
-    /**
-     * Corner: Path goes South then West.
-     */
-    PATH_SW,
-    
-    /**
-     * Tree type 1 decoration.
-     */
-    TREE1,
-    
-    /**
-     * Tree type 2 decoration.
-     */
-    TREE2,
-    
-    /**
-     * Tree type 3 decoration.
-     */
-    TREE3,
-    
-    /**
-     * Rock type 1 obstacle.
-     */
-    ROCK1,
-    
-    /**
-     * Rock type 2 obstacle.
-     */
-    ROCK2,
-    
-    /**
-     * Water well decoration.
-     */
-    WELL,
-    
-    /**
-     * Wooden house decoration.
-     */
+
+    TREE_BIG,
+    TREE_MEDIUM,
+    TREE_SMALL,
+    ROCK_SMALL,
+
+    TOWER_ARTILLERY,
+    TOWER_MAGE,
     HOUSE,
-    
-    /**
-     * Wood pile decoration.
-     */
-    WOOD_PILE,
-    
-    /**
-     * Barrel decoration.
-     */
-    BARREL
+    ROCK_MEDIUM,
+
+    CASTLE1,
+    CASTLE2,
+    ARCHER_TOWER,
+    WELL,
+
+    CASTLE3,
+    CASTLE4,
+    TOWER_BARACK,
+    LOG_PILE
 }
+
+;
