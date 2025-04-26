@@ -66,6 +66,9 @@ public class Tile implements Serializable {
         TILE_COORDS.put(TileType.CASTLE4, new Point2D(1, 7));
         TILE_COORDS.put(TileType.TOWER_BARACK, new Point2D(2, 7));
         TILE_COORDS.put(TileType.LOG_PILE, new Point2D(3, 7));
+
+        // Add coordinates for the logical END_POINT, matching CASTLE1
+        TILE_COORDS.put(TileType.END_POINT, new Point2D(0, 6));
     }
 
     /* ────────────────────────── Static Resources ───────────────────────── */
@@ -132,9 +135,11 @@ public class Tile implements Serializable {
     public static Image getBaseImageForType(TileType type) {
         loadImagesIfNeeded();
         return switch (type) {
-            case CASTLE1, CASTLE2, CASTLE3, CASTLE4 -> castleImage; // Assuming castleImage applies to all castle parts
-            case TOWER_SLOT -> towerSlotImage;
-            default -> tileset;
+            // Treat END_POINT and CASTLE1-4 like regular tiles from the tileset
+            // Their appearance will be determined by slicing based on TILE_COORDS
+            case END_POINT, CASTLE1, CASTLE2, CASTLE3, CASTLE4 -> tileset;
+            case TOWER_SLOT -> towerSlotImage; // Keep Tower Slot specific
+            default -> tileset; // All others use the main tileset
         };
     }
 
@@ -171,6 +176,14 @@ public class Tile implements Serializable {
             gc.fillRect(x * renderTileSize, y * renderTileSize,
                     renderTileSize, renderTileSize);
         }
+    }
+
+    /**
+     * Static getter for the full castle image, primarily for UI elements.
+     */
+    public static Image getCastleImage() {
+        loadImagesIfNeeded();
+        return castleImage;
     }
 
     /* ───────────────────────── Private Helpers ────────────────────────── */

@@ -94,6 +94,9 @@ public class MapEditorScreen extends BorderPane {
             // placement)
             TileType.TOWER_SLOT,
 
+            // Castle Structure (Represents 2x2)
+            TileType.CASTLE1,
+
             // Trees
             TileType.TREE_BIG,
             TileType.TREE_MEDIUM,
@@ -129,7 +132,8 @@ public class MapEditorScreen extends BorderPane {
                     TileType.PATH_CIRCLE_SW, TileType.PATH_CIRCLE_W,
                     TileType.PATH_VERTICAL_N_DE, TileType.PATH_VERTICAL_S_DE,
                     TileType.PATH_HORIZONTAL_W_DE, TileType.PATH_HORIZONTAL_E_DE),
-            "Game Elements", List.of(TileType.TOWER_SLOT), // START/END removed
+            "Game Elements", List.of(TileType.TOWER_SLOT),
+            "Structures", List.of(TileType.CASTLE1),
             "Trees", List.of(TileType.TREE_BIG, TileType.TREE_MEDIUM, TileType.TREE_SMALL),
             "Buildings & Props", List.of(TileType.HOUSE, TileType.WELL, TileType.LOG_PILE),
             "Rocks", List.of(TileType.ROCK_MEDIUM, TileType.ROCK_SMALL),
@@ -207,50 +211,8 @@ public class MapEditorScreen extends BorderPane {
 
         // Canvas for map editing
         mapCanvas = new Canvas(currentMap.getWidth() * tileSize, currentMap.getHeight() * tileSize);
-        mapCanvas.setOnMouseClicked(e -> {
-            // Convert coordinates based on zoom level
-            double zoomedX = e.getX() / zoomLevel;
-            double zoomedY = e.getY() / zoomLevel;
-
-            int x = (int) (zoomedX / tileSize);
-            int y = (int) (zoomedY / tileSize);
-
-            ToggleButton selectedToggle = (ToggleButton) tileToggleGroup.getSelectedToggle();
-            if (selectedToggle != null && x >= 0 && x < currentMap.getWidth() && y >= 0 && y < currentMap.getHeight()) {
-                TileType typeToPlace = (TileType) selectedToggle.getUserData();
-
-                // Don't allow direct placement of START/END via palette click
-                if (typeToPlace == TileType.START_POINT || typeToPlace == TileType.END_POINT) {
-                    // Maybe show a small info popup?
-                    System.out.println("Use the dedicated buttons to place Start/End points.");
-                    return;
-                }
-
-                // Check if placing START/END would overwrite existing START/END
-                Tile existingTile = currentMap.getTile(x, y);
-                if (existingTile != null) {
-                    if (existingTile.getType() == TileType.START_POINT) {
-                        // Allow overwrite only if placing GRASS?
-                        if (typeToPlace != TileType.GRASS) {
-                            System.out.println("Cannot overwrite Start Point with this tile. Place GRASS first.");
-                            return;
-                        }
-                        clearExistingStartPoint(); // Clear the logical marker
-                    } else if (existingTile.getType() == TileType.END_POINT) {
-                        if (typeToPlace != TileType.GRASS) {
-                            System.out.println("Cannot overwrite End Point with this tile. Place GRASS first.");
-                            return;
-                        }
-                        clearExistingEndPoint(); // Clear the logical marker
-                    }
-                }
-
-                // Set the tile type (this handles clearing old start/end if necessary via
-                // GameMap logic)
-                currentMap.setTileType(x, y, typeToPlace);
-                renderMap();
-            }
-        });
+        // Set initial click handler (will be replaced by resetPlacementMode if needed)
+        resetPlacementMode(); // Setup the default click handler
 
         // Apply initial scaling transform to canvas
         mapCanvas.getTransforms().clear();
@@ -510,12 +472,6 @@ public class MapEditorScreen extends BorderPane {
         setStartButton.setOnAction(e -> selectPlacementMode(TileType.START_POINT));
         toolbar.getChildren().add(setStartButton);
 
-        // Button to set END_POINT
-        Button setEndButton = new Button("Set End");
-        setEndButton.setTooltip(new Tooltip("Click on the map edge to set the enemy destination (castle)."));
-        setEndButton.setOnAction(e -> selectPlacementMode(TileType.END_POINT));
-        toolbar.getChildren().add(setEndButton);
-
         return toolbar;
     }
 
@@ -605,10 +561,10 @@ public class MapEditorScreen extends BorderPane {
         tileButton.setUserData(type);
         tileButton.setTooltip(new Tooltip(getTooltipForTileType(type)));
 
-        // Make special tiles stand out
-        if (type == TileType.START_POINT || type == TileType.END_POINT) {
-            tileButton.setStyle("-fx-border-color: gold; -fx-border-width: 2px;");
-        }
+        // Make special tiles stand out (commented out as Castle has its own logic now)
+        // if (type == TileType.START_POINT /*|| type == TileType.END_POINT*/) {
+        // tileButton.setStyle("-fx-border-color: gold; -fx-border-width: 2px;");
+        // }
 
         tileButton.getStyleClass().add("tile-option");
         tileButton.setMinSize(48, 48);
@@ -617,38 +573,61 @@ public class MapEditorScreen extends BorderPane {
         Image imageToShow = null;
         Rectangle2D viewport = null;
         String logInfo = "Type: " + type;
+        boolean useFullImage = false;
 
-        try {
-            Image baseImage = Tile.getBaseImageForType(type);
-            String baseImgId = (baseImage == null) ? "NULL" : Integer.toHexString(System.identityHashCode(baseImage));
-            logInfo += ", BaseImgID: " + baseImgId;
-
-            if (baseImage != null && !baseImage.isError()) {
-                if (baseImage == staticTileset) { // Is this type derived from the main tileset?
-                    // Get the precise viewport rectangle directly from the static map
-                    viewport = Tile.getSourceViewportForType(type); // Use new static helper
-                    if (viewport != null) {
-                        imageToShow = baseImage; // Show the tileset...
-                        logInfo += ", Viewport: Mapped Rect [" + viewport.getMinX() + "," + viewport.getMinY() + " "
-                                + viewport.getWidth() + "x" + viewport.getHeight() + "]";
-                    } else {
-                        logInfo += ", Viewport: NULL (Rect not found!) - Using Fallback";
-                        imageToShow = null; // Trigger fallback graphic
-                    }
-                } else { // Castle or Tower Slot
-                    imageToShow = baseImage; // Show the specific image...
-                    logInfo += ", Viewport: N/A (Specific Image)";
-                    // viewport remains null
+        // --- Special Case for Castle Palette Button ---
+        if (type == TileType.CASTLE1) {
+            logInfo += " -> Special Case: Castle Palette Button";
+            try {
+                imageToShow = Tile.getCastleImage(); // Get the full castle image
+                if (imageToShow != null && !imageToShow.isError()) {
+                    logInfo += ", Using Full Castle Image ID: "
+                            + Integer.toHexString(System.identityHashCode(imageToShow));
+                    useFullImage = true;
+                } else {
+                    logInfo += ", Full Castle Image load FAILED - Using Fallback";
+                    imageToShow = null;
                 }
-            } else {
-                logInfo += ", BaseImg: NULL or Error - Using Fallback";
-                imageToShow = null; // Trigger fallback graphic
+            } catch (Exception e) {
+                logInfo += ", EXCEPTION getting full castle image: " + e.getMessage();
+                e.printStackTrace();
+                imageToShow = null;
             }
+        }
+        // --- Default Logic for Other Tiles ---
+        else {
+            try {
+                Image baseImage = Tile.getBaseImageForType(type);
+                String baseImgId = (baseImage == null) ? "NULL"
+                        : Integer.toHexString(System.identityHashCode(baseImage));
+                logInfo += ", BaseImgID: " + baseImgId;
 
-        } catch (Exception e) {
-            logInfo += ", EXCEPTION building palette button: " + e.getMessage();
-            e.printStackTrace();
-            imageToShow = null; // Ensure fallback on error
+                if (baseImage != null && !baseImage.isError()) {
+                    if (baseImage == staticTileset) { // Is this type derived from the main tileset?
+                        // Get the precise viewport rectangle directly from the static map
+                        viewport = Tile.getSourceViewportForType(type); // Use new static helper
+                        if (viewport != null) {
+                            imageToShow = baseImage; // Show the tileset...
+                            logInfo += ", Viewport: Mapped Rect [" + viewport.getMinX() + "," + viewport.getMinY() + " "
+                                    + viewport.getWidth() + "x" + viewport.getHeight() + "]";
+                        } else {
+                            logInfo += ", Viewport: NULL (Rect not found!) - Using Fallback";
+                            imageToShow = null; // Trigger fallback graphic
+                        }
+                    } else { // Tower Slot or other specific images
+                        imageToShow = baseImage; // Show the specific image...
+                        logInfo += ", Viewport: N/A (Specific Image)";
+                        // viewport remains null
+                    }
+                } else {
+                    logInfo += ", BaseImg: NULL or Error - Using Fallback";
+                    imageToShow = null; // Trigger fallback graphic
+                }
+            } catch (Exception e) {
+                logInfo += ", EXCEPTION building palette button: " + e.getMessage();
+                e.printStackTrace();
+                imageToShow = null; // Ensure fallback on error
+            }
         }
 
         System.out.println("    Palette Button - " + logInfo);
@@ -656,10 +635,11 @@ public class MapEditorScreen extends BorderPane {
         // --- Set Button Graphic ---
         if (imageToShow != null) {
             ImageView imageView = new ImageView(imageToShow);
-            if (viewport != null) { // Apply viewport ONLY if one was retrieved from the map
+            // Apply viewport ONLY if NOT using the full castle image
+            if (viewport != null && !useFullImage) {
                 imageView.setViewport(viewport);
             } else {
-                imageView.setViewport(null); // Ensure viewport is null for non-atlas images
+                imageView.setViewport(null); // Ensure viewport is null for full images or non-atlas ones
             }
             // Scale the resulting view
             imageView.setFitWidth(40);
@@ -719,8 +699,8 @@ public class MapEditorScreen extends BorderPane {
             case START_POINT -> Color.DODGERBLUE;
             case END_POINT -> Color.INDIANRED;
 
-            // Castle types (use END_POINT color or distinct?)
-            case CASTLE1, CASTLE2, CASTLE3, CASTLE4 -> Color.rgb(192, 192, 192); // Light Gray for Castle parts
+            // Castle parts
+            case CASTLE1 -> Color.rgb(192, 192, 192); // Light Gray for Castle parts
 
             default -> Color.PINK; // Fallback for unexpected types
         };
@@ -772,10 +752,11 @@ public class MapEditorScreen extends BorderPane {
 
             // Logical Types - Keep descriptions
             case START_POINT -> "Start Point - Where enemies will spawn (place via button)";
-            case END_POINT -> "End Point/Castle - Destination for enemies (place via button)";
+            case END_POINT -> "End Point/Castle (Logical Marker)";
 
             // Castle parts
-            case CASTLE1, CASTLE2, CASTLE3, CASTLE4 -> "Castle Part - Decoration (End point uses CASTLE1)";
+            case CASTLE1 -> "Castle Structure (Place 2x2)";
+            case CASTLE2, CASTLE3, CASTLE4 -> "Castle Part - Placed automatically";
 
             default -> type.name(); // Default to enum name
         };
@@ -1180,39 +1161,187 @@ public class MapEditorScreen extends BorderPane {
      * Resets the click handler back to the standard tile palette placement.
      */
     private void resetPlacementMode() {
+        // Set the click handler to the palette logic
+        mapCanvas.setOnMouseClicked(this::handlePaletteClick);
+
+        // Update selectedTileType based on the palette selection
         selectedTileType = (tileToggleGroup.getSelectedToggle() != null)
                 ? (TileType) tileToggleGroup.getSelectedToggle().getUserData()
                 : TileType.GRASS; // Default back to grass if nothing selected
 
-        mapCanvas.setOnMouseClicked(e -> {
-            // Copied standard click logic here - could be refactored
-            double zoomedX = e.getX() / zoomLevel;
-            double zoomedY = e.getY() / zoomLevel;
-            int x = (int) (zoomedX / tileSize);
-            int y = (int) (zoomedY / tileSize);
-            ToggleButton selectedToggle = (ToggleButton) tileToggleGroup.getSelectedToggle();
-            if (selectedToggle != null && x >= 0 && x < currentMap.getWidth() && y >= 0 && y < currentMap.getHeight()) {
-                TileType typeToPlaceFromPalette = (TileType) selectedToggle.getUserData();
-                if (typeToPlaceFromPalette == TileType.START_POINT || typeToPlaceFromPalette == TileType.END_POINT) {
-                    return; // Should not happen if palette is correct
-                }
-                Tile existingTile = currentMap.getTile(x, y);
-                if (existingTile != null) {
-                    if (existingTile.getType() == TileType.START_POINT) {
-                        if (typeToPlaceFromPalette != TileType.GRASS)
-                            return;
+        System.out.println("Placement mode reset to palette selection. Current: " + selectedTileType);
+    }
+
+    private void handlePaletteClick(javafx.scene.input.MouseEvent e) {
+        // Convert coordinates based on zoom level
+        double zoomedX = e.getX() / zoomLevel;
+        double zoomedY = e.getY() / zoomLevel;
+        int x = (int) (zoomedX / tileSize);
+        int y = (int) (zoomedY / tileSize);
+
+        ToggleButton selectedToggle = (ToggleButton) tileToggleGroup.getSelectedToggle();
+        if (selectedToggle == null) {
+            System.out.println("No tile selected from palette.");
+            return; // No tile selected
+        }
+
+        TileType typeToPlace = (TileType) selectedToggle.getUserData();
+
+        // Check bounds for single tile placement (castle checks bounds later)
+        if (x < 0 || x >= currentMap.getWidth() || y < 0 || y >= currentMap.getHeight()) {
+            System.out.println("Click out of bounds.");
+            return;
+        }
+
+        // --- Handle Castle Placement (2x2) ---
+        if (typeToPlace == TileType.CASTLE1) {
+            handleCastlePlacement(x, y);
+        }
+        // --- Handle Start Point Placement (Special Mode) ---
+        else if (typeToPlace == TileType.START_POINT) {
+            // This case should ideally not be reached if START_POINT isn't in palette
+            // But if it is, delegate to the special placement logic
+            handleSpecialPlacementClick(e, TileType.START_POINT);
+        }
+        // --- Handle Standard Single Tile Placement ---
+        else {
+            handleSingleTilePlacement(x, y, typeToPlace);
+        }
+        renderMap(); // Re-render after any successful placement
+    }
+
+    /**
+     * Handles placing a single tile from the palette.
+     */
+    private void handleSingleTilePlacement(int x, int y, TileType typeToPlace) {
+        // Don't allow direct placement of START/END/CASTLE via this method
+        if (typeToPlace == TileType.START_POINT || typeToPlace == TileType.END_POINT ||
+                typeToPlace == TileType.CASTLE1 || typeToPlace == TileType.CASTLE2 ||
+                typeToPlace == TileType.CASTLE3 || typeToPlace == TileType.CASTLE4) {
+            System.out.println("Cannot place START/END/CASTLE using single placement logic.");
+            return;
+        }
+
+        // Check if placing would overwrite existing START/END
+        Tile existingTile = currentMap.getTile(x, y);
+        if (existingTile != null) {
+            TileType existingType = existingTile.getType();
+            // Prevent overwriting special tiles unless placing GRASS
+            if (existingType == TileType.START_POINT || existingType == TileType.END_POINT ||
+                    existingType == TileType.CASTLE1 || existingType == TileType.CASTLE2 ||
+                    existingType == TileType.CASTLE3 || existingType == TileType.CASTLE4) {
+                if (typeToPlace != TileType.GRASS) {
+                    showAlert("Action Needed",
+                            "Cannot overwrite " + existingType + " with this tile. Place GRASS first to remove it.");
+                    return;
+                } else {
+                    // If placing grass, clear the logical marker if needed
+                    if (existingType == TileType.START_POINT)
                         clearExistingStartPoint();
-                    } else if (existingTile.getType() == TileType.END_POINT) {
-                        if (typeToPlaceFromPalette != TileType.GRASS)
-                            return;
-                        clearExistingEndPoint();
+                    if (existingType == TileType.END_POINT || existingType == TileType.CASTLE1
+                            || existingType == TileType.CASTLE2 || existingType == TileType.CASTLE3
+                            || existingType == TileType.CASTLE4) {
+                        clearExistingEndPoint(); // Clear logical endpoint if overwriting any castle part
+                        // Also ensure the other 3 castle parts are grass if overwriting one part
+                        clearCastleRemnants(x, y, existingType);
                     }
                 }
-                currentMap.setTileType(x, y, typeToPlaceFromPalette);
-                renderMap();
             }
-        });
-        System.out.println("Placement mode reset to palette selection.");
+        }
+
+        // Set the tile type
+        currentMap.setTileType(x, y, typeToPlace);
+        System.out.println("Placed single tile: " + typeToPlace + " at (" + x + "," + y + ")");
+    }
+
+    /**
+     * Handles placing the 2x2 castle structure.
+     */
+    private void handleCastlePlacement(int x, int y) {
+        // Define the 4 tiles relative to the click position (x, y)
+        int x1 = x, y1 = y; // Top-left (CASTLE1 / END_POINT)
+        int x2 = x + 1, y2 = y; // Top-right (CASTLE2)
+        int x3 = x, y3 = y + 1; // Bottom-left (CASTLE3)
+        int x4 = x + 1, y4 = y + 1; // Bottom-right (CASTLE4)
+
+        // 1. Check Bounds
+        if (x2 >= currentMap.getWidth() || y3 >= currentMap.getHeight()) {
+            showAlert("Invalid Placement", "Castle placement is out of map bounds.");
+            return;
+        }
+
+        // 2. Check if target area is clear (must be GRASS)
+        TileType[] targetTypes = {
+                currentMap.getTileType(x1, y1), currentMap.getTileType(x2, y2),
+                currentMap.getTileType(x3, y3), currentMap.getTileType(x4, y4)
+        };
+        for (TileType type : targetTypes) {
+            // Allow overwriting grass only
+            if (type != TileType.GRASS) {
+                // Check specifically for START_POINT conflict
+                if (type == TileType.START_POINT) {
+                    showAlert("Invalid Placement", "Cannot place castle overlapping the Start Point.");
+                } else {
+                    showAlert("Invalid Placement", "Castle can only be placed on a clear 2x2 area of Grass tiles.");
+                }
+                return;
+            }
+        }
+
+        // 3. Placement
+        System.out.println("Placing 2x2 Castle starting at (" + x + "," + y + ")");
+        clearExistingEndPoint(); // Clear any previous logical end point
+
+        // Place visual tiles first
+        currentMap.setTileType(x1, y1, TileType.CASTLE1);
+        currentMap.setTileType(x2, y2, TileType.CASTLE2);
+        currentMap.setTileType(x3, y3, TileType.CASTLE3);
+        currentMap.setTileType(x4, y4, TileType.CASTLE4);
+
+        // Place logical END_POINT marker over the top-left tile (CASTLE1)
+        currentMap.setTileType(x1, y1, TileType.END_POINT);
+        System.out.println("Placed logical END_POINT at (" + x1 + "," + y1 + ")");
+
+    }
+
+    /**
+     * Helper to clear other castle parts if one part is being overwritten by Grass.
+     * This prevents leaving behind partial castle structures.
+     */
+    private void clearCastleRemnants(int x, int y, TileType overwrittenType) {
+        // Determine top-left corner based on which part was overwritten
+        int topLeftX = x, topLeftY = y;
+        if (overwrittenType == TileType.CASTLE2)
+            topLeftX = x - 1;
+        else if (overwrittenType == TileType.CASTLE3)
+            topLeftY = y - 1;
+        else if (overwrittenType == TileType.CASTLE4) {
+            topLeftX = x - 1;
+            topLeftY = y - 1;
+        } else if (overwrittenType == TileType.END_POINT) {
+            /* Already top-left */ }
+
+        int[] xs = { topLeftX, topLeftX + 1, topLeftX, topLeftX + 1 };
+        int[] ys = { topLeftY, topLeftY, topLeftY + 1, topLeftY + 1 };
+
+        for (int i = 0; i < 4; i++) {
+            // Skip the tile that is already being set to Grass
+            if (xs[i] == x && ys[i] == y)
+                continue;
+
+            if (xs[i] >= 0 && xs[i] < currentMap.getWidth() && ys[i] >= 0 && ys[i] < currentMap.getHeight()) {
+                Tile tile = currentMap.getTile(xs[i], ys[i]);
+                if (tile != null &&
+                        (tile.getType() == TileType.CASTLE1 || tile.getType() == TileType.CASTLE2 ||
+                                tile.getType() == TileType.CASTLE3 || tile.getType() == TileType.CASTLE4 ||
+                                tile.getType() == TileType.END_POINT)) // Also clear logical end point if it wasn't the
+                                                                       // primary clicked one
+                {
+                    currentMap.setTileType(xs[i], ys[i], TileType.GRASS);
+                }
+            }
+        }
+        System.out.println("Cleared castle remnants around (" + x + "," + y + ")");
     }
 
     private void showAlert(String title, String content) {
