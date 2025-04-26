@@ -580,11 +580,6 @@ public class MapEditorScreen extends BorderPane {
         tileButton.setUserData(type);
         tileButton.setTooltip(new Tooltip(getTooltipForTileType(type)));
 
-        // Make special tiles stand out (commented out as Castle has its own logic now)
-        // if (type == TileType.START_POINT /*|| type == TileType.END_POINT*/) {
-        // tileButton.setStyle("-fx-border-color: gold; -fx-border-width: 2px;");
-        // }
-
         tileButton.getStyleClass().add("tile-option");
         tileButton.setMinSize(48, 48);
         tileButton.setPrefSize(48, 48);
@@ -595,27 +590,53 @@ public class MapEditorScreen extends BorderPane {
         boolean useFullImage = false;
         boolean useCompositedFallback = false;
 
-        // --- Special Case for Castle Palette Button ---
+        // --- Special Case for Castle Palette Button (Composite Full Castle onto Grass)
+        // ---
         if (type == TileType.CASTLE1) {
-            logInfo += " -> Special Case: Castle Palette Button";
+            logInfo += " -> Special Case: Castle Palette Button (Composited)";
             try {
-                imageToShow = Tile.getCastleImage(); // Get the full castle image
-                if (imageToShow != null && !imageToShow.isError()) {
-                    logInfo += ", Using Full Castle Image ID: "
-                            + Integer.toHexString(System.identityHashCode(imageToShow));
-                    useFullImage = true;
+                Image fullCastleImage = Tile.getCastleImage();
+                Rectangle2D grassViewport = Tile.getSourceViewportForType(TileType.GRASS);
+
+                if (staticTileset != null && !staticTileset.isError() &&
+                        fullCastleImage != null && !fullCastleImage.isError() &&
+                        grassViewport != null) {
+                    int btnSize = 40;
+                    Canvas tempCanvas = new Canvas(btnSize, btnSize); // Use button size for canvas
+                    GraphicsContext g = tempCanvas.getGraphicsContext2D();
+
+                    // Draw scaled grass background from tileset
+                    g.drawImage(staticTileset,
+                            grassViewport.getMinX(), grassViewport.getMinY(), grassViewport.getWidth(),
+                            grassViewport.getHeight(), // Source rect
+                            0, 0, btnSize, btnSize); // Destination rect (scaled to button)
+
+                    // Draw full castle image on top, scaled
+                    g.drawImage(fullCastleImage, 0, 0, btnSize, btnSize);
+
+                    // Snapshot the canvas
+                    SnapshotParameters snapParams = new SnapshotParameters();
+                    snapParams.setFill(Color.TRANSPARENT);
+                    imageToShow = tempCanvas.snapshot(snapParams, null);
+
+                    logInfo += ", Composited Full Castle + GRASS for button";
+                    useFullImage = true; // Treat as a full image (no further viewport needed)
+
                 } else {
-                    logInfo += ", Full Castle Image load FAILED - Using Fallback";
+                    logInfo += ", FAILED to get necessary images/viewports for castle compositing - Using Fallback";
                     imageToShow = null;
+                    useCompositedFallback = true;
                 }
             } catch (Exception e) {
-                logInfo += ", EXCEPTION getting full castle image: " + e.getMessage();
+                logInfo += ", EXCEPTION compositing full castle image: " + e.getMessage();
                 e.printStackTrace();
                 imageToShow = null;
+                useCompositedFallback = true;
             }
         }
-        // --- Special Case for Overlay Prop Palette Button ---
-        else if (isOverlayPropForPalette(type)) { // Use a helper to check if it's a prop
+        // --- Special Case for Other Overlay Props (Trees, Rocks, Towers, TOWER_SLOT)
+        // ---
+        else if (isOverlayPropForPalette(type)) { // Helper now includes TOWER_SLOT
             logInfo += " -> Special Case: Overlay Prop Palette Button";
             try {
                 Rectangle2D grassViewport = Tile.getSourceViewportForType(TileType.GRASS);
@@ -661,7 +682,7 @@ public class MapEditorScreen extends BorderPane {
                 useCompositedFallback = true; // Indicate we need the colored fallback
             }
         }
-        // --- Default Logic for Other Tiles (Paths, Grass, Tower Slot) ---
+        // --- Default Logic for Other Tiles (Paths, Grass) ---
         else {
             try {
                 Image baseImage = Tile.getBaseImageForType(type);
@@ -680,10 +701,10 @@ public class MapEditorScreen extends BorderPane {
                             logInfo += ", Viewport: NULL (Rect not found!) - Using Fallback";
                             imageToShow = null;
                         }
-                    } else { // Tower Slot or other specific images
+                    } else { // Should only be non-atlas images NOT handled above (if any)
                         imageToShow = baseImage; // Show the specific image...
                         logInfo += ", Viewport: N/A (Specific Image)";
-                        useFullImage = true; // Treat Tower Slot image as 'full'
+                        useFullImage = true;
                     }
                 } else {
                     logInfo += ", BaseImg: NULL or Error - Using Fallback";
@@ -709,7 +730,7 @@ public class MapEditorScreen extends BorderPane {
                 imageView.setViewport(null); // Ensure viewport is null for full/composited images
             }
             // Scale the resulting view
-            imageView.setFitWidth(40);
+            imageView.setFitWidth(40); // Scale to button size
             imageView.setFitHeight(40);
             imageView.setPreserveRatio(true);
             imageView.setSmooth(false);
@@ -722,14 +743,6 @@ public class MapEditorScreen extends BorderPane {
                                                                                                             // blended
                                                                                                             // indication
             fallbackRect.setFill(fallbackColor);
-
-            // Optional: Add letter indication
-            // javafx.scene.text.Text fallbackText = new
-            // javafx.scene.text.Text(type.name().substring(0, 1));
-            // fallbackText.setFill(Color.WHITE);
-            // javafx.scene.layout.StackPane fallbackGraphic = new
-            // javafx.scene.layout.StackPane(fallbackRect, fallbackText);
-            // tileButton.setGraphic(fallbackGraphic);
 
             tileButton.setGraphic(fallbackRect); // Just use the colored rectangle for now
             System.err.println("    Palette: Using fallback graphic for tile button: " + type);
@@ -745,14 +758,14 @@ public class MapEditorScreen extends BorderPane {
 
     /**
      * Helper to determine if a tile type is a prop for the palette rendering.
-     * Duplicates logic from Tile.isOverlayProp for clarity in UI code.
      */
     private boolean isOverlayPropForPalette(TileType type) {
         return switch (type) {
             case TREE_BIG, TREE_MEDIUM, TREE_SMALL,
                     ROCK_SMALL, ROCK_MEDIUM,
                     HOUSE, WELL, LOG_PILE,
-                    TOWER_ARTILLERY, TOWER_MAGE, ARCHER_TOWER, TOWER_BARACK ->
+                    TOWER_ARTILLERY, TOWER_MAGE, ARCHER_TOWER, TOWER_BARACK,
+                    TOWER_SLOT ->
                 true;
             default -> false;
         };
@@ -791,7 +804,7 @@ public class MapEditorScreen extends BorderPane {
             case END_POINT -> Color.INDIANRED;
 
             // Castle parts
-            case CASTLE1 -> Color.rgb(192, 192, 192); // Light Gray for Castle parts
+            case CASTLE1, CASTLE2, CASTLE3, CASTLE4 -> Color.rgb(192, 192, 192); // Light Gray for Castle parts
 
             default -> Color.PINK; // Fallback for unexpected types
         };

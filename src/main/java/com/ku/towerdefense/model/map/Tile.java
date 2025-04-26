@@ -198,7 +198,9 @@ public class Tile implements Serializable {
             case TREE_BIG, TREE_MEDIUM, TREE_SMALL,
                     ROCK_SMALL, ROCK_MEDIUM,
                     HOUSE, WELL, LOG_PILE,
-                    TOWER_ARTILLERY, TOWER_MAGE, ARCHER_TOWER, TOWER_BARACK ->
+                    TOWER_ARTILLERY, TOWER_MAGE, ARCHER_TOWER, TOWER_BARACK,
+                    TOWER_SLOT,
+                    CASTLE1, CASTLE2, CASTLE3, CASTLE4, END_POINT ->
                 true;
             default -> false;
         };
