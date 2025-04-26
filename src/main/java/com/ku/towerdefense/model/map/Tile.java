@@ -136,10 +136,11 @@ public class Tile implements Serializable {
     public static Image getBaseImageForType(TileType type) {
         loadImagesIfNeeded();
         return switch (type) {
-            // Treat END_POINT and CASTLE1-4 like regular tiles from the tileset
+            // Treat END_POINT, CASTLE1-4, and TOWER_SLOT like regular tiles from the
+            // tileset
             // Their appearance will be determined by slicing based on TILE_COORDS
-            case END_POINT, CASTLE1, CASTLE2, CASTLE3, CASTLE4 -> tileset;
-            case TOWER_SLOT -> towerSlotImage; // Keep Tower Slot specific
+            // and compositing if they are overlay props.
+            case END_POINT, CASTLE1, CASTLE2, CASTLE3, CASTLE4, TOWER_SLOT -> tileset;
             default -> tileset; // All others use the main tileset
         };
     }
