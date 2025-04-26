@@ -353,15 +353,32 @@ public class MapEditorScreen extends BorderPane {
     }
 
     /**
-     * Clear the existing end point tile, setting it back to grass.
+     * Clear the existing end point tile and the associated 2x2 castle structure,
+     * setting them back to grass.
      */
     private void clearExistingEndPoint() {
         for (int x = 0; x < currentMap.getWidth(); x++) {
             for (int y = 0; y < currentMap.getHeight(); y++) {
                 Tile tile = currentMap.getTile(x, y);
+                // Find the logical END_POINT which marks the top-left of the castle
                 if (tile != null && tile.getType() == TileType.END_POINT) {
-                    currentMap.setTileType(x, y, TileType.GRASS); // Replace with grass
-                    break; // Assuming only one end point
+                    System.out.println("Clearing existing End Point / Castle structure at (" + x + "," + y + ")");
+                    // Clear the 2x2 area starting from the logical end point
+                    int topLeftX = x;
+                    int topLeftY = y;
+                    currentMap.setTileType(topLeftX, topLeftY, TileType.GRASS); // Clear logical marker & CASTLE1 spot
+
+                    // Clear adjacent castle parts if they exist within bounds
+                    if (topLeftX + 1 < currentMap.getWidth()) {
+                        currentMap.setTileType(topLeftX + 1, topLeftY, TileType.GRASS); // Clear CASTLE2 spot
+                    }
+                    if (topLeftY + 1 < currentMap.getHeight()) {
+                        currentMap.setTileType(topLeftX, topLeftY + 1, TileType.GRASS); // Clear CASTLE3 spot
+                    }
+                    if (topLeftX + 1 < currentMap.getWidth() && topLeftY + 1 < currentMap.getHeight()) {
+                        currentMap.setTileType(topLeftX + 1, topLeftY + 1, TileType.GRASS); // Clear CASTLE4 spot
+                    }
+                    return; // Found and cleared the single end point/castle
                 }
             }
         }
