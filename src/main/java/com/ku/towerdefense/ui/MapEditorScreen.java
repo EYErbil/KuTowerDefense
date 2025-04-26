@@ -9,6 +9,7 @@ import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Alert;
@@ -24,6 +25,7 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BackgroundImage;
@@ -591,6 +593,7 @@ public class MapEditorScreen extends BorderPane {
         Rectangle2D viewport = null;
         String logInfo = "Type: " + type;
         boolean useFullImage = false;
+        boolean useCompositedFallback = false;
 
         // --- Special Case for Castle Palette Button ---
         if (type == TileType.CASTLE1) {
@@ -611,7 +614,54 @@ public class MapEditorScreen extends BorderPane {
                 imageToShow = null;
             }
         }
-        // --- Default Logic for Other Tiles ---
+        // --- Special Case for Overlay Prop Palette Button ---
+        else if (isOverlayPropForPalette(type)) { // Use a helper to check if it's a prop
+            logInfo += " -> Special Case: Overlay Prop Palette Button";
+            try {
+                Rectangle2D grassViewport = Tile.getSourceViewportForType(TileType.GRASS);
+                Rectangle2D propViewport = Tile.getSourceViewportForType(type);
+
+                if (staticTileset != null && !staticTileset.isError() && grassViewport != null
+                        && propViewport != null) {
+                    // --- Use Canvas for Compositing ---
+                    Canvas tempCanvas = new Canvas(Tile.SOURCE_TILE_SIZE, Tile.SOURCE_TILE_SIZE); // Use source size for
+                                                                                                  // drawing
+                    GraphicsContext g = tempCanvas.getGraphicsContext2D();
+
+                    // Draw grass background from tileset
+                    g.drawImage(staticTileset,
+                            grassViewport.getMinX(), grassViewport.getMinY(), grassViewport.getWidth(),
+                            grassViewport.getHeight(), // Source rect
+                            0, 0, Tile.SOURCE_TILE_SIZE, Tile.SOURCE_TILE_SIZE); // Destination rect (original size)
+
+                    // Draw prop layer from tileset on top
+                    g.drawImage(staticTileset,
+                            propViewport.getMinX(), propViewport.getMinY(), propViewport.getWidth(),
+                            propViewport.getHeight(), // Source rect
+                            0, 0, Tile.SOURCE_TILE_SIZE, Tile.SOURCE_TILE_SIZE); // Destination rect (original size)
+
+                    // Snapshot the canvas
+                    SnapshotParameters snapParams = new SnapshotParameters();
+                    snapParams.setFill(Color.TRANSPARENT);
+                    imageToShow = tempCanvas.snapshot(snapParams, null); // This is the composited image
+                    // --- End Canvas Compositing ---
+
+                    logInfo += ", Composited GRASS + PROP for button";
+                    useFullImage = true; // Treat as a full image (no further viewport needed)
+
+                } else {
+                    logInfo += ", FAILED to get necessary images/viewports for compositing - Using Fallback";
+                    imageToShow = null;
+                    useCompositedFallback = true; // Indicate we need the colored fallback
+                }
+            } catch (Exception e) {
+                logInfo += ", EXCEPTION compositing prop image: " + e.getMessage();
+                e.printStackTrace();
+                imageToShow = null;
+                useCompositedFallback = true; // Indicate we need the colored fallback
+            }
+        }
+        // --- Default Logic for Other Tiles (Paths, Grass, Tower Slot) ---
         else {
             try {
                 Image baseImage = Tile.getBaseImageForType(type);
@@ -621,29 +671,28 @@ public class MapEditorScreen extends BorderPane {
 
                 if (baseImage != null && !baseImage.isError()) {
                     if (baseImage == staticTileset) { // Is this type derived from the main tileset?
-                        // Get the precise viewport rectangle directly from the static map
-                        viewport = Tile.getSourceViewportForType(type); // Use new static helper
+                        viewport = Tile.getSourceViewportForType(type); // Use static helper
                         if (viewport != null) {
                             imageToShow = baseImage; // Show the tileset...
                             logInfo += ", Viewport: Mapped Rect [" + viewport.getMinX() + "," + viewport.getMinY() + " "
                                     + viewport.getWidth() + "x" + viewport.getHeight() + "]";
                         } else {
                             logInfo += ", Viewport: NULL (Rect not found!) - Using Fallback";
-                            imageToShow = null; // Trigger fallback graphic
+                            imageToShow = null;
                         }
                     } else { // Tower Slot or other specific images
                         imageToShow = baseImage; // Show the specific image...
                         logInfo += ", Viewport: N/A (Specific Image)";
-                        // viewport remains null
+                        useFullImage = true; // Treat Tower Slot image as 'full'
                     }
                 } else {
                     logInfo += ", BaseImg: NULL or Error - Using Fallback";
-                    imageToShow = null; // Trigger fallback graphic
+                    imageToShow = null;
                 }
             } catch (Exception e) {
-                logInfo += ", EXCEPTION building palette button: " + e.getMessage();
+                logInfo += ", EXCEPTION building standard palette button: " + e.getMessage();
                 e.printStackTrace();
-                imageToShow = null; // Ensure fallback on error
+                imageToShow = null;
             }
         }
 
@@ -652,27 +701,37 @@ public class MapEditorScreen extends BorderPane {
         // --- Set Button Graphic ---
         if (imageToShow != null) {
             ImageView imageView = new ImageView(imageToShow);
-            // Apply viewport ONLY if NOT using the full castle image
+            // Apply viewport ONLY if needed (i.e., it's from tileset and not a special
+            // full/composited image)
             if (viewport != null && !useFullImage) {
                 imageView.setViewport(viewport);
             } else {
-                imageView.setViewport(null); // Ensure viewport is null for full images or non-atlas ones
+                imageView.setViewport(null); // Ensure viewport is null for full/composited images
             }
             // Scale the resulting view
             imageView.setFitWidth(40);
             imageView.setFitHeight(40);
-            imageView.setPreserveRatio(true); // Keep aspect ratio
+            imageView.setPreserveRatio(true);
             imageView.setSmooth(false);
             tileButton.setGraphic(imageView);
         } else {
-            // Fallback graphic
+            // Fallback graphic (Use simple color or composited color if needed)
             javafx.scene.shape.Rectangle fallbackRect = new javafx.scene.shape.Rectangle(40, 40);
-            fallbackRect.setFill(getColorForTileType(type));
-            javafx.scene.text.Text fallbackText = new javafx.scene.text.Text(type.name().substring(0, 1));
-            fallbackText.setFill(Color.WHITE);
-            javafx.scene.layout.StackPane fallbackGraphic = new javafx.scene.layout.StackPane(fallbackRect,
-                    fallbackText);
-            tileButton.setGraphic(fallbackGraphic);
+            Color fallbackColor = useCompositedFallback ? Color.DARKOLIVEGREEN : getColorForTileType(type); // Simple
+                                                                                                            // color or
+                                                                                                            // blended
+                                                                                                            // indication
+            fallbackRect.setFill(fallbackColor);
+
+            // Optional: Add letter indication
+            // javafx.scene.text.Text fallbackText = new
+            // javafx.scene.text.Text(type.name().substring(0, 1));
+            // fallbackText.setFill(Color.WHITE);
+            // javafx.scene.layout.StackPane fallbackGraphic = new
+            // javafx.scene.layout.StackPane(fallbackRect, fallbackText);
+            // tileButton.setGraphic(fallbackGraphic);
+
+            tileButton.setGraphic(fallbackRect); // Just use the colored rectangle for now
             System.err.println("    Palette: Using fallback graphic for tile button: " + type);
         }
 
@@ -682,6 +741,21 @@ public class MapEditorScreen extends BorderPane {
         }
 
         return tileButton;
+    }
+
+    /**
+     * Helper to determine if a tile type is a prop for the palette rendering.
+     * Duplicates logic from Tile.isOverlayProp for clarity in UI code.
+     */
+    private boolean isOverlayPropForPalette(TileType type) {
+        return switch (type) {
+            case TREE_BIG, TREE_MEDIUM, TREE_SMALL,
+                    ROCK_SMALL, ROCK_MEDIUM,
+                    HOUSE, WELL, LOG_PILE,
+                    TOWER_ARTILLERY, TOWER_MAGE, ARCHER_TOWER, TOWER_BARACK ->
+                true;
+            default -> false;
+        };
     }
 
     // Helper method to get fallback colors

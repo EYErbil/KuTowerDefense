@@ -3,6 +3,7 @@ package com.ku.towerdefense.model.map;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.SnapshotParameters;
+import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -188,37 +189,91 @@ public class Tile implements Serializable {
 
     /* ───────────────────────── Private Helpers ────────────────────────── */
 
+    /**
+     * Determines if a given TileType should be rendered by overlaying its image
+     * onto the base GRASS tile.
+     */
+    private static boolean isOverlayProp(TileType type) {
+        return switch (type) {
+            case TREE_BIG, TREE_MEDIUM, TREE_SMALL,
+                    ROCK_SMALL, ROCK_MEDIUM,
+                    HOUSE, WELL, LOG_PILE,
+                    TOWER_ARTILLERY, TOWER_MAGE, ARCHER_TOWER, TOWER_BARACK ->
+                true;
+            default -> false;
+        };
+    }
+
     private void initTransientFields() {
-        // Try to get pre-sliced image from cache
+        // Try to get pre-processed image from cache
         image = CACHE.get(type);
         if (image == null) {
-            // Get the base image based on type
+            // Get the base image (e.g., tileset, tower slot image)
             Image baseImage = getBaseImageForType(type);
 
             if (baseImage != null && !baseImage.isError()) {
+                Image processedImage = null; // This will hold the final image to cache
+
                 if (baseImage == tileset) { // Is this type derived from the main tileset?
-                    // Slice from tileset using coordinates
                     Point2D coords = TILE_COORDS.get(type);
                     if (coords != null) {
+                        // Slice the specific tile layer from the tileset
                         ImageView view = new ImageView(baseImage);
                         view.setViewport(new Rectangle2D(
                                 coords.getX() * SOURCE_TILE_SIZE,
                                 coords.getY() * SOURCE_TILE_SIZE,
                                 SOURCE_TILE_SIZE,
                                 SOURCE_TILE_SIZE));
-
-                        // Create snapshot of the sliced image
                         SnapshotParameters params = new SnapshotParameters();
                         params.setFill(Color.TRANSPARENT);
-                        image = view.snapshot(params, null);
+                        Image tileLayer = view.snapshot(params, null);
 
-                        // Cache for future use
-                        CACHE.put(type, image);
+                        // Check if this type is a prop that needs overlaying
+                        if (isOverlayProp(type)) {
+                            // Retrieve the base GRASS image from cache (must be loaded first!)
+                            Image grassBase = CACHE.get(TileType.GRASS);
+                            if (grassBase != null && !grassBase.isError()) {
+                                // --- Use Canvas for Compositing ---
+                                Canvas tempCanvas = new Canvas(RENDER_TILE_SIZE, RENDER_TILE_SIZE);
+                                GraphicsContext g = tempCanvas.getGraphicsContext2D();
+
+                                // Draw grass first
+                                g.drawImage(grassBase, 0, 0, RENDER_TILE_SIZE, RENDER_TILE_SIZE);
+                                // Draw the prop tile layer on top
+                                g.drawImage(tileLayer, 0, 0, RENDER_TILE_SIZE, RENDER_TILE_SIZE);
+
+                                // Snapshot the canvas to get the composited image
+                                SnapshotParameters snapParams = new SnapshotParameters();
+                                snapParams.setFill(Color.TRANSPARENT);
+                                processedImage = tempCanvas.snapshot(snapParams, null);
+                                // --- End Canvas Compositing ---
+
+                                System.out.println("    -> Composited " + type + " onto GRASS for cache.");
+                            } else {
+                                // Fallback if grass isn't cached (should not happen ideally)
+                                System.err
+                                        .println("    -> ERROR: GRASS tile not found in cache for compositing " + type);
+                                processedImage = tileLayer; // Use the sliced layer as fallback
+                            }
+                        } else {
+                            // Not an overlay prop, use the sliced tile directly
+                            processedImage = tileLayer;
+                        }
                     }
                 } else {
-                    // For special images like castle or tower slot, use as is
-                    image = baseImage;
+                    // For special images like TOWER_SLOT (no longer castle), use as is
+                    processedImage = baseImage;
                 }
+
+                // Cache the final processed image (either sliced or composited)
+                if (processedImage != null) {
+                    CACHE.put(type, processedImage);
+                    image = processedImage; // Assign to the instance field
+                } else {
+                    System.err.println("    -> Failed to process/slice image for type: " + type);
+                }
+            } else {
+                System.err.println("    -> Base image is null or in error for type: " + type);
             }
         }
     }
@@ -249,6 +304,34 @@ public class Tile implements Serializable {
                 System.out.println("    -> Tileset loaded successfully. ID: "
                         + Integer.toHexString(System.identityHashCode(tileset)));
             }
+
+            // --- Pre-cache GRASS tile ---
+            if (tileset != null && !tileset.isError()) {
+                System.out.println("    Pre-caching GRASS tile...");
+                Point2D grassCoords = TILE_COORDS.get(TileType.GRASS);
+                if (grassCoords != null) {
+                    ImageView grassView = new ImageView(tileset);
+                    grassView.setViewport(new Rectangle2D(
+                            grassCoords.getX() * SOURCE_TILE_SIZE,
+                            grassCoords.getY() * SOURCE_TILE_SIZE,
+                            SOURCE_TILE_SIZE,
+                            SOURCE_TILE_SIZE));
+                    SnapshotParameters grassParams = new SnapshotParameters();
+                    grassParams.setFill(Color.TRANSPARENT);
+                    Image grassImage = grassView.snapshot(grassParams, null);
+                    if (grassImage != null && !grassImage.isError()) {
+                        CACHE.put(TileType.GRASS, grassImage);
+                        System.out.println("    -> GRASS tile pre-cached successfully.");
+                    } else {
+                        System.err.println("    -> FAILED to create snapshot for GRASS tile pre-caching.");
+                    }
+                } else {
+                    System.err.println("    -> FAILED: Coordinates for GRASS not found in TILE_COORDS.");
+                }
+            } else {
+                System.err.println("    -> Cannot pre-cache GRASS because tileset failed to load.");
+            }
+            // --- End Pre-cache GRASS ---
 
             System.out.println("    Loading castle image...");
             castleImage = loadPNG("/Asset_pack/Towers/Castle128.png", RENDER_TILE_SIZE);
