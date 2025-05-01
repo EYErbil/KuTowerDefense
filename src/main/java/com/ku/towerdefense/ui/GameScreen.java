@@ -33,6 +33,7 @@ public class GameScreen extends BorderPane {
     
     // Custom AnimationTimer class with additional methods
     private class GameRenderTimer extends AnimationTimer {
+        private long lastTime = -1;
         private String statusMessage = "Ready to play!";
         private long statusTimestamp = 0;
         private double mouseX = 0;
@@ -42,31 +43,31 @@ public class GameScreen extends BorderPane {
         @Override
         public void handle(long now) {
             GraphicsContext gc = gameCanvas.getGraphicsContext2D();
-            
+
             // Clear the canvas
             gc.clearRect(0, 0, gameCanvas.getWidth(), gameCanvas.getHeight());
-            
+
             // Render game elements
             gameController.render(gc);
-            
+
             // Render tower preview if a tower is selected (follow mouse)
             if (selectedTower != null && mouseInCanvas) {
                 // Convert to grid coordinates
                 int tileX = (int)(mouseX / 32);
                 int tileY = (int)(mouseY / 32);
-                
+
                 // Get center of the tile
                 double centerX = tileX * 32 + 16;
                 double centerY = tileY * 32 + 16;
-                
+
                 // Check if we can place here
                 boolean canPlace = gameController.getGameMap().canPlaceTower(centerX, centerY);
-                
+
                 // Draw a preview circle
                 gc.setGlobalAlpha(0.5);
                 gc.setFill(canPlace ? javafx.scene.paint.Color.GREEN : javafx.scene.paint.Color.RED);
                 gc.fillOval(centerX - 16, centerY - 16, 32, 32);
-                
+
                 // Draw range preview
                 gc.setStroke(javafx.scene.paint.Color.WHITE);
                 gc.setGlobalAlpha(0.2);
@@ -77,10 +78,20 @@ public class GameScreen extends BorderPane {
                 } else if (selectedTower instanceof MageTower) {
                     gc.strokeOval(centerX - 140, centerY - 140, 280, 280);
                 }
-                
+
                 gc.setGlobalAlpha(1.0);
             }
-            
+            if (lastTime < 0) lastTime = now;
+            double deltaTime = (now - lastTime) / 1_000_000_000.0;
+            lastTime = now;
+
+            gameController.update(deltaTime);
+
+
+            gc.clearRect(0, 0, gameCanvas.getWidth(), gameCanvas.getHeight());
+
+            gameController.render(gc);
+
             // Status message (fades after 3 seconds)
             long currentTime = System.currentTimeMillis();
             if (currentTime - statusTimestamp < 3000) {

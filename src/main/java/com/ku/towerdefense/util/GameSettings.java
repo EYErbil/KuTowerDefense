@@ -34,8 +34,8 @@ public class GameSettings implements Serializable {
     // Enemy stats
     private int goblinHealth = 100;
     private int knightHealth = 200;
-    private int goblinSpeed = 4;
-    private int knightSpeed = 2;
+    private int goblinSpeed = 60; // Increased from 4 to 60 pixels per second
+    private int knightSpeed = 40; // Increased from 2 to 40 pixels per second
     
     // Tower costs
     private int archerTowerCost = 50;
@@ -224,8 +224,8 @@ public class GameSettings implements Serializable {
         // Enemy stats
         goblinHealth = 100;
         knightHealth = 200;
-        goblinSpeed = 4;
-        knightSpeed = 2;
+        goblinSpeed = 60; // Increased from 4 to 60 pixels per second
+        knightSpeed = 40; // Increased from 2 to 40 pixels per second
         
         // Tower costs
         archerTowerCost = 50;
