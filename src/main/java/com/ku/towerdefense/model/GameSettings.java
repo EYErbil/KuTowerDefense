@@ -63,6 +63,11 @@ public class GameSettings implements Serializable {
     private int startingLives = 20;
     private int startingGold = 100;
     
+    // Wave settings
+    private int enemiesPerGroup = 5; // Base number of enemies per wave
+    private int goblinPercentage = 70; // Percentage of goblins in each wave
+    private int enemyDelay = 1000; // Milliseconds between enemy spawns
+    
     /**
      * Private constructor to prevent direct instantiation.
      */
@@ -132,6 +137,11 @@ public class GameSettings implements Serializable {
         // Reset starting settings
         startingLives = 20;
         startingGold = 100;
+        
+        // Reset wave settings
+        enemiesPerGroup = 5;
+        goblinPercentage = 70;
+        enemyDelay = 1000;
         
         // Save the default settings
         saveSettings();
@@ -367,5 +377,67 @@ public class GameSettings implements Serializable {
      */
     public int getArtilleryAoeRange() {
         return artilleryAoeRange;
+    }
+    
+    // New getters for wave settings
+    
+    /**
+     * Get the base number of enemies per wave.
+     * 
+     * @return number of enemies per group
+     */
+    public int getEnemiesPerGroup() {
+        return enemiesPerGroup;
+    }
+    
+    /**
+     * Set the base number of enemies per wave.
+     * 
+     * @param enemiesPerGroup number of enemies per group
+     */
+    public void setEnemiesPerGroup(int enemiesPerGroup) {
+        if (enemiesPerGroup > 0) {
+            this.enemiesPerGroup = enemiesPerGroup;
+        }
+    }
+    
+    /**
+     * Get the percentage of goblins in each wave.
+     * 
+     * @return goblin percentage (0-100)
+     */
+    public int getGoblinPercentage() {
+        return goblinPercentage;
+    }
+    
+    /**
+     * Set the percentage of goblins in each wave.
+     * 
+     * @param goblinPercentage goblin percentage (0-100)
+     */
+    public void setGoblinPercentage(int goblinPercentage) {
+        if (goblinPercentage >= 0 && goblinPercentage <= 100) {
+            this.goblinPercentage = goblinPercentage;
+        }
+    }
+    
+    /**
+     * Get the delay between enemy spawns in milliseconds.
+     * 
+     * @return enemy spawn delay in ms
+     */
+    public int getEnemyDelay() {
+        return enemyDelay;
+    }
+    
+    /**
+     * Set the delay between enemy spawns in milliseconds.
+     * 
+     * @param enemyDelay enemy spawn delay in ms
+     */
+    public void setEnemyDelay(int enemyDelay) {
+        if (enemyDelay > 0) {
+            this.enemyDelay = enemyDelay;
+        }
     }
 } 

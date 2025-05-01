@@ -147,17 +147,27 @@ public abstract class Tower extends Entity implements Serializable {
         if (image == null && imageFile != null) {
             loadImage();
         }
-        
-        // Draw the tower image if available
+
+        // Define the size to draw the tower visually (e.g., fit in a 32x32 tile)
+        double drawSize = 32.0;
+        // Adjust drawing coordinates to center the visual representation if needed
+        // The entity's x,y usually refer to the top-left. Center 32x32 within logical bounds?
+        // Or just draw at x,y with size 32x32?
+        // Let's assume x,y is top-left and draw a 32x32 image there for now.
+        double drawX = x;
+        double drawY = y;
+
+        // Draw the tower image if available, scaled to drawSize
         if (image != null) {
-            gc.drawImage(image, x, y, width, height);
+            // Use the drawImage overload that specifies destination width/height
+            gc.drawImage(image, drawX, drawY, drawSize, drawSize);
         } else {
-            // Fallback to a simple shape if no image
+            // Fallback to a simple shape if no image, using drawSize
             gc.setFill(Color.DARKGRAY);
-            gc.fillRect(x, y, width, height);
+            gc.fillRect(drawX, drawY, drawSize, drawSize); // Draw fallback in the same size
         }
-        
-        // Draw range circle if selected
+
+        // Draw range circle if selected (using original center logic)
         if (selected) {
             renderRangeCircle(gc);
         }
@@ -169,27 +179,49 @@ public abstract class Tower extends Entity implements Serializable {
     protected void loadImage() {
         try {
             // First try loading from file path
-            File file = new File(imageFile);
-            if (file.exists()) {
-                image = new Image(file.toURI().toString());
-                System.out.println("Loaded image for " + getClass().getSimpleName() + ": " + imageFile);
-            } else {
-                // If not found, try as a classpath resource
-                String resourcePath = imageFile;
-                if (!resourcePath.startsWith("/")) {
-                    resourcePath = "/" + resourcePath;
-                }
-                
-                // Try to load as classpath resource
-                if (loadFromClasspath(resourcePath)) {
-                    System.out.println("Loaded image for " + getClass().getSimpleName() + " from classpath: " + resourcePath);
-                } else {
-                    System.err.println("Image not found in file path or classpath: " + imageFile);
-                }
+            // File file = new File(imageFile);
+            // if (file.exists()) {
+            //    image = new Image(file.toURI().toString());
+            //    System.out.println("Loaded image for " + getClass().getSimpleName() + ": " + imageFile);
+            // } else {
+            //    // If not found, try as a classpath resource
+            //    String resourcePath = imageFile;
+            //    if (!resourcePath.startsWith("/")) {
+            //        resourcePath = "/" + resourcePath;
+            //    }
+            //    
+            //    // Try to load as classpath resource
+            //    if (loadFromClasspath(resourcePath)) {
+            //        System.out.println("Loaded image for " + getClass().getSimpleName() + " from classpath: " + resourcePath);
+            //    } else {
+            //        System.err.println("Image not found in file path or classpath: " + imageFile);
+            //    }
+            // }
+
+            // --- Simplified Loading: Assume imageFile is a classpath resource --- 
+            String resourcePath = imageFile;
+            // Ensure it starts with / for absolute classpath lookup
+            if (resourcePath != null && !resourcePath.startsWith("/")) {
+                resourcePath = "/" + resourcePath;
             }
+
+            if (resourcePath != null) {
+                 if (loadFromClasspath(resourcePath)) {
+                     System.out.println("Loaded image for " + getClass().getSimpleName() + " from classpath: " + resourcePath);
+                 } else {
+                     System.err.println("Failed to load image from classpath: " + resourcePath);
+                     image = null; // Ensure image is null if loading failed
+                 }
+            } else {
+                 System.err.println("Image file path is null for " + getClass().getSimpleName());
+                 image = null;
+            }
+             // --- End Simplified Loading ---
+
         } catch (Exception e) {
             System.err.println("Error loading image " + imageFile + ": " + e.getMessage());
-            e.printStackTrace();
+            image = null; // Ensure image is null on error
+            // e.printStackTrace(); // Uncomment for detailed stack trace if needed
         }
     }
     
@@ -299,5 +331,13 @@ public abstract class Tower extends Entity implements Serializable {
     
     public void setImageFile(String imageFile) {
         this.imageFile = imageFile;
+    }
+
+    public Image getImage() {
+        // Ensure the image is loaded if needed before returning
+        if (this.image == null && this.imageFile != null) {
+            loadImage();
+        }
+        return this.image;
     }
 } 

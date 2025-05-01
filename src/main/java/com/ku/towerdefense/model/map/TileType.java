@@ -46,7 +46,14 @@ public enum TileType {
 
     // Logical types (no visual representation from tileset)
     START_POINT,
-    END_POINT
+    END_POINT,
+    
+    /**
+     * @deprecated This tile type is deprecated and kept only for backward compatibility with saved maps.
+     * Use PATH_HORIZONTAL or PATH_VERTICAL instead.
+     */
+    @Deprecated
+    PATH // Added back for compatibility with saved maps
 }
 
 ;

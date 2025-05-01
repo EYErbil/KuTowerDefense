@@ -9,6 +9,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.ku.towerdefense.model.entity.Tower;
+
 /**
  * Represents the game map with tiles and paths.
  */
@@ -267,17 +269,31 @@ public class GameMap implements Serializable {
     /**
      * Check if a tower can be placed at the specified coordinates.
      *
-     * @param x x coordinate
-     * @param y y coordinate
-     * @return true if a tower can be placed, false otherwise
+     * @param px the pixel x-coordinate
+     * @param py the pixel y-coordinate
+     * @param towers the list of currently placed towers
+     * @return true if a tower can be placed at the specified coordinates
      */
-    public boolean canPlaceTower(double x, double y) {
-        // Convert pixel coordinates to tile coordinates
-        int tileX = (int) (x / 32);
-        int tileY = (int) (y / 32);
+    public boolean canPlaceTower(double px, double py, List<Tower> towers) {
+        // Convert pixel coordinates to tile indices
+        int tileX = (int)(px / 32);
+        int tileY = (int)(py / 32);
 
-        Tile tile = getTile(tileX, tileY);
-        return tile != null && tile.canPlaceTower();
+        Tile t = getTile(tileX, tileY);
+
+        // Check if the tile exists and is a valid placement type
+        if (t == null || !t.canPlaceTower()) {
+            return false; // Invalid tile or type (e.g., path, water)
+        }
+
+        // --- ADDED CHECK: Ensure no other tower occupies this tile --- 
+        // Check if any existing tower's center falls within the same tile grid
+        return towers.stream().noneMatch(existingTower -> {
+            int existingTileX = (int)(existingTower.getCenterX() / 32); // Assuming getCenterX exists
+            int existingTileY = (int)(existingTower.getCenterY() / 32); // Assuming getCenterY exists
+            return existingTileX == tileX && existingTileY == tileY;
+        });
+        // --- END ADDED CHECK ---
     }
 
     /**

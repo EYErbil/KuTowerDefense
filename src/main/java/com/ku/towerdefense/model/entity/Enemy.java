@@ -106,27 +106,25 @@ public abstract class Enemy extends Entity implements Serializable {
      */
     private static void loadEnemyImages() {
         try {
-            // Load from filesystem
-            String basePath = System.getProperty("user.dir") + File.separator + "Asset_pack" + File.separator + "Enemies" + File.separator;
-
-            // Goblin
-            String goblinPath = basePath + "Goblin_Red.png";
-            File goblinFile = new File(goblinPath);
-            if (goblinFile.exists()) {
-                ENEMY_IMAGES.put(EnemyType.GOBLIN, new Image(goblinFile.toURI().toString()));
-                System.out.println("Loaded Goblin image from: " + goblinPath);
+            // FIX: Use classpath resources instead of absolute file paths
+            // Load enemy images from the classpath resources
+            String goblinImagePath = "/assets/enemies/Goblin_Red.png";
+            Image goblinImage = new Image(Enemy.class.getResourceAsStream(goblinImagePath));
+            if (goblinImage != null && !goblinImage.isError()) {
+                ENEMY_IMAGES.put(EnemyType.GOBLIN, goblinImage);
+                System.out.println("Loaded Goblin image from classpath: " + goblinImagePath);
             } else {
-                System.err.println("Goblin image not found: " + goblinPath);
+                System.err.println("Error loading Goblin image from classpath: " + goblinImagePath);
             }
 
             // Knight
-            String knightPath = basePath + "Warrior_Blue.png";
-            File knightFile = new File(knightPath);
-            if (knightFile.exists()) {
-                ENEMY_IMAGES.put(EnemyType.KNIGHT, new Image(knightFile.toURI().toString()));
-                System.out.println("Loaded Knight image from: " + knightPath);
+            String knightImagePath = "/assets/enemies/Warrior_Blue.png";
+            Image knightImage = new Image(Enemy.class.getResourceAsStream(knightImagePath));
+            if (knightImage != null && !knightImage.isError()) {
+                ENEMY_IMAGES.put(EnemyType.KNIGHT, knightImage);
+                System.out.println("Loaded Knight image from classpath: " + knightImagePath);
             } else {
-                System.err.println("Knight image not found: " + knightPath);
+                System.err.println("Error loading Knight image from classpath: " + knightImagePath);
             }
         } catch (Exception e) {
             System.err.println("Error loading enemy images: " + e.getMessage());
@@ -228,12 +226,28 @@ public abstract class Enemy extends Entity implements Serializable {
      */
     protected void loadImage() {
         try {
-            File file = new File(imageFile);
-            if (file.exists()) {
-                image = new Image(file.toURI().toString());
-                System.out.println("Loaded image for " + getClass().getSimpleName() + ": " + imageFile);
-            } else {
-                System.err.println("Image file not found: " + imageFile);
+            // FIX: Use classpath resources instead of absolute file path
+            if (imageFile != null && !imageFile.isEmpty()) {
+                // Try to load from classpath first
+                String resourcePath = "/assets/" + imageFile;
+                try {
+                    image = new Image(getClass().getResourceAsStream(resourcePath));
+                    if (image != null && !image.isError()) {
+                        System.out.println("Loaded image for " + getClass().getSimpleName() + " from classpath: " + resourcePath);
+                        return;
+                    }
+                } catch (Exception e) {
+                    System.err.println("Could not load image from classpath: " + resourcePath + " - " + e.getMessage());
+                }
+                
+                // Fallback to file system if needed
+                File file = new File(imageFile);
+                if (file.exists()) {
+                    image = new Image(file.toURI().toString());
+                    System.out.println("Loaded image for " + getClass().getSimpleName() + " from file: " + imageFile);
+                } else {
+                    System.err.println("Image file not found: " + imageFile);
+                }
             }
         } catch (Exception e) {
             System.err.println("Error loading image " + imageFile + ": " + e.getMessage());

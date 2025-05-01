@@ -2,6 +2,8 @@ package com.ku.towerdefense.controller;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
+import java.util.ArrayDeque;
 
 import com.ku.towerdefense.model.GamePath;
 import com.ku.towerdefense.model.entity.Enemy;
@@ -16,6 +18,10 @@ import com.ku.towerdefense.util.GameSettings;
 import javafx.animation.AnimationTimer;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.animation.Timeline;
+import javafx.animation.KeyFrame;
+import javafx.util.Duration;
+import javafx.animation.Animation;
 
 /**
  * Main controller for the game, handling the game loop, entities, and game state.
@@ -58,16 +64,6 @@ public class GameController {
         this.playerLives = GameSettings.getInstance().getStartingLives();
         this.currentWave = 0;
         this.gameOver = false;
-
-        // Initialize a basic path if not already set
-        if (gameMap.getEnemyPath() == null) {
-            // Set start and end points
-            gameMap.setTileType(0, 5, TileType.START_POINT);
-            gameMap.setTileType(gameMap.getWidth() - 1, 5, TileType.END_POINT);
-
-            // This will generate a path between the start and end points
-            gameMap.generatePath();
-        }
 
         // Initialize game loop
         gameLoop = new AnimationTimer() {
@@ -240,7 +236,7 @@ public class GameController {
      * @return true if the tower was placed, false otherwise
      */
     public boolean placeTower(Tower tower) {
-        if (playerGold >= tower.getCost() && gameMap.canPlaceTower(tower.getX(), tower.getY())) {
+        if (playerGold >= tower.getCost() && gameMap.canPlaceTower(tower.getX(), tower.getY(), towers)) {
             towers.add(tower);
             playerGold -= tower.getCost();
             return true;
@@ -288,78 +284,108 @@ public class GameController {
     }
 
     /**
-     * Add a wave of enemies to the game.
-     * This will spawn multiple enemies over time.
+     * Starts the next wave of enemies.
      */
     public void startNextWave() {
+        // Enhanced debugging for enemy path issues
+        System.out.println("startNextWave called - attempting to start wave " + (currentWave + 1));
+        
+        // Check if path exists
+        if (gameMap.getEnemyPath() == null) {
+             System.err.println("ERROR: Cannot start wave - No path defined on the map. Place Start and End tiles.");
+             
+             // Debug extra information to help diagnose
+             boolean hasStartTile = false;
+             boolean hasEndTile = false;
+             for (int x = 0; x < gameMap.getWidth(); x++) {
+                 for (int y = 0; y < gameMap.getHeight(); y++) {
+                     if (gameMap.getTileType(x, y) == TileType.START_POINT) {
+                         hasStartTile = true;
+                         System.out.println("Found START_POINT at (" + x + "," + y + ")");
+                     }
+                     if (gameMap.getTileType(x, y) == TileType.END_POINT) {
+                         hasEndTile = true;
+                         System.out.println("Found END_POINT at (" + x + "," + y + ")");
+                     }
+                 }
+             }
+
+             if (!hasStartTile) System.err.println("Missing START_POINT tile on map");
+             if (!hasEndTile) System.err.println("Missing END_POINT tile on map");
+             
+             // Try to force path generation if we have start and end points but no path
+             if (hasStartTile && hasEndTile) {
+                 System.out.println("Trying to force path generation since start and end points exist...");
+                 gameMap.generatePath();
+                 
+                 // Check if it worked
+                 if (gameMap.getEnemyPath() == null) {
+                     System.err.println("Path generation failed. Please check map configuration.");
+                     return;
+                 } else {
+                     System.out.println("Path was successfully generated!");
+                 }
+             } else {
+                 return; // Exit if we don't have both required points
+             }
+        }
+
+        // Increment wave counter
         currentWave++;
+        System.out.println("Starting wave " + currentWave);
+        
+        // Calculate enemy numbers
+        int num = GameSettings.getInstance().getEnemiesPerGroup() * (1 + currentWave/3); // Example scaling
+        int goblins = (int)(num * GameSettings.getInstance().getGoblinPercentage() / 100.0);
+        int knights  = num - goblins;
+        System.out.println("Wave " + currentWave + " will have " + goblins + " goblins and " + knights + " knights");
 
-        // Calculate number of enemies based on wave number and settings
-        int numEnemies = GameSettings.getInstance().getEnemiesPerGroup() *
-                (1 + currentWave / 3); // Increase enemies as waves progress
+        // Find start point
+        Point2D start = gameMap.getStartPoint();
+        if (start == null) {
+             System.err.println("ERROR: Cannot start wave - Start point not found on map.");
+             return;
+        }
+        System.out.println("Using start point at: (" + start.getX() + ", " + start.getY() + ")");
 
-        // Calculate goblin/knight ratio based on settings
-        int goblinPercentage = GameSettings.getInstance().getGoblinPercentage();
-        final int totalGoblins = (int)(numEnemies * (goblinPercentage / 100.0));
-        final int totalKnights = numEnemies - totalGoblins;
+        // Create enemy queue
+        Queue<Enemy> queue = new ArrayDeque<>();
+        for (int i=0;i<goblins;i++)  queue.add(new Goblin(start.getX(), start.getY()));
+        for (int i=0;i<knights;i++)  queue.add(new Knight(start.getX(), start.getY()));
+        System.out.println("Created queue with " + queue.size() + " enemies");
 
-        System.out.println("Starting wave " + currentWave + " with " + totalGoblins + " goblins and " + totalKnights + " knights");
-
-        // Use JavaFX Timeline instead of Thread to prevent race conditions
+        // Setting up spawning
         isSpawningEnemies = true;
+        double delay = GameSettings.getInstance().getEnemyDelay() / 1000.0; // Convert ms to seconds
+        System.out.println("Enemy spawn delay: " + delay + " seconds");
 
-        // Create counters outside the lambda
-        final int[] remainingGoblins = {totalGoblins};
-        final int[] remainingKnights = {totalKnights};
-
-        // Create a timeline for spawning enemies
-        javafx.animation.Timeline spawner = new javafx.animation.Timeline();
-        spawner.setCycleCount(totalGoblins + totalKnights);
-
-        // Base delay between enemy spawns
-        double baseDelay = GameSettings.getInstance().getEnemyDelay() / 1000.0; // Convert to seconds
-
-        // Keyframe for spawning one enemy at a time
-        spawner.getKeyFrames().add(
-                new javafx.animation.KeyFrame(javafx.util.Duration.seconds(baseDelay), e -> {
-                    // Get the start point from the map
-                    Point2D startPoint = gameMap.getStartPoint();
-                    if (startPoint == null) {
-                        System.err.println("No start point found on map!");
-                        return;
-                    }
-
-                    // Determine if we should spawn a goblin or knight
-                    Enemy enemy;
-                    if (remainingGoblins[0] > 0) {
-                        enemy = new Goblin(startPoint.getX(), startPoint.getY());
-                        remainingGoblins[0]--;
-                    } else {
-                        enemy = new Knight(startPoint.getX(), startPoint.getY());
-                        remainingKnights[0]--;
-                    }
-
-                    // Set the path for the enemy
-                    GamePath enemyPath = gameMap.getEnemyPath();
-                    if (enemyPath != null) {
-                        enemy.setPath(enemyPath);
-                        enemies.add(enemy);
-                        System.out.println("Spawned " + enemy.getClass().getSimpleName() +
-                                " at (" + startPoint.getX() + "," + startPoint.getY() + ")");
-                    } else {
-                        System.err.println("No enemy path found on map!");
-                    }
-                })
+        // Create and start Timeline for enemy spawning
+        Timeline spawner = new Timeline(
+            new KeyFrame(Duration.seconds(delay), e -> {
+                Enemy next = queue.poll();
+                if (next == null) {
+                    isSpawningEnemies = false;
+                    ((Timeline)e.getSource()).stop();
+                    System.out.println("Wave " + currentWave + " spawning complete.");
+                    return;
+                }
+                
+                // Ensure the enemy has the path reference
+                GamePath path = gameMap.getEnemyPath();
+                if (path != null) {
+                    next.setPath(path);
+                    enemies.add(next);
+                    System.out.println("Spawned " + (next instanceof Goblin ? "Goblin" : "Knight") + 
+                                     " at (" + next.getX() + "," + next.getY() + ")");
+                } else {
+                    System.err.println("ERROR: Enemy path disappeared during spawning!");
+                }
+            })
         );
-
-        // Mark spawning as complete when timeline finishes
-        spawner.setOnFinished(e -> {
-            isSpawningEnemies = false;
-            System.out.println("Wave " + currentWave + " spawning complete");
-        });
-
-        // Start the timeline
+        spawner.setCycleCount(Animation.INDEFINITE);
         spawner.play();
+
+        System.out.println("Wave " + currentWave + " spawning started!");
     }
 
     /**
