@@ -11,7 +11,7 @@ import java.io.Serializable;
  */
 public class Goblin extends Enemy implements Serializable {
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * Create a new goblin at the specified position.
      *
@@ -19,18 +19,15 @@ public class Goblin extends Enemy implements Serializable {
      * @param y y coordinate
      */
     public Goblin(double x, double y) {
-        super(x, y, 64, 64, GameSettings.getInstance().getGoblinHealth(), 
-              GameSettings.getInstance().getGoblinSpeed(),
-              GameSettings.getInstance().getGoldPerGoblin(),
-              EnemyType.GOBLIN);
-        
-        // Set image file from assets
-        String imagePath = System.getProperty("user.dir") + File.separator + 
-                          "Asset_pack" + File.separator + "Enemies" + File.separator + 
-                          "Goblin_Red.png";
-        setImageFile(imagePath);
+        super(x, y, 64, 64, GameSettings.getInstance().getGoblinHealth(),
+                GameSettings.getInstance().getGoblinSpeed(),
+                GameSettings.getInstance().getGoldPerGoblin(),
+                EnemyType.GOBLIN);
+
+        // Image is already loaded in the static initializer of Enemy class
+        // No need to set image file here
     }
-    
+
     /**
      * Apply damage with type modifiers.
      * Goblins take more damage from arrows but less from magic.
@@ -43,7 +40,7 @@ public class Goblin extends Enemy implements Serializable {
     public boolean applyDamage(int amount, DamageType damageType) {
         // Apply modifiers based on damage type
         int modifiedAmount = amount;
-        
+
         if (damageType == DamageType.ARROW) {
             // Goblins are weak against arrows (50% more damage)
             modifiedAmount = (int)(amount * 1.5);
@@ -51,7 +48,7 @@ public class Goblin extends Enemy implements Serializable {
             // Goblins are resistant to magic (30% less damage)
             modifiedAmount = (int)(amount * 0.7);
         }
-        
+
         return super.applyDamage(modifiedAmount);
     }
 } 

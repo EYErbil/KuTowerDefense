@@ -1,5 +1,8 @@
 package com.ku.towerdefense.controller;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.ku.towerdefense.model.GamePath;
 import com.ku.towerdefense.model.entity.Enemy;
 import com.ku.towerdefense.model.entity.Goblin;
@@ -9,12 +12,10 @@ import com.ku.towerdefense.model.entity.Tower;
 import com.ku.towerdefense.model.map.GameMap;
 import com.ku.towerdefense.model.map.TileType;
 import com.ku.towerdefense.util.GameSettings;
-import javafx.animation.AnimationTimer;
-import javafx.scene.canvas.GraphicsContext;
-import javafx.geometry.Point2D;
 
-import java.util.ArrayList;
-import java.util.List;
+import javafx.animation.AnimationTimer;
+import javafx.geometry.Point2D;
+import javafx.scene.canvas.GraphicsContext;
 
 /**
  * Main controller for the game, handling the game loop, entities, and game state.
@@ -100,6 +101,15 @@ public class GameController {
     public void stopGame() {
         gameLoop.stop();
     }
+    public void pauseGame() {
+        // Add any game-specific pause logic here
+    }
+
+    public void resumeGame() {
+        // Add any game-specific resume logic here
+    }
+    
+
 
     /**
      * Updates the game state.

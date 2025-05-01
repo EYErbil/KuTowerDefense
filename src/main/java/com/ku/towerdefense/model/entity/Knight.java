@@ -11,7 +11,7 @@ import java.io.Serializable;
  */
 public class Knight extends Enemy implements Serializable {
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * Create a new knight at the specified position.
      *
@@ -19,18 +19,15 @@ public class Knight extends Enemy implements Serializable {
      * @param y y coordinate
      */
     public Knight(double x, double y) {
-        super(x, y, 64, 64, GameSettings.getInstance().getKnightHealth(), 
-              GameSettings.getInstance().getKnightSpeed(),
-              GameSettings.getInstance().getGoldPerKnight(),
-              EnemyType.KNIGHT);
-        
-        // Set image file from assets
-        String imagePath = System.getProperty("user.dir") + File.separator + 
-                          "Asset_pack" + File.separator + "Enemies" + File.separator + 
-                          "Warrior_Blue.png";
-        setImageFile(imagePath);
+        super(x, y, 64, 64, GameSettings.getInstance().getKnightHealth(),
+                GameSettings.getInstance().getKnightSpeed(),
+                GameSettings.getInstance().getGoldPerKnight(),
+                EnemyType.KNIGHT);
+
+        // Image is already loaded in the static initializer of Enemy class
+        // No need to set image file here
     }
-    
+
     /**
      * Apply damage with type modifiers.
      * Knights take less damage from arrows but more from magic.
@@ -43,7 +40,7 @@ public class Knight extends Enemy implements Serializable {
     public boolean applyDamage(int amount, DamageType damageType) {
         // Apply modifiers based on damage type
         int modifiedAmount = amount;
-        
+
         if (damageType == DamageType.ARROW) {
             // Knights are resistant to arrows (40% less damage)
             modifiedAmount = (int)(amount * 0.6);
@@ -51,7 +48,7 @@ public class Knight extends Enemy implements Serializable {
             // Knights are weak against magic (40% more damage)
             modifiedAmount = (int)(amount * 1.4);
         }
-        
+
         return super.applyDamage(modifiedAmount);
     }
 } 

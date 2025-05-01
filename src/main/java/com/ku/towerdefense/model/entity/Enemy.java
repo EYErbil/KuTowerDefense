@@ -106,27 +106,25 @@ public abstract class Enemy extends Entity implements Serializable {
      */
     private static void loadEnemyImages() {
         try {
-            // Load from filesystem
-            String basePath = System.getProperty("user.dir") + File.separator + "Asset_pack" + File.separator + "Enemies" + File.separator;
+            // Load from resources
+            String basePath = "/Asset_pack/Enemies/";
 
             // Goblin
             String goblinPath = basePath + "Goblin_Red.png";
-            File goblinFile = new File(goblinPath);
-            if (goblinFile.exists()) {
-                ENEMY_IMAGES.put(EnemyType.GOBLIN, new Image(goblinFile.toURI().toString()));
+            try {
+                ENEMY_IMAGES.put(EnemyType.GOBLIN, new Image(Enemy.class.getResourceAsStream(goblinPath)));
                 System.out.println("Loaded Goblin image from: " + goblinPath);
-            } else {
-                System.err.println("Goblin image not found: " + goblinPath);
+            } catch (Exception e) {
+                System.err.println("Error loading Goblin image: " + e.getMessage());
             }
 
             // Knight
             String knightPath = basePath + "Warrior_Blue.png";
-            File knightFile = new File(knightPath);
-            if (knightFile.exists()) {
-                ENEMY_IMAGES.put(EnemyType.KNIGHT, new Image(knightFile.toURI().toString()));
+            try {
+                ENEMY_IMAGES.put(EnemyType.KNIGHT, new Image(Enemy.class.getResourceAsStream(knightPath)));
                 System.out.println("Loaded Knight image from: " + knightPath);
-            } else {
-                System.err.println("Knight image not found: " + knightPath);
+            } catch (Exception e) {
+                System.err.println("Error loading Knight image: " + e.getMessage());
             }
         } catch (Exception e) {
             System.err.println("Error loading enemy images: " + e.getMessage());
