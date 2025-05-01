@@ -1,5 +1,9 @@
 package com.ku.towerdefense.controller;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import com.ku.towerdefense.model.GamePath;
 import com.ku.towerdefense.model.entity.Enemy;
 import com.ku.towerdefense.model.entity.Goblin;
 import com.ku.towerdefense.model.entity.Knight;
@@ -8,11 +12,10 @@ import com.ku.towerdefense.model.entity.Tower;
 import com.ku.towerdefense.model.map.GameMap;
 import com.ku.towerdefense.model.map.TileType;
 import com.ku.towerdefense.util.GameSettings;
-import javafx.animation.AnimationTimer;
-import javafx.scene.canvas.GraphicsContext;
 
-import java.util.ArrayList;
-import java.util.List;
+import javafx.animation.AnimationTimer;
+import javafx.geometry.Point2D;
+import javafx.scene.canvas.GraphicsContext;
 
 /**
  * Main controller for the game, handling the game loop, entities, and game state.
@@ -27,23 +30,23 @@ public class GameController {
     private int currentWave;
     private boolean gameOver;
     private AnimationTimer gameLoop;
-    
+
     // Time between waves in milliseconds
     private static final long WAVE_BREAK_TIME = 5000;
     private boolean betweenWaves = false;
     private long waveStartTime = 0;
     private boolean isSpawningEnemies = false;
-    
+
     // Game speed control
     private boolean speedAccelerated = false;
     private static final double SPEED_MULTIPLIER = 2.0;
-    
+
     // Listener for wave events
     private WaveCompletedListener onWaveCompletedListener;
-    
+
     /**
      * Creates a new game controller with the specified game map.
-     * 
+     *
      * @param gameMap the game map to use
      */
     public GameController(GameMap gameMap) {
@@ -55,65 +58,74 @@ public class GameController {
         this.playerLives = GameSettings.getInstance().getStartingLives();
         this.currentWave = 0;
         this.gameOver = false;
-        
+
         // Initialize a basic path if not already set
         if (gameMap.getEnemyPath() == null) {
             // Set start and end points
             gameMap.setTileType(0, 5, TileType.START_POINT);
             gameMap.setTileType(gameMap.getWidth() - 1, 5, TileType.END_POINT);
-            
+
             // This will generate a path between the start and end points
             gameMap.generatePath();
         }
-        
+
         // Initialize game loop
         gameLoop = new AnimationTimer() {
             private long lastUpdate = 0;
-            
+
             @Override
             public void handle(long now) {
                 if (lastUpdate == 0) {
                     lastUpdate = now;
                     return;
                 }
-                
+
                 double deltaTime = (now - lastUpdate) / 1_000_000_000.0; // Convert to seconds
                 lastUpdate = now;
-                
+
                 update(deltaTime);
             }
         };
     }
-    
+
     /**
      * Starts the game loop.
      */
     public void startGame() {
         gameLoop.start();
     }
-    
+
     /**
      * Stops the game loop.
      */
     public void stopGame() {
         gameLoop.stop();
     }
+    public void pauseGame() {
+        // Add any game-specific pause logic here
+    }
+
+    public void resumeGame() {
+        // Add any game-specific resume logic here
+    }
     
+
+
     /**
      * Updates the game state.
-     * 
+     *
      * @param deltaTime time elapsed since the last update in seconds
      */
-    private void update(double deltaTime) {
+    public void update(double deltaTime) {
         if (gameOver) {
             return;
         }
-        
+
         // Apply speed multiplier if accelerated
         if (speedAccelerated) {
             deltaTime *= SPEED_MULTIPLIER;
         }
-        
+
         // Update towers and collect projectiles
         for (Tower tower : towers) {
             Projectile projectile = tower.update(deltaTime, enemies);
@@ -121,7 +133,7 @@ public class GameController {
                 projectiles.add(projectile);
             }
         }
-        
+
         // Update projectiles and check for hits
         List<Projectile> projectilesToRemove = new ArrayList<>();
         for (Projectile projectile : projectiles) {
@@ -133,12 +145,12 @@ public class GameController {
                     Enemy target = projectile.getTarget();
                     if (target != null) {
                         target.applyDamage(projectile.getDamage(), projectile.getDamageType());
-                        
+
                         // Handle area of effect damage
                         if (projectile.hasAoeEffect()) {
                             for (Enemy enemy : enemies) {
-                                if (enemy != target && 
-                                    enemy.distanceTo(target) <= projectile.getAoeRange()) {
+                                if (enemy != target &&
+                                        enemy.distanceTo(target) <= projectile.getAoeRange()) {
                                     enemy.applyDamage(projectile.getDamage() / 2, projectile.getDamageType());
                                 }
                             }
@@ -148,16 +160,16 @@ public class GameController {
             }
         }
         projectiles.removeAll(projectilesToRemove);
-        
+
         // Update enemies and check for ones that reached the end
         List<Enemy> enemiesToRemove = new ArrayList<>();
         for (Enemy enemy : enemies) {
             boolean reachedEnd = enemy.update(deltaTime);
-            
+
             if (reachedEnd) {
                 enemiesToRemove.add(enemy);
                 playerLives--;
-                
+
                 if (playerLives <= 0) {
                     gameOver = true;
                     stopGame();
@@ -167,21 +179,21 @@ public class GameController {
                 playerGold += enemy.getGoldReward();
             }
         }
-        
+
         // Remove dead or escaped enemies
         enemies.removeAll(enemiesToRemove);
-        
+
         // Check if wave is completed and all enemies are spawned
         if (enemies.isEmpty() && !isSpawningEnemies && currentWave > 0) {
             // Give player time before the next wave
             if (!betweenWaves) {
                 betweenWaves = true;
                 waveStartTime = System.currentTimeMillis() + WAVE_BREAK_TIME; // 5 seconds break
-                
+
                 // Give gold bonus for completing the wave
                 int waveBonus = currentWave * 10;
                 playerGold += waveBonus;
-                
+
                 // Notify listeners for UI update
                 if (onWaveCompletedListener != null) {
                     onWaveCompletedListener.onWaveCompleted(currentWave, waveBonus);
@@ -193,37 +205,37 @@ public class GameController {
             }
         }
     }
-    
+
     /**
      * Renders all game elements.
-     * 
+     *
      * @param gc the graphics context to render on
      */
     public void render(GraphicsContext gc) {
         // Render map
         gameMap.render(gc);
-        
+
         // Render enemies
         for (Enemy enemy : enemies) {
             enemy.render(gc);
         }
-        
+
         // Render towers
         for (Tower tower : towers) {
             tower.render(gc);
         }
-        
+
         // Render projectiles
         for (Projectile projectile : projectiles) {
             projectile.render(gc);
         }
-        
+
         // Additional UI rendering can be handled elsewhere
     }
-    
+
     /**
      * Places a tower at the specified position if there's enough gold.
-     * 
+     *
      * @param tower the tower to place
      * @return true if the tower was placed, false otherwise
      */
@@ -235,7 +247,7 @@ public class GameController {
         }
         return false;
     }
-    
+
     /**
      * Add a test enemy to the game.
      * This is for demonstration purposes.
@@ -248,7 +260,7 @@ public class GameController {
         } else {
             enemy = new Knight(50, 50);
         }
-        
+
         // Set the path for the enemy to follow
         if (gameMap.getEnemyPath() != null) {
             enemy.setPath(gameMap.getEnemyPath());
@@ -258,90 +270,101 @@ public class GameController {
             System.out.println("Cannot add enemy: no path available");
         }
     }
-    
+
     /**
      * Interface for wave completed event
      */
     public interface WaveCompletedListener {
         void onWaveCompleted(int waveNumber, int goldBonus);
     }
-    
+
     /**
      * Set listener for wave completed events
-     * 
+     *
      * @param listener the listener to set
      */
     public void setOnWaveCompletedListener(WaveCompletedListener listener) {
         this.onWaveCompletedListener = listener;
     }
-    
+
     /**
      * Add a wave of enemies to the game.
      * This will spawn multiple enemies over time.
      */
     public void startNextWave() {
         currentWave++;
-        
+
         // Calculate number of enemies based on wave number and settings
-        int numEnemies = GameSettings.getInstance().getEnemiesPerGroup() * 
-                         (1 + currentWave / 3); // Increase enemies as waves progress
-        
+        int numEnemies = GameSettings.getInstance().getEnemiesPerGroup() *
+                (1 + currentWave / 3); // Increase enemies as waves progress
+
         // Calculate goblin/knight ratio based on settings
         int goblinPercentage = GameSettings.getInstance().getGoblinPercentage();
         final int totalGoblins = (int)(numEnemies * (goblinPercentage / 100.0));
         final int totalKnights = numEnemies - totalGoblins;
-        
+
         System.out.println("Starting wave " + currentWave + " with " + totalGoblins + " goblins and " + totalKnights + " knights");
-        
+
         // Use JavaFX Timeline instead of Thread to prevent race conditions
         isSpawningEnemies = true;
-        
+
         // Create counters outside the lambda
         final int[] remainingGoblins = {totalGoblins};
         final int[] remainingKnights = {totalKnights};
-        
+
         // Create a timeline for spawning enemies
         javafx.animation.Timeline spawner = new javafx.animation.Timeline();
         spawner.setCycleCount(totalGoblins + totalKnights);
-        
+
         // Base delay between enemy spawns
         double baseDelay = GameSettings.getInstance().getEnemyDelay() / 1000.0; // Convert to seconds
-        
+
         // Keyframe for spawning one enemy at a time
         spawner.getKeyFrames().add(
-            new javafx.animation.KeyFrame(javafx.util.Duration.seconds(baseDelay), e -> {
-                double startX = gameMap.getStartPoint().getX();
-                double startY = gameMap.getStartPoint().getY();
-                
-                // Determine if we should spawn a goblin or knight
-                Enemy enemy;
-                if (remainingGoblins[0] > 0) {
-                    enemy = new Goblin(startX, startY);
-                    remainingGoblins[0]--;
-                } else {
-                    enemy = new Knight(startX, startY);
-                    remainingKnights[0]--;
-                    // Apply a slight delay for knights
-                    ((javafx.animation.KeyFrame)spawner.getKeyFrames().get(0)).getTime().add(javafx.util.Duration.millis(100));
-                }
-                
-                if (gameMap.getEnemyPath() != null) {
-                    enemy.setPath(gameMap.getEnemyPath());
-                    enemies.add(enemy);
-                }
-            })
+                new javafx.animation.KeyFrame(javafx.util.Duration.seconds(baseDelay), e -> {
+                    // Get the start point from the map
+                    Point2D startPoint = gameMap.getStartPoint();
+                    if (startPoint == null) {
+                        System.err.println("No start point found on map!");
+                        return;
+                    }
+
+                    // Determine if we should spawn a goblin or knight
+                    Enemy enemy;
+                    if (remainingGoblins[0] > 0) {
+                        enemy = new Goblin(startPoint.getX(), startPoint.getY());
+                        remainingGoblins[0]--;
+                    } else {
+                        enemy = new Knight(startPoint.getX(), startPoint.getY());
+                        remainingKnights[0]--;
+                    }
+
+                    // Set the path for the enemy
+                    GamePath enemyPath = gameMap.getEnemyPath();
+                    if (enemyPath != null) {
+                        enemy.setPath(enemyPath);
+                        enemies.add(enemy);
+                        System.out.println("Spawned " + enemy.getClass().getSimpleName() +
+                                " at (" + startPoint.getX() + "," + startPoint.getY() + ")");
+                    } else {
+                        System.err.println("No enemy path found on map!");
+                    }
+                })
         );
-        
+
         // Mark spawning as complete when timeline finishes
-        spawner.setOnFinished(e -> isSpawningEnemies = false);
-        
+        spawner.setOnFinished(e -> {
+            isSpawningEnemies = false;
+            System.out.println("Wave " + currentWave + " spawning complete");
+        });
+
         // Start the timeline
         spawner.play();
     }
-    
+
     /**
      * Sells a tower at the specified position if one exists there.
-     * 
+     *
      * @param x x coordinate (pixels)
      * @param y y coordinate (pixels)
      * @return the amount of gold refunded, or 0 if no tower was sold
@@ -350,19 +373,19 @@ public class GameController {
         // Convert to tile coordinates
         int tileX = (int) (x / 32);
         int tileY = (int) (y / 32);
-        
+
         // Find a tower at this location
         Tower towerToSell = null;
         for (Tower tower : towers) {
             int towerTileX = (int) (tower.getCenterX() / 32);
             int towerTileY = (int) (tower.getCenterY() / 32);
-            
+
             if (towerTileX == tileX && towerTileY == tileY) {
                 towerToSell = tower;
                 break;
             }
         }
-        
+
         // If we found a tower, sell it
         if (towerToSell != null) {
             int refundAmount = towerToSell.getSellRefund();
@@ -370,13 +393,13 @@ public class GameController {
             playerGold += refundAmount;
             return refundAmount;
         }
-        
+
         return 0;
     }
-    
+
     /**
      * Select a tower at the specified position.
-     * 
+     *
      * @param x x coordinate (pixels)
      * @param y y coordinate (pixels)
      * @return the selected tower or null if none exists at that position
@@ -386,72 +409,72 @@ public class GameController {
         for (Tower tower : towers) {
             tower.setSelected(false);
         }
-        
+
         // Convert to tile coordinates
         int tileX = (int) (x / 32);
         int tileY = (int) (y / 32);
-        
+
         // Find a tower at this location
         Tower selectedTower = null;
         for (Tower tower : towers) {
             int towerTileX = (int) (tower.getCenterX() / 32);
             int towerTileY = (int) (tower.getCenterY() / 32);
-            
+
             if (towerTileX == tileX && towerTileY == tileY) {
                 tower.setSelected(true);
                 selectedTower = tower;
                 break;
             }
         }
-        
+
         return selectedTower;
     }
-    
+
     /**
      * Check if game speed is accelerated.
-     * 
+     *
      * @return true if speed is accelerated, false otherwise
      */
     public boolean isSpeedAccelerated() {
         return speedAccelerated;
     }
-    
+
     /**
      * Set the game speed acceleration.
-     * 
+     *
      * @param speedAccelerated true to accelerate, false for normal speed
      */
     public void setSpeedAccelerated(boolean speedAccelerated) {
         this.speedAccelerated = speedAccelerated;
     }
-    
+
     /**
      * Getters and setters
      */
     public GameMap getGameMap() {
         return gameMap;
     }
-    
+
     public List<Tower> getTowers() {
         return towers;
     }
-    
+
     public List<Enemy> getEnemies() {
         return enemies;
     }
-    
+
     public int getPlayerGold() {
         return playerGold;
     }
-    
+
     public int getPlayerLives() {
         return playerLives;
     }
-    
+
     public int getCurrentWave() {
         return currentWave;
     }
-    
+
     public boolean isGameOver() {
         return gameOver;
     }

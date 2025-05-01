@@ -21,7 +21,8 @@ public class Goblin extends Enemy implements Serializable {
     public Goblin(double x, double y) {
         super(x, y, 64, 64, GameSettings.getInstance().getGoblinHealth(), 
               GameSettings.getInstance().getGoblinSpeed(),
-              GameSettings.getInstance().getGoldPerGoblin());
+              GameSettings.getInstance().getGoldPerGoblin(),
+              EnemyType.GOBLIN);
         
         // Set image file from assets
         String imagePath = System.getProperty("user.dir") + File.separator + 

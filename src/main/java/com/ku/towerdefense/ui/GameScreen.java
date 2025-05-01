@@ -5,6 +5,7 @@ import com.ku.towerdefense.model.entity.ArcherTower;
 import com.ku.towerdefense.model.entity.ArtilleryTower;
 import com.ku.towerdefense.model.entity.MageTower;
 import com.ku.towerdefense.model.entity.Tower;
+
 import javafx.animation.AnimationTimer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -13,26 +14,28 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 /**
  * The main game screen where the tower defense gameplay takes place.
  */
+
+
 public class GameScreen extends BorderPane {
     private final Stage primaryStage;
     private final GameController gameController;
     private Canvas gameCanvas;
     private GameRenderTimer renderTimer;
     private Tower selectedTower;
+    private boolean isPaused = false;
     
     // Custom AnimationTimer class with additional methods
     private class GameRenderTimer extends AnimationTimer {
+        private long lastTime = -1;
         private String statusMessage = "Ready to play!";
         private long statusTimestamp = 0;
         private double mouseX = 0;
@@ -42,31 +45,31 @@ public class GameScreen extends BorderPane {
         @Override
         public void handle(long now) {
             GraphicsContext gc = gameCanvas.getGraphicsContext2D();
-            
+
             // Clear the canvas
             gc.clearRect(0, 0, gameCanvas.getWidth(), gameCanvas.getHeight());
-            
+
             // Render game elements
             gameController.render(gc);
-            
+
             // Render tower preview if a tower is selected (follow mouse)
             if (selectedTower != null && mouseInCanvas) {
                 // Convert to grid coordinates
                 int tileX = (int)(mouseX / 32);
                 int tileY = (int)(mouseY / 32);
-                
+
                 // Get center of the tile
                 double centerX = tileX * 32 + 16;
                 double centerY = tileY * 32 + 16;
-                
+
                 // Check if we can place here
                 boolean canPlace = gameController.getGameMap().canPlaceTower(centerX, centerY);
-                
+
                 // Draw a preview circle
                 gc.setGlobalAlpha(0.5);
                 gc.setFill(canPlace ? javafx.scene.paint.Color.GREEN : javafx.scene.paint.Color.RED);
                 gc.fillOval(centerX - 16, centerY - 16, 32, 32);
-                
+
                 // Draw range preview
                 gc.setStroke(javafx.scene.paint.Color.WHITE);
                 gc.setGlobalAlpha(0.2);
@@ -77,10 +80,20 @@ public class GameScreen extends BorderPane {
                 } else if (selectedTower instanceof MageTower) {
                     gc.strokeOval(centerX - 140, centerY - 140, 280, 280);
                 }
-                
+
                 gc.setGlobalAlpha(1.0);
             }
-            
+            if (lastTime < 0) lastTime = now;
+            double deltaTime = (now - lastTime) / 1_000_000_000.0;
+            lastTime = now;
+
+            gameController.update(deltaTime);
+
+
+            gc.clearRect(0, 0, gameCanvas.getWidth(), gameCanvas.getHeight());
+
+            gameController.render(gc);
+
             // Status message (fades after 3 seconds)
             long currentTime = System.currentTimeMillis();
             if (currentTime - statusTimestamp < 3000) {
@@ -190,81 +203,52 @@ public class GameScreen extends BorderPane {
      * @return the top bar container
      */
     private HBox createTopBar() {
-        HBox topBar = new HBox(30);
-        topBar.setAlignment(Pos.CENTER_LEFT);
-        topBar.setPadding(new Insets(10));
-        topBar.setStyle("-fx-background-color: #333333;");
-        
-        // Load game UI image to create status indicators
-        javafx.scene.image.Image gameUIImage = UIAssets.getImage("GameUI");
-        
-        // Lives indicator with icon
-        ImageView livesIcon = null;
-        if (gameUIImage != null) {
-            // Extract the hearts icon from the UI image (adjust the values based on actual image)
-            livesIcon = new ImageView(gameUIImage);
-            livesIcon.setViewport(new javafx.geometry.Rectangle2D(0, 0, 32, 32));
+    HBox topBar = new HBox(30);  // 30 pixels spacing between elements
+    topBar.setAlignment(Pos.CENTER_LEFT);
+    topBar.setPadding(new Insets(10));
+    topBar.setStyle("-fx-background-color: #333333;");
+
+    // Lives indicator
+    Label livesLabel = new Label("❤️ Lives: " + gameController.getPlayerLives());
+    livesLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
+
+    // Gold indicator
+    Label goldLabel = new Label("💰 Gold: " + gameController.getPlayerGold());
+    goldLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
+
+    // Wave indicator
+    Label waveLabel = new Label("🌊 Wave: " + gameController.getCurrentWave());
+    waveLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
+
+    // Pause/Resume button
+    Button pauseButton = new Button("⏸️ Pause");
+    UIAssets.styleButton(pauseButton, "blue");
+    pauseButton.setOnAction(e -> togglePause());
+
+    // Menu button
+    Button menuButton = new Button("Menu");
+    UIAssets.styleButton(menuButton, "blue");
+    menuButton.setOnAction(e -> openPauseMenu());
+
+    // Add all elements to the top bar
+    topBar.getChildren().addAll(livesLabel, goldLabel, waveLabel, pauseButton, menuButton);
+
+    // Update the labels when values change
+    AnimationTimer updateLabels = new AnimationTimer() {
+        @Override
+        public void handle(long now) {
+            livesLabel.setText("❤️ Lives: " + gameController.getPlayerLives());
+            goldLabel.setText("💰 Gold: " + gameController.getPlayerGold());
+            waveLabel.setText("🌊 Wave: " + gameController.getCurrentWave());
+            
+            // Update pause button text based on game state
+            pauseButton.setText(isPaused ? "▶️ Resume" : "⏸️ Pause");
         }
-        
-        Label livesLabel = new Label("Lives: " + gameController.getPlayerLives());
-        livesLabel.getStyleClass().add("game-info-text");
-        
-        HBox livesBox = new HBox(5, livesIcon != null ? livesIcon : new javafx.scene.layout.Pane(), livesLabel);
-        livesBox.setAlignment(Pos.CENTER_LEFT);
-        
-        // Gold indicator with icon
-        ImageView goldIcon = null;
-        if (gameUIImage != null) {
-            // Extract the coin icon from the UI image (adjust the values based on actual image)
-            goldIcon = new ImageView(gameUIImage);
-            goldIcon.setViewport(new javafx.geometry.Rectangle2D(32, 0, 32, 32));
-        }
-        
-        Label goldLabel = new Label("Gold: " + gameController.getPlayerGold());
-        goldLabel.getStyleClass().add("game-info-text");
-        
-        HBox goldBox = new HBox(5, goldIcon != null ? goldIcon : new javafx.scene.layout.Pane(), goldLabel);
-        goldBox.setAlignment(Pos.CENTER_LEFT);
-        
-        // Wave indicator with icon
-        ImageView waveIcon = null;
-        if (gameUIImage != null) {
-            // Extract the wave icon from the UI image (adjust the values based on actual image)
-            waveIcon = new ImageView(gameUIImage);
-            waveIcon.setViewport(new javafx.geometry.Rectangle2D(64, 0, 32, 32));
-        }
-        
-        Label waveLabel = new Label("Wave: " + gameController.getCurrentWave());
-        waveLabel.getStyleClass().add("game-info-text");
-        
-        HBox waveBox = new HBox(5, waveIcon != null ? waveIcon : new javafx.scene.layout.Pane(), waveLabel);
-        waveBox.setAlignment(Pos.CENTER_LEFT);
-        
-        // Menu button
-        Button menuButton = new Button("Menu");
-        UIAssets.styleButton(menuButton, "blue");
-        menuButton.setOnAction(e -> openPauseMenu());
-        
-        topBar.getChildren().addAll(livesBox, goldBox, waveBox, menuButton);
-        
-        // Update the labels when values change
-        AnimationTimer updateLabels = new AnimationTimer() {
-            @Override
-            public void handle(long now) {
-                livesLabel.setText("Lives: " + gameController.getPlayerLives());
-                goldLabel.setText("Gold: " + gameController.getPlayerGold());
-                waveLabel.setText("Wave: " + gameController.getCurrentWave());
-                
-                if (gameController.isGameOver()) {
-                    stop();
-                    showGameOverScreen();
-                }
-            }
-        };
-        updateLabels.start();
-        
-        return topBar;
-    }
+    };
+    updateLabels.start();
+
+    return topBar;
+}
     
     /**
      * Create the sidebar with tower selection and game controls.
@@ -335,6 +319,19 @@ public class GameScreen extends BorderPane {
         );
         
         return sidebar;
+    }
+    private void togglePause() {
+        isPaused = !isPaused;
+        
+        if (isPaused) {
+            // Pause the game
+            renderTimer.stop();
+            gameController.pauseGame();
+        } else {
+            // Resume the game
+            renderTimer.start();
+            gameController.resumeGame();
+        }
     }
     
     /**

@@ -1,14 +1,12 @@
 package com.ku.towerdefense.ui;
 
-import javafx.scene.Cursor;
+import java.util.HashMap;
+import java.util.Map;
+
 import javafx.scene.ImageCursor;
 import javafx.scene.control.Button;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Utility class for loading and managing UI assets.
@@ -29,7 +27,8 @@ public class UIAssets {
      * Load images from the Asset_pack/UI folder.
      */
     private static void loadImages() {
-        String basePath = System.getProperty("user.dir") + File.separator + "Asset_pack" + File.separator + "UI" + File.separator;
+        // Get the base path from the class loader
+        String basePath = "/Asset_pack/UI/";
         
         try {
             // Load all button images
@@ -51,24 +50,17 @@ public class UIAssets {
                 loadImage(key, basePath + file);
             }
             
-            // Load cursor image
-            loadImage("Cursor", basePath + "01.png");
-            
-            // Load tower buttons
-            loadImage("TowerButtons", basePath + "kutowerbuttons4.png");
-            
-            // Load UI elements
+            // Load other UI images
             loadImage("GameUI", basePath + "Coin_Health_Wave.png");
-            
-            // Load ribbon images for UI panels
-            loadImage("RibbonBlue", basePath + "Ribbon_Blue_3Slides.png");
-            loadImage("RibbonRed", basePath + "Ribbon_Red_3Slides.png");
-            loadImage("RibbonYellow", basePath + "Ribbon_Yellow_3Slides.png");
+            loadImage("Ribbon_Blue", basePath + "Ribbon_Blue_3Slides.png");
+            loadImage("Ribbon_Red", basePath + "Ribbon_Red_3Slides.png");
+            loadImage("Ribbon_Yellow", basePath + "Ribbon_Yellow_3Slides.png");
+            loadImage("KUTowerButtons", basePath + "kutowerbuttons4.png");
+            loadImage("01", basePath + "01.png");
             
             System.out.println("UI assets loaded successfully - " + imageCache.size() + " images");
         } catch (Exception e) {
-            System.err.println("Failed to load UI assets: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("Error loading UI assets: " + e.getMessage());
         }
     }
     
@@ -80,21 +72,14 @@ public class UIAssets {
      */
     private static void loadImage(String name, String path) {
         try {
-            File imageFile = new File(path);
-            if (imageFile.exists()) {
-                Image image = new Image(imageFile.toURI().toString());
-                if (!image.isError()) {
-                    imageCache.put(name, image);
-                    System.out.println("Loaded UI asset: " + name);
-                } else {
-                    System.err.println("Error loading image: " + name);
-                }
+            Image image = new Image(UIAssets.class.getResourceAsStream(path));
+            if (image != null) {
+                imageCache.put(name, image);
             } else {
-                System.err.println("Image file not found: " + path);
+                System.err.println("Failed to load image: " + path);
             }
         } catch (Exception e) {
-            System.err.println("Failed to load image " + name + ": " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("Error loading image " + path + ": " + e.getMessage());
         }
     }
     
@@ -103,7 +88,7 @@ public class UIAssets {
      */
     private static void createCustomCursor() {
         try {
-            Image cursorImage = imageCache.get("Cursor");
+            Image cursorImage = imageCache.get("01");
             if (cursorImage != null) {
                 // Hotspot at center of the image
                 customCursor = new ImageCursor(cursorImage, cursorImage.getWidth() / 2, cursorImage.getHeight() / 2);

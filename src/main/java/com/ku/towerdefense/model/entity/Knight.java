@@ -21,7 +21,8 @@ public class Knight extends Enemy implements Serializable {
     public Knight(double x, double y) {
         super(x, y, 64, 64, GameSettings.getInstance().getKnightHealth(), 
               GameSettings.getInstance().getKnightSpeed(),
-              GameSettings.getInstance().getGoldPerKnight());
+              GameSettings.getInstance().getGoldPerKnight(),
+              EnemyType.KNIGHT);
         
         // Set image file from assets
         String imagePath = System.getProperty("user.dir") + File.separator + 

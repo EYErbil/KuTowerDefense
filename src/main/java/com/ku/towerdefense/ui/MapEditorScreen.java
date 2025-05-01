@@ -207,13 +207,16 @@ public class MapEditorScreen extends BorderPane {
         Point startPoint = null;
         Point endPointAdjacent = null;
 
-        // First pass: Check for start and end points
         for (int y = 0; y < currentMap.getHeight(); y++) {
             for (int x = 0; x < currentMap.getWidth(); x++) {
                 TileType type = currentMap.getTileType(x, y);
                 if (type == TileType.START_POINT) {
                     if (hasStart) {
                         showAlert("Validation Error", "Multiple Start Points found. Only one allowed.");
+                        return false;
+                    }
+                    if (x != 0 && x != currentMap.getWidth() - 1 && y != 0 && y != currentMap.getHeight() - 1) {
+                        showAlert("Validation Error", "Start Point must be on the edge of the map.");
                         return false;
                     }
                     hasStart = true;
@@ -240,21 +243,7 @@ public class MapEditorScreen extends BorderPane {
         }
 
         if (!hasStart) {
-            // Check for valid path tiles that could serve as start points
-            for (int y = 0; y < currentMap.getHeight(); y++) {
-                for (int x = 0; x < currentMap.getWidth(); x++) {
-                    if (isValidStartTile(x, y)) {
-                        hasStart = true;
-                        startPoint = new Point(x, y);
-                        break;
-                    }
-                }
-                if (hasStart) break;
-            }
-        }
-
-        if (!hasStart) {
-            showAlert("Validation Error", "No valid start point found. A valid start point must be either a START_POINT tile or a path tile at the edge of the map.");
+            showAlert("Validation Error", "No Start Point found.");
             return false;
         }
         if (!hasEnd) {
@@ -276,59 +265,6 @@ public class MapEditorScreen extends BorderPane {
     }
 
     /**
-     * Checks if a tile at (x,y) is a valid start point.
-     * A valid start point is either:
-     * 1. A START_POINT tile
-     * 2. A path tile at the edge of the map that is not a dead end
-     * Valid configurations:
-     * - Vertical path tiles at the top or bottom edge
-     * - Horizontal path tiles at the left or right edge
-     * - Circular path tiles in the corners
-     */
-    private boolean isValidStartTile(int x, int y) {
-        TileType type = currentMap.getTileType(x, y);
-        
-        // Must be on the edge of the map
-        boolean isOnEdge = x == 0 || x == currentMap.getWidth() - 1 || y == 0 || y == currentMap.getHeight() - 1;
-        if (!isOnEdge) return false;
-
-        // Check if it's a valid path tile
-        switch (type) {
-            case PATH_HORIZONTAL:
-                // Valid if on left or right edge
-                return x == 0 || x == currentMap.getWidth() - 1;
-            case PATH_VERTICAL:
-                // Valid if on top or bottom edge
-                return y == 0 || y == currentMap.getHeight() - 1;
-            case PATH_CIRCLE_N:
-            case PATH_CIRCLE_S:
-                // Treated as horizontal - valid if on left or right edge
-                return x == 0 || x == currentMap.getWidth() - 1;
-            case PATH_CIRCLE_W:
-            case PATH_CIRCLE_E:
-                // Treated as vertical - valid if on top or bottom edge
-                return y == 0 || y == currentMap.getHeight() - 1;
-            case PATH_CIRCLE_NW:
-                // Valid if on right edge or bottom edge
-                return x == currentMap.getWidth() - 1 || y == currentMap.getHeight() - 1;
-            case PATH_CIRCLE_NE:
-                // Valid if on left edge or bottom edge
-                return x == 0 || y == currentMap.getHeight() - 1;
-            case PATH_CIRCLE_SW:
-                // Valid if on right edge or top edge
-                return x == currentMap.getWidth() - 1 || y == 0;
-            case PATH_CIRCLE_SE:
-                // Valid if on left edge or top edge
-                return x == 0 || y == 0;
-            case START_POINT:
-                // Always valid if it's a START_POINT tile
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    /**
      * Checks if the 2x2 castle structure is correctly placed starting with the
      * bottom-left at (x, y).
      * Assumes (x, y) is TileType.END_POINT.
@@ -340,11 +276,10 @@ public class MapEditorScreen extends BorderPane {
             return false;
         }
 
-        // Check if the castle structure is complete
         boolean structureOk = currentMap.getTileType(baseX, baseY) == TileType.END_POINT &&
-                currentMap.getTileType(baseX + 1, baseY) == TileType.CASTLE2 &&
-                currentMap.getTileType(baseX, baseY + 1) == TileType.CASTLE3 &&
-                currentMap.getTileType(baseX + 1, baseY + 1) == TileType.CASTLE4;
+                currentMap.getTileType(baseX + 1, baseY) == TileType.CASTLE4 &&
+                currentMap.getTileType(baseX, baseY + 1) == TileType.CASTLE1 &&
+                currentMap.getTileType(baseX + 1, baseY + 1) == TileType.CASTLE2;
 
         if (!structureOk) {
             System.err.println("Castle structure check failed at (" + baseX + "," + baseY + ")");
