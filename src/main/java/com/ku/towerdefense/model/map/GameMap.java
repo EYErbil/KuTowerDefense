@@ -1,18 +1,10 @@
 package com.ku.towerdefense.model.map;
 
-import com.ku.towerdefense.model.Path;
-import com.ku.towerdefense.model.PathPoint;
+import com.ku.towerdefense.model.GamePath;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +19,7 @@ public class GameMap implements Serializable {
     private int width;
     private int height;
     private Tile[][] tiles;
-    private Path enemyPath;
+    private GamePath enemyPath;
     private List<int[]> pathPoints;
 
     // For caching the start and end points
@@ -36,7 +28,7 @@ public class GameMap implements Serializable {
 
     /**
      * Constructor for a new game map.
-     * 
+     *
      * @param name   map name
      * @param width  width in tiles
      * @param height height in tiles
@@ -62,7 +54,7 @@ public class GameMap implements Serializable {
 
     /**
      * Get a tile at the specified coordinates.
-     * 
+     *
      * @param x x coordinate
      * @param y y coordinate
      * @return the tile at the coordinates, or null if out of bounds
@@ -76,7 +68,7 @@ public class GameMap implements Serializable {
 
     /**
      * Set the type of a tile at the specified coordinates.
-     * 
+     *
      * @param x    x coordinate
      * @param y    y coordinate
      * @param type the new tile type
@@ -103,7 +95,7 @@ public class GameMap implements Serializable {
 
     /**
      * Clear all tiles of a specific type in the map
-     * 
+     *
      * @param typeToRemove the tile type to remove
      */
     private void clearTileTypeInMap(TileType typeToRemove) {
@@ -118,7 +110,7 @@ public class GameMap implements Serializable {
 
     /**
      * Get the type of a tile at the specified coordinates.
-     * 
+     *
      * @param x x coordinate
      * @param y y coordinate
      * @return the tile type, or null if out of bounds
@@ -202,22 +194,23 @@ public class GameMap implements Serializable {
             // Add point to path (in pixels)
             pathPoints.add(new int[] { currentX * ts + ts / 2, currentY * ts + ts / 2 });
 
-            // Mark as path tile
-            if (getTile(currentX, currentY) != null &&
-                    getTile(currentX, currentY).getType() != TileType.START_POINT &&
-                    getTile(currentX, currentY).getType() != TileType.END_POINT) {
-                getTile(currentX, currentY).setType(TileType.PATH_VERTICAL);
+            // Mark as path tile only if it's currently GRASS
+            if (currentTile != null && currentTile.getType() == TileType.GRASS) {
+                currentTile.setType(TileType.PATH_VERTICAL);
             }
         }
 
-        // Create path object
-        this.enemyPath = new Path(pathPoints);
+        // Add the end point
+        pathPoints.add(new int[] { endTile.getX() * ts + ts / 2, endTile.getY() * ts + ts / 2 });
+
+        // Create and set the enemy path with the generated points
+        this.enemyPath = new GamePath(pathPoints);
         System.out.println("Generated path with " + pathPoints.size() + " points");
     }
 
     /**
      * Get the start point for enemies
-     * 
+     *
      * @return the start point coordinates
      */
     public Point2D getStartPoint() {
@@ -245,7 +238,7 @@ public class GameMap implements Serializable {
 
     /**
      * Get the end point for enemies
-     * 
+     *
      * @return the end point coordinates
      */
     public Point2D getEndPoint() {
@@ -273,7 +266,7 @@ public class GameMap implements Serializable {
 
     /**
      * Check if a tower can be placed at the specified coordinates.
-     * 
+     *
      * @param x x coordinate
      * @param y y coordinate
      * @return true if a tower can be placed, false otherwise
@@ -289,7 +282,7 @@ public class GameMap implements Serializable {
 
     /**
      * Render the map on the canvas.
-     * 
+     *
      * @param gc the graphics context to draw on
      */
     public void render(GraphicsContext gc) {
@@ -349,25 +342,25 @@ public class GameMap implements Serializable {
 
     /**
      * Get the enemy path for this map.
-     * 
+     *
      * @return the enemy path
      */
-    public Path getEnemyPath() {
+    public GamePath getEnemyPath() {
         return enemyPath;
     }
 
     /**
      * Set the enemy path for this map.
-     * 
+     *
      * @param enemyPath the enemy path to set
      */
-    public void setEnemyPath(Path enemyPath) {
+    public void setEnemyPath(GamePath enemyPath) {
         this.enemyPath = enemyPath;
     }
 
     /**
      * Get the map name.
-     * 
+     *
      * @return the map name
      */
     public String getName() {
@@ -376,7 +369,7 @@ public class GameMap implements Serializable {
 
     /**
      * Set the map name.
-     * 
+     *
      * @param name the map name to set
      */
     public void setName(String name) {
@@ -385,7 +378,7 @@ public class GameMap implements Serializable {
 
     /**
      * Get the map width in tiles.
-     * 
+     *
      * @return the map width
      */
     public int getWidth() {
@@ -394,7 +387,7 @@ public class GameMap implements Serializable {
 
     /**
      * Get the map height in tiles.
-     * 
+     *
      * @return the map height
      */
     public int getHeight() {
