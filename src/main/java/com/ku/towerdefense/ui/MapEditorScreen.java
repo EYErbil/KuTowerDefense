@@ -175,24 +175,22 @@ public class MapEditorScreen extends BorderPane {
         TextArea textArea = new TextArea(
                 "Map Requirements:\n" +
                         "- Must have exactly one Start Point (Path Start).\n" +
-                        "- Start Point must be on an edge tile.\n" +
                         "- Must have exactly one End Point (Castle base - bottom-left tile).\n" +
+                        "- Start and End points must be the only points connected to the edge of the map through walkable tiles.\n" +
                         "- End Point must be represented by a full 2x2 Castle structure placed on Grass.\n" +
-                        "- There must be a valid path (using Path tiles) from the Start Point to a tile adjacent to the End Point (Castle).\n"
-                        +
+                        "- There must be a valid path (using Path tiles) from the Start Point to a tile adjacent to the End Point (Castle).\n" +
                         "- The path must be walkable (Path tiles).\n" +
-                        "- Tower Slots can only be placed on Grass tiles.\n\n" +
+                        "- Tower Slots can only be placed on Grass tiles.\n" +
+                        "- Map must have at least 4 tower slots.\n\n" +
                         "Editor Usage:\n" +
                         "- Select a tile from the left palette.\n" +
                         "- Click on the canvas to place the selected tile.\n" +
-                        "- Use the 'Set Start' button in the top toolbar, then click on an edge tile to place the Start Point.\n"
-                        +
-                        "- To place the Castle (End Point), select the Castle icon (bottom-left part) and click on the desired top-left Grass tile for the 2x2 structure.\n"
-                        +
+                        "- Use the 'Set Start' button in the top toolbar, then click on a tile to place the Start Point.\n" +
+                        "- To place the Castle (End Point), select the Castle icon (bottom-left part) and click on the desired top-left Grass tile for the 2x2 structure.\n" +
                         "- Use zoom controls (+/-) or Reset Zoom.\n" +
                         "- Use 'Resize Map' in the top toolbar to change map dimensions (clears Start/End/Castle).\n" +
                         "- Save/Load maps using the buttons below.\n" +
-                        "- Validate Map checks if the current map meets the basic requirements.");
+                        "- Validate Map checks if the current map meets all requirements.");
         textArea.setEditable(false);
         textArea.setWrapText(true);
 
@@ -201,13 +199,73 @@ public class MapEditorScreen extends BorderPane {
         helpAlert.showAndWait();
     }
 
+    private boolean hasDisconnectedTiles() {
+        boolean[][] visited = new boolean[currentMap.getWidth()][currentMap.getHeight()];
+        List<Point> pathTiles = new ArrayList<>();
+
+        // First, find all path tiles
+        for (int y = 0; y < currentMap.getHeight(); y++) {
+            for (int x = 0; x < currentMap.getWidth(); x++) {
+                TileType type = currentMap.getTileType(x, y);
+                if (type == TileType.PATH_HORIZONTAL || type == TileType.PATH_VERTICAL ||
+                    type == TileType.PATH_CIRCLE_N || type == TileType.PATH_CIRCLE_S ||
+                    type == TileType.PATH_CIRCLE_W || type == TileType.PATH_CIRCLE_E ||
+                    type == TileType.PATH_CIRCLE_NW || type == TileType.PATH_CIRCLE_NE ||
+                    type == TileType.PATH_CIRCLE_SW || type == TileType.PATH_CIRCLE_SE ||
+                    type == TileType.START_POINT) {
+                    pathTiles.add(new Point(x, y));
+                }
+            }
+        }
+
+        if (pathTiles.isEmpty()) {
+            return false; // No path tiles means no disconnected ones
+        }
+
+        // Start BFS from the first path tile
+        List<Point> queue = new ArrayList<>();
+        Point start = pathTiles.get(0);
+        queue.add(start);
+        visited[start.x][start.y] = true;
+        int connectedCount = 1;
+
+        // BFS to find all connected path tiles
+        while (!queue.isEmpty()) {
+            Point current = queue.remove(0);
+            int[][] directions = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}}; // Left, Right, Up, Down
+
+            for (int[] dir : directions) {
+                int nx = current.x + dir[0];
+                int ny = current.y + dir[1];
+
+                if (nx >= 0 && nx < currentMap.getWidth() && ny >= 0 && ny < currentMap.getHeight() && !visited[nx][ny]) {
+                    TileType type = currentMap.getTileType(nx, ny);
+                    if (type == TileType.PATH_HORIZONTAL || type == TileType.PATH_VERTICAL ||
+                        type == TileType.PATH_CIRCLE_N || type == TileType.PATH_CIRCLE_S ||
+                        type == TileType.PATH_CIRCLE_W || type == TileType.PATH_CIRCLE_E ||
+                        type == TileType.PATH_CIRCLE_NW || type == TileType.PATH_CIRCLE_NE ||
+                        type == TileType.PATH_CIRCLE_SW || type == TileType.PATH_CIRCLE_SE ||
+                        type == TileType.START_POINT) {
+                        visited[nx][ny] = true;
+                        queue.add(new Point(nx, ny));
+                        connectedCount++;
+                    }
+                }
+            }
+        }
+
+        // If we didn't visit all path tiles, there are disconnected ones
+        return connectedCount != pathTiles.size();
+    }
+
     private boolean validateMap() {
         boolean hasStart = false;
-        boolean hasEnd = false;
         Point startPoint = null;
-        Point endPointAdjacent = null;
+        Point endPoint = null;
+        int towerSlotCount = 0;
+        List<Point> validStartPoints = new ArrayList<>();
 
-        // First pass: Check for start and end points
+        // First find all valid start points (edge-connected path tiles)
         for (int y = 0; y < currentMap.getHeight(); y++) {
             for (int x = 0; x < currentMap.getWidth(); x++) {
                 TileType type = currentMap.getTileType(x, y);
@@ -218,61 +276,149 @@ public class MapEditorScreen extends BorderPane {
                     }
                     hasStart = true;
                     startPoint = new Point(x, y);
-                } else if (type == TileType.END_POINT) {
-                    if (hasEnd) {
-                        showAlert("Validation Error", "Multiple End Points (Castle bases) found. Only one allowed.");
-                        return false;
-                    }
-                    if (!isCastleComplete(x, y)) {
-                        showAlert("Validation Error", "Incomplete or invalid Castle structure found at (" + x + "," + y
-                                + "). Ensure a full 2x2 castle is placed on Grass.");
-                        return false;
-                    }
-                    hasEnd = true;
-                    endPointAdjacent = findAdjacentWalkable(x, y);
-                    if (endPointAdjacent == null) {
-                        showAlert("Validation Error",
-                                "Castle at (" + x + "," + y + ") must have an adjacent Path tile for the enemy route.");
-                        return false;
-                    }
+                } else if (type == TileType.TOWER_SLOT) {
+                    towerSlotCount++;
+                }
+
+                if (isValidStartTile(x, y)) {
+                    validStartPoints.add(new Point(x, y));
                 }
             }
         }
 
+        // Check if there are exactly two valid start points
+        if (validStartPoints.size() != 2) {
+            showAlert("Validation Error", "There must be exactly two valid start points (edge-connected path tiles). Found " + validStartPoints.size() + ".");
+            return false;
+        }
+
         if (!hasStart) {
-            // Check for valid path tiles that could serve as start points
-            for (int y = 0; y < currentMap.getHeight(); y++) {
-                for (int x = 0; x < currentMap.getWidth(); x++) {
-                    if (isValidStartTile(x, y)) {
-                        hasStart = true;
-                        startPoint = new Point(x, y);
-                        break;
-                    }
-                }
-                if (hasStart) break;
+            showAlert("Validation Error", "No Start Point found.");
+            return false;
+        }
+
+        // Verify that the start point is not a grass tile
+        if (currentMap.getTileType(startPoint.x, startPoint.y) == TileType.GRASS) {
+            showAlert("Validation Error", "Start Point cannot be placed on a grass tile.");
+            return false;
+        }
+
+        // Verify that the start point is one of the valid start points
+        boolean startIsValid = false;
+        for (Point p : validStartPoints) {
+            if (p.x == startPoint.x && p.y == startPoint.y) {
+                startIsValid = true;
+                break;
             }
         }
 
-        if (!hasStart) {
-            showAlert("Validation Error", "No valid start point found. A valid start point must be either a START_POINT tile or a path tile at the edge of the map.");
-            return false;
-        }
-        if (!hasEnd) {
-            showAlert("Validation Error", "No End Point (Castle) found.");
-            return false;
-        }
-        if (startPoint == null || endPointAdjacent == null) {
-            showAlert("Validation Error", "Internal error: Start or End adjacent point not determined.");
+        if (!startIsValid) {
+            showAlert("Validation Error", "Start Point must be placed on one of the two valid start points (edge-connected path tiles).");
             return false;
         }
 
-        if (!isPathConnected(startPoint, endPointAdjacent)) {
-            showAlert("Validation Error", "No valid path found from Start Point to the End Point (Castle).");
+        // Find the other valid start point (which becomes the end point)
+        for (Point p : validStartPoints) {
+            if (p.x != startPoint.x || p.y != startPoint.y) {
+                endPoint = p;
+                break;
+            }
+        }
+
+        if (endPoint == null) {
+            showAlert("Validation Error", "Could not determine End Point from valid start points.");
+            return false;
+        }
+
+        // Check for disconnected tiles
+        if (hasDisconnectedTiles()) {
+            showAlert("Validation Error", "Map contains disconnected path tiles. All path tiles must be connected.");
+            return false;
+        }
+
+        // Check minimum tower slots
+        if (towerSlotCount < 4) {
+            showAlert("Validation Error", "Map must have at least 4 tower slots. Currently has " + towerSlotCount + ".");
+            return false;
+        }
+
+        // Check path connectivity between start and end points
+        if (!isPathConnected(startPoint, endPoint)) {
+            showAlert("Validation Error", "No valid path found from Start Point to End Point.");
             return false;
         }
 
         showAlert("Validation Success", "Map validation successful!");
         return true;
+    }
+
+    private boolean canSetAsStartPoint(int x, int y) {
+        // Check if it's a grass tile
+        if (currentMap.getTileType(x, y) == TileType.GRASS) {
+            showAlert("Invalid Start Point", "Start Point cannot be placed on a grass tile.");
+            return false;
+        }
+
+        // Check if it's a valid start tile (edge-connected path tile)
+        if (!isValidStartTile(x, y)) {
+            showAlert("Invalid Start Point", "Start Point must be placed on an edge-connected path tile.");
+            return false;
+        }
+
+        // Count valid start points
+        List<Point> validStartPoints = new ArrayList<>();
+        for (int ty = 0; ty < currentMap.getHeight(); ty++) {
+            for (int tx = 0; tx < currentMap.getWidth(); tx++) {
+                if (isValidStartTile(tx, ty)) {
+                    validStartPoints.add(new Point(tx, ty));
+                }
+            }
+        }
+
+        // Check if there are exactly two valid start points
+        if (validStartPoints.size() != 2) {
+            showAlert("Invalid Start Point", "There must be exactly two valid start points (edge-connected path tiles). Found " + validStartPoints.size() + ".");
+            return false;
+        }
+
+        // Check if the selected point is one of the valid start points
+        boolean isOneOfValidPoints = false;
+        for (Point p : validStartPoints) {
+            if (p.x == x && p.y == y) {
+                isOneOfValidPoints = true;
+                break;
+            }
+        }
+
+        if (!isOneOfValidPoints) {
+            showAlert("Invalid Start Point", "Start Point must be placed on one of the two valid start points (edge-connected path tiles).");
+            return false;
+        }
+
+        return true;
+    }
+
+    private void handleStartPointPlacement(int x, int y) {
+        if (!canSetAsStartPoint(x, y)) {
+            return;
+        }
+
+        // Clear any existing start point
+        for (int ty = 0; ty < currentMap.getHeight(); ty++) {
+            for (int tx = 0; tx < currentMap.getWidth(); tx++) {
+                if (currentMap.getTileType(tx, ty) == TileType.START_POINT) {
+                    currentMap.setTileType(tx, ty, TileType.PATH_HORIZONTAL); // Or whatever the original tile type was
+                }
+            }
+        }
+
+        // Set the new start point
+        currentMap.setTileType(x, y, TileType.START_POINT);
+        canvasView.renderMap();
+    }
+
+    private boolean isOnEdge(int x, int y) {
+        return x == 0 || x == currentMap.getWidth() - 1 || y == 0 || y == currentMap.getHeight() - 1;
     }
 
     /**
@@ -562,5 +708,44 @@ public class MapEditorScreen extends BorderPane {
         System.out.println("Map resized to: " + newWidth + "x" + newHeight);
         showAlert("Map Resized",
                 "Map resized to " + newWidth + "x" + newHeight + ". Start/End points may need resetting.");
+    }
+
+    private boolean isConnectedToEdge(int x, int y) {
+        boolean[][] visited = new boolean[currentMap.getWidth()][currentMap.getHeight()];
+        List<Point2D> queue = new ArrayList<>();
+        
+        queue.add(new Point2D(x, y));
+        visited[x][y] = true;
+
+        int head = 0;
+        while (head < queue.size()) {
+            Point2D current = queue.get(head++);
+            int cx = (int) current.getX();
+            int cy = (int) current.getY();
+
+            // If we reach the edge, return true
+            if (cx == 0 || cx == currentMap.getWidth() - 1 || cy == 0 || cy == currentMap.getHeight() - 1) {
+                return true;
+            }
+
+            // Check all four directions
+            int[] dx = { 0, 0, -1, 1 };
+            int[] dy = { -1, 1, 0, 0 };
+
+            for (int i = 0; i < 4; i++) {
+                int nextX = cx + dx[i];
+                int nextY = cy + dy[i];
+
+                if (nextX >= 0 && nextX < currentMap.getWidth() && nextY >= 0 && nextY < currentMap.getHeight()) {
+                    Tile neighbor = currentMap.getTile(nextX, nextY);
+                    if (!visited[nextX][nextY] && neighbor != null && neighbor.isWalkable()) {
+                        visited[nextX][nextY] = true;
+                        queue.add(new Point2D(nextX, nextY));
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 }

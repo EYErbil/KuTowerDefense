@@ -246,18 +246,15 @@ public class MapEditorCanvasView extends VBox {
             showAlert("Invalid Placement", "Placement out of bounds.");
             return;
         }
-        boolean onEdge = (x == 0 || x == gameMap.getWidth() - 1 || y == 0 || y == gameMap.getHeight() - 1);
-        if (!onEdge) {
-            showAlert("Invalid Placement", "Start Point must be placed on the edge.");
-            return;
-        }
+
         Tile targetTile = gameMap.getTile(x, y);
         if (targetTile != null && targetTile.getType() != TileType.GRASS && !targetTile.isWalkable()) {
             if (targetTile.getType() == TileType.END_POINT || targetTile.getType() == TileType.CASTLE1
-                    || /* ... */ targetTile.getType() == TileType.CASTLE4) {
+                    || targetTile.getType() == TileType.CASTLE2 || targetTile.getType() == TileType.CASTLE3
+                    || targetTile.getType() == TileType.CASTLE4) {
                 showAlert("Invalid Placement", "Start Point cannot overlap the Castle/End Point.");
             } else {
-                showAlert("Invalid Placement", "Start Point can only be placed on Grass or Path tiles on the edge.");
+                showAlert("Invalid Placement", "Start Point can only be placed on Grass or Path tiles.");
             }
             return;
         }
@@ -310,6 +307,14 @@ public class MapEditorCanvasView extends VBox {
             showAlert("Invalid Placement", "Castle placement out of bounds.");
             return;
         }
+
+        // Check if castle is at edge
+        boolean isAtEdge = (x1 == 0 || x2 == gameMap.getWidth() - 1 || y1 == 0 || y3 == gameMap.getHeight() - 1);
+        if (!isAtEdge) {
+            showAlert("Invalid Placement", "Castle must be placed at the edge of the map.");
+            return;
+        }
+
         TileType[] targetTypes = { gameMap.getTileType(x1, y1), gameMap.getTileType(x2, y2),
                 gameMap.getTileType(x3, y3), gameMap.getTileType(x4, y4) };
         for (TileType type : targetTypes) {
