@@ -176,6 +176,21 @@ public class Tile implements Serializable {
         if (type == TileType.END_POINT) {
             // Special case for END_POINT (Castle) - it should be a 2x2 tile structure
             renderEndPoint(gc, renderTileSize);
+        } else if (type == TileType.START_POINT) {
+            // For START_POINT, render the tile with an indicator overlay
+            if (image != null && !image.isError()) {
+                // Standard rendering for the base tile
+                gc.drawImage(image, x * renderTileSize, y * renderTileSize,
+                        renderTileSize, renderTileSize);
+                
+                // No additional indicator here - we'll add those in MapEditorCanvasView
+                // for better visual separation of game data and editor UI
+            } else {
+                // Fallback for missing images
+                gc.setFill(Color.LIGHTGREEN);
+                gc.fillRect(x * renderTileSize, y * renderTileSize,
+                        renderTileSize, renderTileSize);
+            }
         } else if (image != null && !image.isError()) {
             // Standard rendering for normal tiles
             gc.drawImage(image, x * renderTileSize, y * renderTileSize,

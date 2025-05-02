@@ -152,42 +152,144 @@ public class MapEditorCanvasView extends VBox {
     // --- Rendering ---
 
     public void renderMap() {
-        System.out.println("--- CanvasView.renderMap() called ---");
-        GraphicsContext gc = mapCanvas.getGraphicsContext2D();
-        gc.clearRect(0, 0, mapCanvas.getWidth(), mapCanvas.getHeight());
+        if (gameMap == null) return;
 
-        for (int y = 0; y < gameMap.getHeight(); y++) {
-            for (int x = 0; x < gameMap.getWidth(); x++) {
+        int mapWidth = gameMap.getWidth();
+        int mapHeight = gameMap.getHeight();
+        int pixelWidth = mapWidth * tileSize;
+        int pixelHeight = mapHeight * tileSize;
+
+        // Calculate the enlarged size needed with zoom
+        double zoomedWidth = pixelWidth * zoomLevel;
+        double zoomedHeight = pixelHeight * zoomLevel;
+
+        // Resize canvas if needed to fit the zoomed map
+        mapCanvas.setWidth(zoomedWidth);
+        mapCanvas.setHeight(zoomedHeight);
+
+        GraphicsContext gc = mapCanvas.getGraphicsContext2D();
+        gc.clearRect(0, 0, zoomedWidth, zoomedHeight);
+
+        // Apply zoom transformation
+        gc.save();
+        gc.scale(zoomLevel, zoomLevel);
+
+        // Draw the map tiles
+        for (int y = 0; y < mapHeight; y++) {
+            for (int x = 0; x < mapWidth; x++) {
                 Tile tile = gameMap.getTile(x, y);
                 if (tile != null) {
                     tile.render(gc, tileSize);
                 }
             }
         }
+        
+        // Add visual indicators for START_POINT and END_POINT
+        for (int y = 0; y < mapHeight; y++) {
+            for (int x = 0; x < mapWidth; x++) {
+                Tile tile = gameMap.getTile(x, y);
+                if (tile != null) {
+                    if (tile.getType() == TileType.START_POINT) {
+                        // Subtle green border indicator for START_POINT
+                        gc.setStroke(Color.GREEN);
+                        gc.setLineWidth(2);
+                        gc.strokeRect(x * tileSize + 2, y * tileSize + 2, tileSize - 4, tileSize - 4);
+                        
+                        // Draw direction arrow based on position (but smaller and more subtle)
+                        drawDirectionArrow(gc, x, y, mapWidth, mapHeight);
+                    } else if (tile.getType() == TileType.END_POINT) {
+                        // Subtle red diamond indicator for END_POINT
+                        double midX = x * tileSize + tileSize / 2;
+                        double midY = y * tileSize + tileSize / 2;
+                        double size = tileSize / 4;
+                        
+                        gc.setStroke(Color.RED);
+                        gc.setLineWidth(2);
+                        
+                        // Draw a diamond
+                        gc.beginPath();
+                        gc.moveTo(midX, midY - size);  // Top
+                        gc.lineTo(midX + size, midY);  // Right
+                        gc.lineTo(midX, midY + size);  // Bottom
+                        gc.lineTo(midX - size, midY);  // Left
+                        gc.closePath();
+                        gc.stroke();
+                    }
+                }
+            }
+        }
 
-        // Draw grid overlay
-        gc.setStroke(Color.rgb(0, 0, 0, 0.2));
+        // Draw grid lines
+        gc.setStroke(Color.LIGHTGRAY);
         gc.setLineWidth(0.5);
-        for (int x = 0; x <= gameMap.getWidth(); x++) {
-            gc.strokeLine(x * tileSize, 0, x * tileSize, gameMap.getHeight() * tileSize);
+        for (int x = 0; x <= mapWidth; x++) {
+            gc.strokeLine(x * tileSize, 0, x * tileSize, mapHeight * tileSize);
         }
-        for (int y = 0; y <= gameMap.getHeight(); y++) {
-            gc.strokeLine(0, y * tileSize, gameMap.getWidth() * tileSize, y * tileSize);
+        for (int y = 0; y <= mapHeight; y++) {
+            gc.strokeLine(0, y * tileSize, mapWidth * tileSize, y * tileSize);
         }
-        System.out.println("--- CanvasView.renderMap() finished ---");
+
+        // Restore transformation
+        gc.restore();
+    }
+    
+    /**
+     * Draw a directional arrow from the START_POINT toward the map center
+     */
+    private void drawDirectionArrow(GraphicsContext gc, int x, int y, int mapWidth, int mapHeight) {
+        double centerX = x * tileSize + tileSize/2;
+        double centerY = y * tileSize + tileSize/2;
+        double arrowLength = tileSize/4; // Make arrow shorter
+        
+        // Determine arrow direction based on edge position
+        double dirX = 0, dirY = 0;
+        
+        if (x == 0) dirX = 1;
+        else if (x == mapWidth-1) dirX = -1;
+        
+        if (y == 0) dirY = 1;
+        else if (y == mapHeight-1) dirY = -1;
+        
+        // If at a corner, point diagonally inward
+        if (dirX != 0 && dirY != 0) {
+            double length = Math.sqrt(dirX*dirX + dirY*dirY);
+            dirX /= length;
+            dirY /= length;
+        }
+        
+        // Calculate arrow end points
+        double endX = centerX + dirX * arrowLength;
+        double endY = centerY + dirY * arrowLength;
+        
+        // Draw arrow line
+        gc.setStroke(Color.GREEN);
+        gc.setLineWidth(1.5); // Thinner line
+        gc.strokeLine(centerX, centerY, endX, endY);
+        
+        // Draw arrowhead
+        double headSize = tileSize/8; // Smaller arrowhead
+        double angle = Math.atan2(dirY, dirX);
+        double angle1 = angle - Math.PI/4;
+        double angle2 = angle + Math.PI/4;
+        
+        double head1X = endX - headSize * Math.cos(angle1);
+        double head1Y = endY - headSize * Math.sin(angle1);
+        double head2X = endX - headSize * Math.cos(angle2);
+        double head2Y = endY - headSize * Math.sin(angle2);
+        
+        gc.strokeLine(endX, endY, head1X, head1Y);
+        gc.strokeLine(endX, endY, head2X, head2Y);
     }
 
     // --- Placement Logic ---
 
-    public void activateSetStartMode() {
-        currentClickMode = ClickMode.SET_START;
-        // Deselect palette toggle (optional, but good UX)
-        if (tilePalette.getToggleGroup().getSelectedToggle() != null) {
+    public void activateSetStartMode(){
+        currentClickMode=ClickMode.SET_START;
+        if(tilePalette.getToggleGroup().getSelectedToggle()!=null)
             tilePalette.getToggleGroup().getSelectedToggle().setSelected(false);
-        }
-        System.out.println("CanvasView: Set Start mode activated. Click on the map edge.");
         mapCanvas.setOnMouseClicked(this::handleCanvasClick);
     }
+
 
     // Reset placement mode back to using the palette selection
     // Made public to be called after loading a map
@@ -224,6 +326,10 @@ public class MapEditorCanvasView extends VBox {
 
         if (typeToPlace == TileType.CASTLE1) {
             handleCastlePlacement(x, y);
+        } else if (typeToPlace == TileType.START_POINT) {
+            handleStartPointPlacement(x, y);
+        } else if (typeToPlace == TileType.END_POINT) {
+            handleEndPointPlacement(x, y);
         } else {
             handleSingleTilePlacement(x, y, typeToPlace);
         }
@@ -300,35 +406,72 @@ public class MapEditorCanvasView extends VBox {
         System.out.println("Placed single tile: " + typeToPlace + " at (" + x + "," + y + ")");
     }
 
-    private void handleCastlePlacement(int x, int y) {
-        int x1 = x, y1 = y;
-        int x2 = x + 1, y2 = y;
-        int x3 = x, y3 = y + 1;
-        int x4 = x + 1, y4 = y + 1;
-
-        if (x2 >= gameMap.getWidth() || y3 >= gameMap.getHeight()) {
-            showAlert("Invalid Placement", "Castle placement out of bounds.");
+    private void handleCastlePlacement(int x,int y){
+        if(x+1>=gameMap.getWidth() || y+1>=gameMap.getHeight()){
+            showAlert("Invalid placement","Castle must fit entirely on the map.");
             return;
         }
-        TileType[] targetTypes = { gameMap.getTileType(x1, y1), gameMap.getTileType(x2, y2),
-                gameMap.getTileType(x3, y3), gameMap.getTileType(x4, y4) };
-        for (TileType type : targetTypes) {
-            if (type != TileType.GRASS) {
-                if (type == TileType.START_POINT) {
-                    showAlert("Invalid Placement", "Cannot place castle overlapping Start Point.");
-                } else {
-                    showAlert("Invalid Placement", "Castle must be placed on 2x2 Grass.");
-                }
+        // validate 2×2 grass
+        for(int dx=0;dx<=1;dx++) for(int dy=0;dy<=1;dy++)
+            if(gameMap.getTileType(x+dx,y+dy)!=TileType.GRASS){
+                showAlert("Invalid placement","Castle must be placed on 2×2 grass.");
                 return;
             }
-        }
         clearExistingEndPoint();
-        gameMap.setTileType(x1, y1, TileType.CASTLE1);
-        gameMap.setTileType(x2, y2, TileType.CASTLE2);
-        gameMap.setTileType(x3, y3, TileType.CASTLE3);
-        gameMap.setTileType(x4, y4, TileType.CASTLE4);
-        gameMap.setTileType(x1, y1, TileType.END_POINT);
-        System.out.println("Placed 2x2 Castle and logical END_POINT at (" + x1 + "," + y1 + ")");
+        gameMap.setTileType(x,  y,  TileType.CASTLE1);
+        gameMap.setTileType(x+1,y,  TileType.CASTLE2);
+        gameMap.setTileType(x,  y+1,TileType.CASTLE3);
+        gameMap.setTileType(x+1,y+1,TileType.CASTLE4);
+
+        // choose outward‑facing End tile
+        int ex=x, ey=y;
+        if(x==0)                           ex = x-1;
+        else if(x+2==gameMap.getWidth())   ex = x+2;
+        else if(y==0)                      ey = y-1;
+        else if(y+2==gameMap.getHeight())  ey = y+2;
+        else                               ey = y+2; // default bottom
+        if(ex>=0 && ex<gameMap.getWidth() && ey>=0 && ey<gameMap.getHeight())
+            gameMap.setTileType(ex,ey,TileType.END_POINT);
+        System.out.printf("Castle @(%d,%d) – End @(%d,%d)%n",x,y,ex,ey);
+        renderMap();
+    }
+
+    /**
+     * Handle the placement of a START_POINT tile
+     */
+    private void handleStartPointPlacement(int x, int y) {
+        // Validate edge placement
+        boolean onEdge = (x == 0 || x == gameMap.getWidth() - 1 || y == 0 || y == gameMap.getHeight() - 1);
+        if (!onEdge) {
+            showAlert("Invalid Placement", "Start Point must be placed on the edge of the map.");
+            return;
+        }
+        
+        // Validate not on castle
+        Tile targetTile = gameMap.getTile(x, y);
+        if (targetTile != null && (targetTile.getType() == TileType.END_POINT || 
+                                  targetTile.getType() == TileType.CASTLE1 ||
+                                  targetTile.getType() == TileType.CASTLE2 ||
+                                  targetTile.getType() == TileType.CASTLE3 ||
+                                  targetTile.getType() == TileType.CASTLE4)) {
+            showAlert("Invalid Placement", "Start Point cannot overlap with the Castle/End Point.");
+            return;
+        }
+        
+        // Clear any existing start point
+        clearExistingStartPoint();
+        
+        // Place the new start point
+        gameMap.setTileType(x, y, TileType.START_POINT);
+        System.out.println("Placed Start Point at (" + x + "," + y + ")");
+    }
+    
+    /**
+     * Handle the placement of an END_POINT tile
+     */
+    private void handleEndPointPlacement(int x, int y) {
+        // END_POINT is always placed with a castle structure, so we just redirect to castle placement
+        handleCastlePlacement(x, y);
     }
 
     // --- Clearing Logic (Moved from MapEditorScreen) ---

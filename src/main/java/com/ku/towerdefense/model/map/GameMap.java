@@ -1,412 +1,167 @@
 package com.ku.towerdefense.model.map;
 
 import com.ku.towerdefense.model.GamePath;
+import com.ku.towerdefense.model.entity.Tower;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.ku.towerdefense.model.entity.Tower;
-
 /**
- * Represents the game map with tiles and paths.
+ * Serializable game‑map that stores a 2‑D array of {@link Tile}s plus the
+ * derived enemy {@link GamePath}.  All JavaFX objects are kept <em>transient</em>
+ * and rebuilt after loading so maps can safely be written with plain Java
+ * serialization.
  */
 public class GameMap implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    /* ------------------------------------------------------------------
+     *  Core data – these are written to disk
+     * ------------------------------------------------------------------ */
     private String name;
-    private int width;
-    private int height;
+    private int width, height;
     private Tile[][] tiles;
-    private GamePath enemyPath;
-    private List<int[]> pathPoints;
 
-    // For caching the start and end points
+    /* mirror of the (transient) start/end Points so they survive I/O */
+    private int[] startXY;   // [px, py]
+    private int[] endXY;     // [px, py]
+
+    /* ------------------------------------------------------------------
+     *  Transient caches – rebuilt on demand / after load
+     * ------------------------------------------------------------------ */
     private transient Point2D startPoint;
     private transient Point2D endPoint;
+    private transient GamePath enemyPath;
 
-    /**
-     * Constructor for a new game map.
-     *
-     * @param name   map name
-     * @param width  width in tiles
-     * @param height height in tiles
-     */
+    /* ------------------------------------------------------------------
+     *  C‑TOR
+     * ------------------------------------------------------------------ */
     public GameMap(String name, int width, int height) {
-        this.name = name;
-        this.width = width;
+        this.name   = name;
+        this.width  = width;
         this.height = height;
-        initializeTiles();
-    }
+        this.tiles  = new Tile[width][height];
 
-    /**
-     * Initialize the map tiles with grass.
-     */
-    private void initializeTiles() {
-        tiles = new Tile[width][height];
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++)
+            for (int y = 0; y < height; y++)
                 tiles[x][y] = new Tile(x, y, TileType.GRASS);
-            }
+    }
+
+    /* ------------------------------------------------------------------
+     *  Basic getters/setters that UI code relies on
+     * ------------------------------------------------------------------ */
+    public String getName()               { return name; }
+    public void   setName(String newName) { this.name = newName; }
+
+    public int  getWidth()  { return width; }
+    public int  getHeight() { return height; }
+
+    public Tile       getTile(int x,int y)        { return inBounds(x,y) ? tiles[x][y] : null; }
+    public TileType   getTileType(int x,int y)    { Tile t = getTile(x,y); return t==null ? null : t.getType(); }
+
+    /* ------------------------------------------------------------------
+     *  Map editing helpers
+     * ------------------------------------------------------------------ */
+    public void setTileType(int x,int y,TileType type){
+        if(!inBounds(x,y)) return;
+        // keep only ONE start / end on the map
+        if(type==TileType.START_POINT) clearType(TileType.START_POINT);
+        if(type==TileType.END_POINT)   clearType(TileType.END_POINT);
+        tiles[x][y].setType(type);
+        if(type==TileType.START_POINT||type==TileType.END_POINT) generatePath();
+    }
+
+    private void clearType(TileType tt){
+        for(Tile[] row:tiles) for(Tile t:row)
+            if(t.getType()==tt) t.setType(TileType.GRASS);
+    }
+
+    private boolean inBounds(int x,int y){ return x>=0 && x<width && y>=0 && y<height; }
+
+    /* ------------------------------------------------------------------
+     *  Enemy path generation – super simple: go horizontally then vertically
+     * ------------------------------------------------------------------ */
+    public void generatePath(){
+        Tile s=null,e=null;
+        for(Tile[] row:tiles) for(Tile t:row){
+            if(t.getType()==TileType.START_POINT) s=t;
+            else if(t.getType()==TileType.END_POINT) e=t;
+        }
+        if(s==null||e==null){ enemyPath=null; return; }
+
+        final int TS = 32; // logic coords: 32 px per tile
+        startPoint = new Point2D(s.getX()*TS+16, s.getY()*TS+16);
+        endPoint   = new Point2D(e.getX()*TS+16, e.getY()*TS+16);
+        startXY = new int[]{ (int)startPoint.getX(), (int)startPoint.getY() };
+        endXY   = new int[]{ (int)endPoint.getX(),   (int)endPoint.getY()   };
+
+        List<int[]> pts = new ArrayList<>();
+        pts.add(new int[]{ s.getX()*TS+TS/2, s.getY()*TS+TS/2 });
+        int cx = s.getX(), cy = s.getY();
+        while(cx!=e.getX()){
+            cx += (e.getX()>cx?1:-1);
+            tiles[cx][cy].setType(TileType.PATH_HORIZONTAL);
+            pts.add(new int[]{ cx*TS+TS/2, cy*TS+TS/2 });
+        }
+        while(cy!=e.getY()){
+            cy += (e.getY()>cy?1:-1);
+            tiles[cx][cy].setType(TileType.PATH_VERTICAL);
+            pts.add(new int[]{ cx*TS+TS/2, cy*TS+TS/2 });
+        }
+        pts.add(new int[]{ e.getX()*TS+TS/2, e.getY()*TS+TS/2 });
+        enemyPath = new GamePath(pts);
+    }
+
+    public GamePath getEnemyPath(){ return enemyPath; }
+    public Point2D  getStartPoint(){ if(startPoint==null&&startXY!=null) startPoint=new Point2D(startXY[0],startXY[1]); return startPoint; }
+    public Point2D  getEndPoint(){ if(endPoint==null&&endXY!=null) endPoint=new Point2D(endXY[0],endXY[1]); return endPoint; }
+
+    /* ------------------------------------------------------------------
+     *  Tower placement rule used by gameplay layer
+     * ------------------------------------------------------------------ */
+    public boolean canPlaceTower(double px,double py,List<Tower> towers){
+        int tx = (int)(px/32), ty = (int)(py/32);
+        Tile t = getTile(tx,ty);
+        if(t==null || !t.canPlaceTower()) return false;
+        return towers.stream().noneMatch(tv-> ((int)(tv.getCenterX()/32)==tx && (int)(tv.getCenterY()/32)==ty));
+    }
+
+    /* ------------------------------------------------------------------
+     *  Minimal rendering (editor / preview)
+     * ------------------------------------------------------------------ */
+    public void render(GraphicsContext gc){
+        final int TS = 32;
+        gc.setFill(Color.web("#282828"));
+        gc.fillRect(0,0,width*TS,height*TS);
+        for(int y=0;y<height;y++) for(int x=0;x<width;x++)
+            tiles[x][y].render(gc,TS);
+        if(enemyPath!=null){
+            var pts = enemyPath.getPoints();
+            gc.setStroke(Color.YELLOW); gc.setLineWidth(2); gc.setGlobalAlpha(0.35);
+            for(int i=0;i<pts.size()-1;i++) gc.strokeLine(pts.get(i).getX(),pts.get(i).getY(), pts.get(i+1).getX(),pts.get(i+1).getY());
+            gc.setGlobalAlpha(1);
         }
     }
 
-    /**
-     * Get a tile at the specified coordinates.
-     *
-     * @param x x coordinate
-     * @param y y coordinate
-     * @return the tile at the coordinates, or null if out of bounds
-     */
-    public Tile getTile(int x, int y) {
-        if (x >= 0 && x < width && y >= 0 && y < height) {
-            return tiles[x][y];
-        }
-        return null;
+    /* ------------------------------------------------------------------
+     *  Custom serialisation so transient fields get rebuilt
+     * ------------------------------------------------------------------ */
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        if(startPoint!=null) startXY = new int[]{ (int)startPoint.getX(), (int)startPoint.getY() };
+        if(endPoint  !=null) endXY   = new int[]{ (int)endPoint.getX(),   (int)endPoint.getY()   };
+        out.defaultWriteObject();
     }
-
-    /**
-     * Set the type of a tile at the specified coordinates.
-     *
-     * @param x    x coordinate
-     * @param y    y coordinate
-     * @param type the new tile type
-     */
-    public void setTileType(int x, int y, TileType type) {
-        if (x >= 0 && x < width && y >= 0 && y < height) {
-            // Clear previous start/end points if setting a new one
-            if (type == TileType.START_POINT) {
-                clearTileTypeInMap(TileType.START_POINT);
-                startPoint = null;
-            } else if (type == TileType.END_POINT) {
-                clearTileTypeInMap(TileType.END_POINT);
-                endPoint = null;
-            }
-
-            tiles[x][y].setType(type);
-
-            // If we're changing start or end points, we need to regenerate the path
-            if (type == TileType.START_POINT || type == TileType.END_POINT) {
-                generatePath();
-            }
-        }
-    }
-
-    /**
-     * Clear all tiles of a specific type in the map
-     *
-     * @param typeToRemove the tile type to remove
-     */
-    private void clearTileTypeInMap(TileType typeToRemove) {
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                if (tiles[x][y].getType() == typeToRemove) {
-                    tiles[x][y].setType(TileType.GRASS);
-                }
-            }
-        }
-    }
-
-    /**
-     * Get the type of a tile at the specified coordinates.
-     *
-     * @param x x coordinate
-     * @param y y coordinate
-     * @return the tile type, or null if out of bounds
-     */
-    public TileType getTileType(int x, int y) {
-        Tile tile = getTile(x, y);
-        return tile != null ? tile.getType() : null;
-    }
-
-    /**
-     * Generate a path from start to end points.
-     */
-    public void generatePath() {
-        // Find start and end tiles
-        Tile startTile = null;
-        Tile endTile = null;
-
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                if (tiles[x][y].getType() == TileType.START_POINT) {
-                    startTile = tiles[x][y];
-                } else if (tiles[x][y].getType() == TileType.END_POINT) {
-                    endTile = tiles[x][y];
-                }
-            }
-        }
-
-        // Reset path if start or end is missing
-        if (startTile == null || endTile == null) {
-            enemyPath = null;
-            return;
-        }
-
-        // Update cached start and end points
-        startPoint = new Point2D(startTile.getX() * 32 + 16, startTile.getY() * 32 + 16);
-        endPoint = new Point2D(endTile.getX() * 32 + 16, endTile.getY() * 32 + 16);
-
-        // Initialize pathPoints list
-        List<int[]> pathPoints = new ArrayList<>();
-
-        // Add the start point (in pixels)
-        final int ts = 32; // tileSize
-        pathPoints.add(new int[] { startTile.getX() * ts + ts / 2, startTile.getY() * ts + ts / 2 });
-
-        // Generate horizontal path
-        int currentX = startTile.getX();
-        int currentY = startTile.getY();
-        int endX = endTile.getX();
-        int endY = endTile.getY();
-
-        // First go horizontally
-        while (currentX != endX) {
-            currentX += (endX > currentX) ? 1 : -1;
-
-            Tile currentTile = getTile(currentX, currentY);
-            // Skip if tile is not walkable
-            if (currentTile != null && !currentTile.isWalkable()) {
-                continue;
-            }
-
-            // Add point to path (in pixels)
-            pathPoints.add(new int[] { currentX * ts + ts / 2, currentY * ts + ts / 2 });
-
-            // Mark as path tile only if it's currently GRASS
-            if (currentTile != null && currentTile.getType() == TileType.GRASS) {
-                // Choose path type based on direction (simplified)
-                currentTile.setType(TileType.PATH_HORIZONTAL);
-            }
-        }
-
-        // Then go vertically
-        while (currentY != endY) {
-            currentY += (endY > currentY) ? 1 : -1;
-
-            Tile currentTile = getTile(currentX, currentY);
-            // Skip if tile is not walkable
-            if (currentTile != null && !currentTile.isWalkable()) {
-                continue;
-            }
-
-            // Add point to path (in pixels)
-            pathPoints.add(new int[] { currentX * ts + ts / 2, currentY * ts + ts / 2 });
-
-            // Mark as path tile only if it's currently GRASS
-            if (currentTile != null && currentTile.getType() == TileType.GRASS) {
-                currentTile.setType(TileType.PATH_VERTICAL);
-            }
-        }
-
-        // Add the end point
-        pathPoints.add(new int[] { endTile.getX() * ts + ts / 2, endTile.getY() * ts + ts / 2 });
-
-        // Create and set the enemy path with the generated points
-        this.enemyPath = new GamePath(pathPoints);
-        System.out.println("Generated path with " + pathPoints.size() + " points");
-    }
-
-    /**
-     * Get the start point for enemies
-     *
-     * @return the start point coordinates
-     */
-    public Point2D getStartPoint() {
-        if (startPoint == null) {
-            // Find the start tile if not cached
-            for (int x = 0; x < width; x++) {
-                for (int y = 0; y < height; y++) {
-                    if (tiles[x][y].getType() == TileType.START_POINT) {
-                        startPoint = new Point2D(x * 32 + 16, y * 32 + 16);
-                        break;
-                    }
-                }
-                if (startPoint != null)
-                    break;
-            }
-
-            // Create a default start point if none exists
-            if (startPoint == null) {
-                startPoint = new Point2D(16, height * 16);
-            }
-        }
-
-        return startPoint;
-    }
-
-    /**
-     * Get the end point for enemies
-     *
-     * @return the end point coordinates
-     */
-    public Point2D getEndPoint() {
-        if (endPoint == null) {
-            // Find the end tile if not cached
-            for (int x = 0; x < width; x++) {
-                for (int y = 0; y < height; y++) {
-                    if (tiles[x][y].getType() == TileType.END_POINT) {
-                        endPoint = new Point2D(x * 32 + 16, y * 32 + 16);
-                        break;
-                    }
-                }
-                if (endPoint != null)
-                    break;
-            }
-
-            // Create a default end point if none exists
-            if (endPoint == null) {
-                endPoint = new Point2D(width * 32 - 16, height * 16);
-            }
-        }
-
-        return endPoint;
-    }
-
-    /**
-     * Check if a tower can be placed at the specified coordinates.
-     *
-     * @param px the pixel x-coordinate
-     * @param py the pixel y-coordinate
-     * @param towers the list of currently placed towers
-     * @return true if a tower can be placed at the specified coordinates
-     */
-    public boolean canPlaceTower(double px, double py, List<Tower> towers) {
-        // Convert pixel coordinates to tile indices
-        int tileX = (int)(px / 32);
-        int tileY = (int)(py / 32);
-
-        Tile t = getTile(tileX, tileY);
-
-        // Check if the tile exists and is a valid placement type
-        if (t == null || !t.canPlaceTower()) {
-            return false; // Invalid tile or type (e.g., path, water)
-        }
-
-        // --- ADDED CHECK: Ensure no other tower occupies this tile --- 
-        // Check if any existing tower's center falls within the same tile grid
-        return towers.stream().noneMatch(existingTower -> {
-            int existingTileX = (int)(existingTower.getCenterX() / 32); // Assuming getCenterX exists
-            int existingTileY = (int)(existingTower.getCenterY() / 32); // Assuming getCenterY exists
-            return existingTileX == tileX && existingTileY == tileY;
-        });
-        // --- END ADDED CHECK ---
-    }
-
-    /**
-     * Render the map on the canvas.
-     *
-     * @param gc the graphics context to draw on
-     */
-    public void render(GraphicsContext gc) {
-        int tileSize = 32; // 32 pixels per tile
-
-        // Draw background
-        gc.setFill(javafx.scene.paint.Color.rgb(40, 40, 40));
-        gc.fillRect(0, 0, width * tileSize, height * tileSize);
-
-        // Draw all tiles using their render methods
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                Tile tile = tiles[x][y];
-                tile.render(gc, tileSize);
-            }
-        }
-
-        // Draw path line to visualize enemy path
-        if (enemyPath != null) {
-            List<Point2D> pathPoints = enemyPath.getPoints();
-            if (pathPoints.size() > 1) {
-                gc.setStroke(Color.YELLOW);
-                gc.setLineWidth(2);
-                gc.setGlobalAlpha(0.4);
-
-                for (int i = 0; i < pathPoints.size() - 1; i++) {
-                    Point2D start = pathPoints.get(i);
-                    Point2D end = pathPoints.get(i + 1);
-
-                    // Points are already in pixel coordinates
-                    gc.strokeLine(
-                            start.getX(), start.getY(),
-                            end.getX(), end.getY());
-                }
-
-                gc.setGlobalAlpha(1.0);
-            }
-        }
-
-        // Draw subtle grid lines
-        gc.setStroke(javafx.scene.paint.Color.rgb(0, 0, 0, 0.2)); // Semi-transparent
-        gc.setLineWidth(0.5);
-
-        for (int x = 0; x <= width; x++) {
-            gc.strokeLine(x * tileSize, 0, x * tileSize, height * tileSize);
-        }
-
-        for (int y = 0; y <= height; y++) {
-            gc.strokeLine(0, y * tileSize, width * tileSize, y * tileSize);
-        }
-
-        // Draw a border around the entire map
-        gc.setStroke(javafx.scene.paint.Color.rgb(80, 80, 80));
-        gc.setLineWidth(2.0);
-        gc.strokeRect(0, 0, width * tileSize, height * tileSize);
-    }
-
-    /**
-     * Get the enemy path for this map.
-     *
-     * @return the enemy path
-     */
-    public GamePath getEnemyPath() {
-        return enemyPath;
-    }
-
-    /**
-     * Set the enemy path for this map.
-     *
-     * @param enemyPath the enemy path to set
-     */
-    public void setEnemyPath(GamePath enemyPath) {
-        this.enemyPath = enemyPath;
-    }
-
-    /**
-     * Get the map name.
-     *
-     * @return the map name
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Set the map name.
-     *
-     * @param name the map name to set
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    /**
-     * Get the map width in tiles.
-     *
-     * @return the map width
-     */
-    public int getWidth() {
-        return width;
-    }
-
-    /**
-     * Get the map height in tiles.
-     *
-     * @return the map height
-     */
-    public int getHeight() {
-        return height;
+    private void readObject(ObjectInputStream in) throws IOException,ClassNotFoundException {
+        in.defaultReadObject();
+        if(startXY!=null) startPoint = new Point2D(startXY[0], startXY[1]);
+        if(endXY  !=null) endPoint   = new Point2D(endXY[0],   endXY[1]);
+        generatePath(); // rebuild enemyPath + tile markings
     }
 }

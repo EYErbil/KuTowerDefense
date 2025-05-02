@@ -52,31 +52,12 @@ public class MapEditorTilePalette extends VBox {
             TileType.PATH_HORIZONTAL_W_DE,
             TileType.PATH_HORIZONTAL_E_DE,
 
-            // Game Elements
             TileType.TOWER_SLOT,
-
-            // Structures
-            TileType.CASTLE1, // Represents 2x2 castle
-
-            // Trees
-            TileType.TREE_BIG,
-            TileType.TREE_MEDIUM,
-            TileType.TREE_SMALL,
-
-            // Buildings & Props
-            TileType.HOUSE,
-            TileType.WELL,
-            TileType.LOG_PILE,
-
-            // Rocks
-            TileType.ROCK_MEDIUM,
-            TileType.ROCK_SMALL,
-
-            // Towers (Visual representation only in editor)
-            TileType.TOWER_ARTILLERY,
-            TileType.TOWER_MAGE,
-            TileType.ARCHER_TOWER,
-            TileType.TOWER_BARACK);
+            TileType.CASTLE1,
+            TileType.TREE_BIG, TileType.TREE_MEDIUM, TileType.TREE_SMALL,
+            TileType.HOUSE, TileType.WELL, TileType.LOG_PILE,
+            TileType.ROCK_MEDIUM, TileType.ROCK_SMALL,
+            TileType.TOWER_ARTILLERY, TileType.TOWER_MAGE, TileType.ARCHER_TOWER, TileType.TOWER_BARACK);
 
     // Groups for category headers in the palette
     private static final Map<String, List<TileType>> TILE_CATEGORIES = Map.of(
@@ -88,13 +69,12 @@ public class MapEditorTilePalette extends VBox {
                     TileType.PATH_CIRCLE_SW, TileType.PATH_CIRCLE_W,
                     TileType.PATH_VERTICAL_N_DE, TileType.PATH_VERTICAL_S_DE,
                     TileType.PATH_HORIZONTAL_W_DE, TileType.PATH_HORIZONTAL_E_DE),
-            "Game Elements", List.of(TileType.TOWER_SLOT),
-            "Structures", List.of(TileType.CASTLE1),
-            "Trees", List.of(TileType.TREE_BIG, TileType.TREE_MEDIUM, TileType.TREE_SMALL),
-            "Buildings & Props", List.of(TileType.HOUSE, TileType.WELL, TileType.LOG_PILE),
-            "Rocks", List.of(TileType.ROCK_MEDIUM, TileType.ROCK_SMALL),
-            "Towers (Visual)",
-            List.of(TileType.TOWER_ARTILLERY, TileType.TOWER_MAGE, TileType.ARCHER_TOWER, TileType.TOWER_BARACK));
+            "Game Elements",    List.of(TileType.TOWER_SLOT),
+            "Structures",       List.of(TileType.CASTLE1),
+            "Trees",            List.of(TileType.TREE_BIG,TileType.TREE_MEDIUM,TileType.TREE_SMALL),
+            "Buildings & Props",List.of(TileType.HOUSE,TileType.WELL,TileType.LOG_PILE),
+            "Rocks",            List.of(TileType.ROCK_MEDIUM,TileType.ROCK_SMALL),
+            "Towers (Visual)",  List.of(TileType.TOWER_ARTILLERY,TileType.TOWER_MAGE,TileType.ARCHER_TOWER,TileType.TOWER_BARACK));
 
     private final ToggleGroup tileToggleGroup;
     private final ObjectProperty<TileType> selectedTileTypeProperty = new SimpleObjectProperty<>(TileType.GRASS);
@@ -224,9 +204,111 @@ public class MapEditorTilePalette extends VBox {
         boolean useFullImage = false;
         boolean useCompositedFallback = false;
 
+        // Special case for START_POINT and END_POINT buttons
+        if (type == TileType.START_POINT || type == TileType.END_POINT) {
+            try {
+                int btnSize = 40;
+                Canvas tempCanvas = new Canvas(btnSize, btnSize);
+                GraphicsContext g = tempCanvas.getGraphicsContext2D();
+                
+                // Use path image for START_POINT, CASTLE image for END_POINT
+                if (type == TileType.START_POINT) {
+                    // Start point uses a path image with indicator
+                    viewport = Tile.getSourceViewportForType(TileType.PATH_HORIZONTAL);
+                    
+                    if (staticTileset != null && viewport != null) {
+                        // Draw path image first
+                        g.drawImage(staticTileset,
+                            viewport.getMinX(), viewport.getMinY(), viewport.getWidth(), viewport.getHeight(),
+                            0, 0, btnSize, btnSize);
+                        
+                        // Add green direction indicator
+                        g.setStroke(Color.GREEN);
+                        g.setLineWidth(2);
+                        g.strokeRect(2, 2, btnSize - 4, btnSize - 4);
+                        
+                        // Draw small arrow
+                        g.setStroke(Color.GREEN);
+                        g.setLineWidth(1.5);
+                        double centerX = btnSize/2;
+                        double centerY = btnSize/2;
+                        g.strokeLine(centerX-8, centerY, centerX+8, centerY);
+                        g.strokeLine(centerX+8, centerY, centerX+4, centerY-4);
+                        g.strokeLine(centerX+8, centerY, centerX+4, centerY+4);
+                    } else {
+                        // Fallback if image loading fails
+                        g.setFill(Color.LIGHTGREEN);
+                        g.fillRect(0, 0, btnSize, btnSize);
+                        g.setFill(Color.DARKGREEN);
+                        g.fillText("START", 5, btnSize/2 + 5);
+                    }
+                } else { // END_POINT
+                    // End point uses castle image with indicator
+                    viewport = Tile.getSourceViewportForType(TileType.CASTLE1);
+                    
+                    if (staticTileset != null && viewport != null) {
+                        // Draw castle image first
+                        g.drawImage(staticTileset,
+                            viewport.getMinX(), viewport.getMinY(), viewport.getWidth(), viewport.getHeight(),
+                            0, 0, btnSize, btnSize);
+                        
+                        // Add red diamond indicator
+                        g.setStroke(Color.RED);
+                        g.setLineWidth(2);
+                        double midX = btnSize/2;
+                        double midY = btnSize/2;
+                        double size = btnSize/6;
+                        
+                        g.beginPath();
+                        g.moveTo(midX, midY - size);
+                        g.lineTo(midX + size, midY);
+                        g.lineTo(midX, midY + size);
+                        g.lineTo(midX - size, midY);
+                        g.closePath();
+                        g.stroke();
+                    } else {
+                        // Fallback if image loading fails
+                        g.setFill(Color.LIGHTPINK);
+                        g.fillRect(0, 0, btnSize, btnSize);
+                        g.setFill(Color.DARKRED);
+                        g.fillText("END", 10, btnSize/2 + 5);
+                    }
+                }
+                
+                // Create the image from the canvas
+                SnapshotParameters params = new SnapshotParameters();
+                params.setFill(Color.TRANSPARENT);
+                imageToShow = tempCanvas.snapshot(params, null);
+                useFullImage = true;
+            } catch (Exception e) {
+                // Fallback to the old approach if there's an exception
+                System.err.println("Error creating special tile button: " + e.getMessage());
+                
+                int btnSize = 40;
+                Canvas tempCanvas = new Canvas(btnSize, btnSize);
+                GraphicsContext g = tempCanvas.getGraphicsContext2D();
+                
+                if (type == TileType.START_POINT) {
+                    g.setFill(Color.LIGHTGREEN);
+                    g.fillRect(0, 0, btnSize, btnSize);
+                    g.setFill(Color.DARKGREEN);
+                    g.fillText("START", 5, btnSize/2 + 5);
+                } else {
+                    g.setFill(Color.LIGHTPINK);
+                    g.fillRect(0, 0, btnSize, btnSize);
+                    g.setFill(Color.DARKRED);
+                    g.fillText("END", 10, btnSize/2 + 5);
+                }
+                
+                SnapshotParameters params = new SnapshotParameters();
+                params.setFill(Color.TRANSPARENT);
+                imageToShow = tempCanvas.snapshot(params, null);
+                useFullImage = true;
+            }
+        }
         // --- Special Case for Castle Palette Button (Composite Full Castle onto Grass)
         // ---
-        if (type == TileType.CASTLE1) {
+        else if (type == TileType.CASTLE1) {
             logInfo += " -> Special Case: Castle Palette Button (Composited)";
             try {
                 Image fullCastleImage = Tile.getCastleImage();
@@ -405,42 +487,43 @@ public class MapEditorTilePalette extends VBox {
         };
     }
 
-    // Tooltips with better descriptions
+    /**
+     * Get formatted tooltip text for a tile type.
+     */
     private String getTooltipForTileType(TileType type) {
         return switch (type) {
-            case GRASS -> "Grass - Basic buildable/empty terrain";
-            case PATH_HORIZONTAL -> "Path (Horizontal)";
-            case PATH_VERTICAL -> "Path (Vertical)";
-            case PATH_CIRCLE_NW -> "Path (Corner NW)";
-            case PATH_CIRCLE_N -> "Path (Circle N)";
-            case PATH_CIRCLE_NE -> "Path (Corner NE)";
-            case PATH_CIRCLE_E -> "Path (Circle E)";
-            case PATH_CIRCLE_SE -> "Path (Corner SE)";
-            case PATH_CIRCLE_S -> "Path (Circle S)";
-            case PATH_CIRCLE_SW -> "Path (Corner SW)";
-            case PATH_CIRCLE_W -> "Path (Circle W)";
-            case PATH_VERTICAL_N_DE -> "Path (Dead End N)";
-            case PATH_VERTICAL_S_DE -> "Path (Dead End S)";
-            case PATH_HORIZONTAL_W_DE -> "Path (Dead End W)";
-            case PATH_HORIZONTAL_E_DE -> "Path (Dead End E)";
-            case TOWER_SLOT -> "Tower Slot - Place towers here";
-            case TREE_BIG -> "Tree (Big) - Decoration/Obstacle";
-            case TREE_MEDIUM -> "Tree (Medium) - Decoration/Obstacle";
-            case TREE_SMALL -> "Tree (Small) - Decoration/Obstacle";
-            case HOUSE -> "House - Decoration";
-            case WELL -> "Well - Decoration";
-            case LOG_PILE -> "Log Pile - Decoration";
-            case ROCK_MEDIUM -> "Rock (Medium) - Obstacle";
-            case ROCK_SMALL -> "Rock (Small) - Obstacle";
+            case GRASS -> "Grass (Base terrain tile)";
+            case PATH_HORIZONTAL -> "Horizontal Path";
+            case PATH_VERTICAL -> "Vertical Path";
+            case PATH_CIRCLE_NW -> "Path Corner (North-West)";
+            case PATH_CIRCLE_N -> "Path End (North)";
+            case PATH_CIRCLE_NE -> "Path Corner (North-East)";
+            case PATH_CIRCLE_E -> "Path End (East)";
+            case PATH_CIRCLE_SE -> "Path Corner (South-East)";
+            case PATH_CIRCLE_S -> "Path End (South)";
+            case PATH_CIRCLE_SW -> "Path Corner (South-West)";
+            case PATH_CIRCLE_W -> "Path End (West)";
+            case PATH_VERTICAL_N_DE -> "Vertical Path Dead End (North)";
+            case PATH_VERTICAL_S_DE -> "Vertical Path Dead End (South)";
+            case PATH_HORIZONTAL_W_DE -> "Horizontal Path Dead End (West)";
+            case PATH_HORIZONTAL_E_DE -> "Horizontal Path Dead End (East)";
+            case TOWER_SLOT -> "Tower Slot (Place towers here)";
+            case CASTLE1 -> "Castle Base (2x2 structure, also sets END_POINT)";
+            case TREE_BIG -> "Large Tree";
+            case TREE_MEDIUM -> "Medium Tree";
+            case TREE_SMALL -> "Small Tree";
+            case HOUSE -> "House";
+            case WELL -> "Well";
+            case LOG_PILE -> "Log Pile";
+            case ROCK_MEDIUM -> "Medium Rock";
+            case ROCK_SMALL -> "Small Rock";
             case TOWER_ARTILLERY -> "Artillery Tower (Visual)";
             case TOWER_MAGE -> "Mage Tower (Visual)";
             case ARCHER_TOWER -> "Archer Tower (Visual)";
-            case TOWER_BARACK -> "Barrack Tower (Visual)";
-            case START_POINT -> "Start Point - Where enemies will spawn (place via button)";
-            case END_POINT -> "End Point/Castle (Logical Marker)";
-            case CASTLE1 -> "Castle Structure (Place 2x2)";
-            case CASTLE2, CASTLE3, CASTLE4 -> "Castle Part - Placed automatically";
-            default -> type.name();
+            case TOWER_BARACK -> "Barracks (Visual)";
+            case START_POINT -> "Start Point (REQUIRED - Place on the map edge where enemies should spawn)";
+            case END_POINT -> "End Point (REQUIRED - Usually placed with Castle, represents enemy target)";
+            default -> type.toString();
         };
     }
 
