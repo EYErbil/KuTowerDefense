@@ -74,7 +74,7 @@ public class GameMap implements Serializable {
         // keep only ONE start / end on the map
         if(type==TileType.START_POINT) clearType(TileType.START_POINT);
         if(type==TileType.END_POINT)   clearType(TileType.END_POINT);
-        tiles[x][y].setType(type);
+            tiles[x][y].setType(type);
         if(type==TileType.START_POINT||type==TileType.END_POINT) generatePath();
     }
 
@@ -106,7 +106,7 @@ public class GameMap implements Serializable {
             enemyPath = null;
             return;
         }
-        
+
         final int TS = 32; // logic coords: 32 px per tile
         startPoint = new Point2D(startTile.getX() * TS + TS/2, startTile.getY() * TS + TS/2);
         endPoint = new Point2D(endTile.getX() * TS + TS/2, endTile.getY() * TS + TS/2);
@@ -168,9 +168,9 @@ public class GameMap implements Serializable {
                 // Update target position to the last walkable tile
                 targetX = cx;
                 targetY = cy;
-                break;
+                    break;
             }
-            
+
             // Check all four directions
             for (int[] dir : directions) {
                 int nx = cx + dir[0];

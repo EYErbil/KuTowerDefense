@@ -359,13 +359,14 @@ public class GameController {
         double delay = GameSettings.getInstance().getEnemyDelay() / 1000.0; // Convert ms to seconds
         System.out.println("Enemy spawn delay: " + delay + " seconds");
 
-        // Create and start Timeline for enemy spawning
+        // Create and start Timeline for enemy spawning using AtomicReference to avoid initialization issues
+        final Timeline[] spawnerRef = new Timeline[1];
         Timeline spawner = new Timeline(
             new KeyFrame(Duration.seconds(delay), e -> {
                 Enemy next = queue.poll();
                 if (next == null) {
                     isSpawningEnemies = false;
-                    spawner.stop();
+                    spawnerRef[0].stop();  // Use the reference instead of direct variable
                     System.out.println("Wave " + currentWave + " spawning complete.");
                     return;
                 }
@@ -382,6 +383,7 @@ public class GameController {
                 }
             })
         );
+        spawnerRef[0] = spawner;  // Store the Timeline in the array reference
         spawner.setCycleCount(Animation.INDEFINITE);
         spawner.play();
 
