@@ -1,126 +1,80 @@
 package com.ku.towerdefense.model;
 
 import javafx.geometry.Point2D;
-import java.io.Serializable;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents a path that enemies follow in the game.
+ * Serializable poly‑line path the enemies follow.
  */
 public class GamePath implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private List<Point2D> points;
-    private double totalLength;
-
-    public GamePath() {
-        this.points = new ArrayList<>();
-        this.totalLength = 0;
-    }
-
-    /**
-     * Constructor that takes a list of path points as [x, y] coordinate arrays.
-     *
-     * @param pathPoints list of path points as [x, y] coordinate arrays
+    /*
+     * JavaFX Point2D is **not** Serializable → mark it transient and store a
+     * primitive mirror that Java can write to an ObjectStream.
      */
+    private transient List<Point2D> points = new ArrayList<>();
+    private List<double[]> rawPoints = new ArrayList<>();   // [x,y] pairs
+
+    private transient double totalLength;   // cached after load
+
+    public GamePath() {}
     public GamePath(List<int[]> pathPoints) {
-        this.points = new ArrayList<>();
-        for (int[] point : pathPoints) {
-            this.points.add(new Point2D(point[0], point[1]));
-        }
-        calculateTotalLength();
+        pathPoints.forEach(p -> addPoint(p[0], p[1]));
     }
 
-    /**
-     * Add a point to the path.
-     *
-     * @param x x coordinate
-     * @param y y coordinate
-     */
     public void addPoint(double x, double y) {
         points.add(new Point2D(x, y));
+        rawPoints.add(new double[]{x, y});
         calculateTotalLength();
     }
 
-    /**
-     * Get all points in the path.
-     *
-     * @return list of points
-     */
-    public List<Point2D> getPoints() {
-        return points;
-    }
+    public List<Point2D> getPoints() { return points; }
 
-    /**
-     * Calculate the total length of the path.
-     *
-     * @return the total length in pixels
-     */
+    // ---------------------------------------------------------------------
+    // Geometry helpers
+    // ---------------------------------------------------------------------
     public double calculateTotalLength() {
         totalLength = 0;
-
-        if (points.size() < 2) {
-            System.err.println("Path has less than 2 points!");
-            return 0;
-        }
-
-        for (int i = 0; i < points.size() - 1; i++) {
-            Point2D start = points.get(i);
-            Point2D end = points.get(i + 1);
-
-            double segmentLength = start.distance(end);
-            totalLength += segmentLength;
-
-            System.out.println("Path segment " + i + ": " + segmentLength + " pixels");
-        }
-
-        System.out.println("Total path length: " + totalLength + " pixels");
+        for (int i = 0; i < points.size() - 1; i++)
+            totalLength += points.get(i).distance(points.get(i + 1));
         return totalLength;
     }
 
-    /**
-     * Get a position along the path based on progress (0.0 to 1.0).
-     *
-     * @param progress the progress along the path (0.0 to 1.0)
-     * @return the [x, y] position at that progress point
-     */
+    /** Return x,y along the poly‑line where {@code progress}=0.0…1.0. */
     public double[] getPositionAt(double progress) {
-        if (points.size() < 2) {
-            System.err.println("Path has less than 2 points!");
-            return null;
-        }
-
-        if (progress <= 0) {
-            Point2D start = points.get(0);
-            return new double[]{start.getX(), start.getY()};
-        }
-
-        if (progress >= 1) {
-            Point2D end = points.get(points.size() - 1);
-            return new double[]{end.getX(), end.getY()};
-        }
-
-        double targetDistance = progress * totalLength;
-        double currentDistance = 0;
-
+        if (points.size() < 2) return new double[]{0,0};
+        progress = Math.max(0, Math.min(1, progress));
+        double target = progress * totalLength;
+        double walked = 0;
         for (int i = 0; i < points.size() - 1; i++) {
-            Point2D start = points.get(i);
-            Point2D end = points.get(i + 1);
-
-            double segmentLength = start.distance(end);
-
-            if (currentDistance + segmentLength >= targetDistance) {
-                double segmentProgress = (targetDistance - currentDistance) / segmentLength;
-                double x = start.getX() + (end.getX() - start.getX()) * segmentProgress;
-                double y = start.getY() + (end.getY() - start.getY()) * segmentProgress;
-                return new double[]{x, y};
+            Point2D a = points.get(i), b = points.get(i + 1);
+            double segLen = a.distance(b);
+            if (walked + segLen >= target) {
+                double t = (target - walked) / segLen;
+                return new double[]{ a.getX() + t*(b.getX()-a.getX()),
+                        a.getY() + t*(b.getY()-a.getY()) };
             }
-
-            currentDistance += segmentLength;
+            walked += segLen;
         }
-
-        Point2D end = points.get(points.size() - 1);
+        Point2D end = points.get(points.size()-1);
         return new double[]{end.getX(), end.getY()};
     }
-} 
+
+    // ---------------------------------------------------------------------
+    // Custom serialisation – Point2D ➟ double[2]
+    // ---------------------------------------------------------------------
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        rawPoints = new ArrayList<>();
+        for (Point2D p : points) rawPoints.add(new double[]{p.getX(), p.getY()});
+        out.defaultWriteObject();
+    }
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        points = new ArrayList<>();
+        for (double[] arr : rawPoints) points.add(new Point2D(arr[0], arr[1]));
+        calculateTotalLength();
+    }
+}

@@ -197,15 +197,77 @@ public class Projectile extends Entity implements Serializable {
      */
     private void loadImage() {
         try {
-            File file = new File(imageFile);
-            if (file.exists()) {
-                image = new Image(file.toURI().toString());
-                System.out.println("Loaded image for projectile: " + imageFile);
-            } else {
-                System.err.println("Image file not found: " + imageFile);
+            // Try loading from classpath first
+            if (imageFile != null && !imageFile.isEmpty()) {
+                // Handle both situations - when imageFile is an absolute path or just a filename
+                String resourcePath;
+                if (imageFile.contains("Asset_pack") || imageFile.contains("assets")) {
+                    // Extract just the file name from the path
+                    int lastSlash = Math.max(imageFile.lastIndexOf('\\'), imageFile.lastIndexOf('/'));
+                    if (lastSlash >= 0 && lastSlash < imageFile.length() - 1) {
+                        String fileName = imageFile.substring(lastSlash + 1);
+                        // Try to load using the extracted file name
+                        resourcePath = "/Asset_pack/Projectiles/" + fileName;
+                    } else {
+                        resourcePath = "/Asset_pack/Projectiles/" + imageFile;
+                    }
+                } else {
+                    resourcePath = "/Asset_pack/Projectiles/" + imageFile;
+                }
+                
+                // Try to load from the classpath
+                try {
+                    image = new Image(getClass().getResourceAsStream(resourcePath));
+                    if (image != null && !image.isError()) {
+                        System.out.println("Loaded projectile image from classpath: " + resourcePath);
+                        return;
+                    }
+                } catch (Exception e) {
+                    System.err.println("Could not load projectile image from classpath: " + resourcePath);
+                }
+                
+                // Fallback to file system only if absolutely necessary
+                try {
+                    File file = new File(imageFile);
+                    if (file.exists()) {
+                        image = new Image(file.toURI().toString());
+                        System.out.println("Loaded projectile image from file: " + imageFile);
+                    } else {
+                        System.err.println("Projectile image file not found: " + imageFile);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error loading from file system: " + e.getMessage());
+                }
             }
         } catch (Exception e) {
-            System.err.println("Error loading image " + imageFile + ": " + e.getMessage());
+            System.err.println("Error loading projectile image " + imageFile + ": " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Reinitialize after deserialization to reload images
+     */
+    public void reinitializeAfterLoad() {
+        if (image == null && imageFile != null) {
+            loadImage();
+        }
+        
+        // If image still couldn't be loaded, ensure color is set for fallback rendering
+        if (image == null && color == null) {
+            // Set a default color based on damage type
+            switch (damageType) {
+                case ARROW:
+                    color = Color.BROWN;
+                    break;
+                case MAGIC:
+                    color = Color.PURPLE;
+                    break;
+                case EXPLOSIVE:
+                    color = Color.ORANGE;
+                    break;
+                default:
+                    color = Color.GRAY;
+            }
         }
     }
     

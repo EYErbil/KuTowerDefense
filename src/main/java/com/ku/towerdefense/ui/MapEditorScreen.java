@@ -174,25 +174,21 @@ public class MapEditorScreen extends BorderPane {
 
         TextArea textArea = new TextArea(
                 "Map Requirements:\n" +
-                        "- Must have exactly one Start Point (Path Start).\n" +
-                        "- Start Point must be on an edge tile.\n" +
-                        "- Must have exactly one End Point (Castle base - bottom-left tile).\n" +
-                        "- End Point must be represented by a full 2x2 Castle structure placed on Grass.\n" +
-                        "- There must be a valid path (using Path tiles) from the Start Point to a tile adjacent to the End Point (Castle).\n"
-                        +
-                        "- The path must be walkable (Path tiles).\n" +
-                        "- Tower Slots can only be placed on Grass tiles.\n\n" +
-                        "Editor Usage:\n" +
-                        "- Select a tile from the left palette.\n" +
+                        "- Must have exactly one Start Point (where enemies spawn).\n" +
+                        "- The Start Point must be placed on an edge tile.\n" +
+                        "- Must have exactly one End Point (enemy target).\n" +
+                        "- The End Point is typically represented by a Castle structure.\n" +
+                        "- There must be a valid path from Start Point to End Point.\n" +
+                        "\nSpecial Tiles (Required):\n" +
+                        "- START_POINT: Place this on a map edge where enemies will spawn.\n" +
+                        "- END_POINT: Place this where enemies should try to reach. It automatically\n" +
+                        "  places a 2x2 Castle structure.\n" +
+                        "\nEditor Usage:\n" +
+                        "- Select a tile from the left palette, including the new Special Tiles section.\n" +
                         "- Click on the canvas to place the selected tile.\n" +
-                        "- Use the 'Set Start' button in the top toolbar, then click on an edge tile to place the Start Point.\n"
-                        +
-                        "- To place the Castle (End Point), select the Castle icon (bottom-left part) and click on the desired top-left Grass tile for the 2x2 structure.\n"
-                        +
-                        "- Use zoom controls (+/-) or Reset Zoom.\n" +
-                        "- Use 'Resize Map' in the top toolbar to change map dimensions (clears Start/End/Castle).\n" +
-                        "- Save/Load maps using the buttons below.\n" +
-                        "- Validate Map checks if the current map meets the basic requirements.");
+                        "- For path creation, use various path tiles to connect Start and End points.\n" +
+                        "- Tower slots can only be placed on Grass tiles.\n" +
+                        "- Validate your map before saving to check all requirements are met.");
         textArea.setEditable(false);
         textArea.setWrapText(true);
 
@@ -254,11 +250,17 @@ public class MapEditorScreen extends BorderPane {
         }
 
         if (!hasStart) {
-            showAlert("Validation Error", "No valid start point found. A valid start point must be either a START_POINT tile or a path tile at the edge of the map.");
+            showAlert("Validation Error", 
+                "No valid start point found. Please place a START_POINT tile on the edge of the map.\n\n" +
+                "The START_POINT tile can be found in the 'Special Tiles' section of the palette and " +
+                "should be placed where enemies will spawn.");
             return false;
         }
         if (!hasEnd) {
-            showAlert("Validation Error", "No End Point (Castle) found.");
+            showAlert("Validation Error", 
+                "No End Point (Castle) found. Please place an END_POINT tile on the map.\n\n" +
+                "The END_POINT tile can be found in the 'Special Tiles' section of the palette and " +
+                "will automatically place a 2x2 castle structure where enemies will try to reach.");
             return false;
         }
         if (startPoint == null || endPointAdjacent == null) {
@@ -329,8 +331,7 @@ public class MapEditorScreen extends BorderPane {
     }
 
     /**
-     * Checks if the 2x2 castle structure is correctly placed starting with the
-     * bottom-left at (x, y).
+     * Checks if the 2x2 castle structure is correctly placed starting at the END_POINT.
      * Assumes (x, y) is TileType.END_POINT.
      */
     private boolean isCastleComplete(int baseX, int baseY) {
@@ -355,13 +356,19 @@ public class MapEditorScreen extends BorderPane {
     }
 
     /**
-     * Finds a walkable tile adjacent to the castle base (END_POINT) at (baseX,
-     * baseY).
+     * Finds a walkable tile adjacent to the castle (END_POINT) at (baseX, baseY).
      * Returns the Point of the adjacent walkable tile, or null if none found.
      */
     private Point findAdjacentWalkable(int baseX, int baseY) {
-        int[][] neighbors = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
-        for (int[] offset : neighbors) {
+        // Check all four sides of the 2x2 castle structure
+        int[][] directions = {
+            {-1, 0}, {-1, 1},  // Left side
+            {0, -1}, {1, -1},  // Top side
+            {2, 0}, {2, 1},    // Right side
+            {0, 2}, {1, 2}     // Bottom side
+        };
+        
+        for (int[] offset : directions) {
             int nx = baseX + offset[0];
             int ny = baseY + offset[1];
             if (nx >= 0 && nx < currentMap.getWidth() && ny >= 0 && ny < currentMap.getHeight()) {
@@ -499,6 +506,19 @@ public class MapEditorScreen extends BorderPane {
             try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(selectedFile))) {
                 GameMap loadedMap = (GameMap) ois.readObject();
                 this.currentMap = loadedMap;
+                
+                // Ensure all tiles reinitialize after loading
+                for (int x = 0; x < currentMap.getWidth(); x++) {
+                    for (int y = 0; y < currentMap.getHeight(); y++) {
+                        Tile tile = currentMap.getTile(x, y);
+                        if (tile != null) {
+                            tile.reinitializeAfterLoad();
+                        }
+                    }
+                }
+                
+                // Ensure path is regenerated
+                currentMap.generatePath();
 
                 topToolbar.setGameMap(this.currentMap);
                 canvasView.setGameMap(this.currentMap);

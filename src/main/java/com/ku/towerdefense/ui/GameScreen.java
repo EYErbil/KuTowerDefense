@@ -19,6 +19,11 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import javafx.scene.layout.StackPane;
+import javafx.scene.transform.Affine;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.image.Image;
+import javafx.scene.ImageCursor;
 
 /**
  * The main game screen where the tower defense gameplay takes place.
@@ -32,6 +37,8 @@ public class GameScreen extends BorderPane {
     private GameRenderTimer renderTimer;
     private Tower selectedTower;
     private boolean isPaused = false;
+    private final StackPane canvasContainer = new StackPane();
+    private final Affine worldTransform = new Affine();
     
     // Custom AnimationTimer class with additional methods
     private class GameRenderTimer extends AnimationTimer {
@@ -45,75 +52,118 @@ public class GameScreen extends BorderPane {
         @Override
         public void handle(long now) {
             GraphicsContext gc = gameCanvas.getGraphicsContext2D();
+            double canvasWidth = gameCanvas.getWidth();
+            double canvasHeight = gameCanvas.getHeight();
 
-            // Clear the canvas
-            gc.clearRect(0, 0, gameCanvas.getWidth(), gameCanvas.getHeight());
+            // Calculate desired game world size (original fixed size)
+            double worldWidth = gameController.getGameMap().getWidth() * 32.0;
+            double worldHeight = gameController.getGameMap().getHeight() * 32.0;
 
-            // Render game elements
+            // --- Calculate Scaling and Centering ---
+            double scaleX = canvasWidth / worldWidth;
+            double scaleY = canvasHeight / worldHeight;
+            double scale = Math.min(scaleX, scaleY); // Maintain aspect ratio
+
+            // Calculate translation to center the scaled world
+            double scaledWorldWidth = worldWidth * scale;
+            double scaledWorldHeight = worldHeight * scale;
+            double translateX = (canvasWidth - scaledWorldWidth) / 2.0;
+            double translateY = (canvasHeight - scaledWorldHeight) / 2.0;
+
+            // Update the transformation matrix
+            worldTransform.setToIdentity();
+            worldTransform.appendTranslation(translateX, translateY);
+            worldTransform.appendScale(scale, scale);
+            // --- End Scaling and Centering ---
+
+
+            // --- Rendering ---
+            gc.save(); // Save default transform state
+
+            // Clear the entire canvas (background)
+            gc.setFill(javafx.scene.paint.Color.web("#111111")); // Match background color
+            gc.fillRect(0, 0, canvasWidth, canvasHeight);
+
+            // Apply the world transformation (scale and center)
+            gc.setTransform(worldTransform);
+
+            // Render game elements using original world coordinates
+            // The transform handles scaling them correctly onto the canvas
             gameController.render(gc);
 
-            // Render tower preview if a tower is selected (follow mouse)
+            // Render tower preview (using transformed mouse coords - see setOnMouseClicked)
             if (selectedTower != null && mouseInCanvas) {
-                // Convert to grid coordinates
-                int tileX = (int)(mouseX / 32);
-                int tileY = (int)(mouseY / 32);
+                // Transform mouse coordinates from canvas space to world space
+                javafx.geometry.Point2D worldMouse = transformMouseCoords(mouseX, mouseY);
 
-                // Get center of the tile
-                double centerX = tileX * 32 + 16;
-                double centerY = tileY * 32 + 16;
+                if (worldMouse != null) {
+                    // Convert world coordinates to grid coordinates (original logic)
+                    int tileX = (int)(worldMouse.getX() / 32);
+                    int tileY = (int)(worldMouse.getY() / 32);
 
-                // Check if we can place here
-                boolean canPlace = gameController.getGameMap().canPlaceTower(centerX, centerY);
+                    // Get center of the tile in world coordinates
+                    double centerX = tileX * 32 + 16;
+                    double centerY = tileY * 32 + 16;
 
-                // Draw a preview circle
-                gc.setGlobalAlpha(0.5);
-                gc.setFill(canPlace ? javafx.scene.paint.Color.GREEN : javafx.scene.paint.Color.RED);
-                gc.fillOval(centerX - 16, centerY - 16, 32, 32);
+                    // Check if we can place here (uses world coordinates)
+                    boolean canPlace = gameController.getGameMap().canPlaceTower(centerX, centerY, gameController.getTowers());
 
-                // Draw range preview
-                gc.setStroke(javafx.scene.paint.Color.WHITE);
-                gc.setGlobalAlpha(0.2);
-                if (selectedTower instanceof ArcherTower) {
-                    gc.strokeOval(centerX - 150, centerY - 150, 300, 300);
-                } else if (selectedTower instanceof ArtilleryTower) {
-                    gc.strokeOval(centerX - 120, centerY - 120, 240, 240);
-                } else if (selectedTower instanceof MageTower) {
-                    gc.strokeOval(centerX - 140, centerY - 140, 280, 280);
+                    // Draw preview circle in world coordinates
+                    gc.setGlobalAlpha(0.5);
+                    gc.setFill(canPlace ? javafx.scene.paint.Color.GREEN : javafx.scene.paint.Color.RED);
+                    // Use world coordinates for drawing - transform handles canvas placement
+                    gc.fillOval(centerX - 16, centerY - 16, 32, 32);
+
+                    // Draw range preview in world coordinates
+                    gc.setStroke(javafx.scene.paint.Color.WHITE);
+                    gc.setGlobalAlpha(0.2);
+                    double range = 0;
+                    if (selectedTower instanceof ArcherTower) range = ((ArcherTower)selectedTower).getRange();
+                    else if (selectedTower instanceof ArtilleryTower) range = ((ArtilleryTower)selectedTower).getRange();
+                    else if (selectedTower instanceof MageTower) range = ((MageTower)selectedTower).getRange();
+
+                    if (range > 0) {
+                       gc.strokeOval(centerX - range, centerY - range, range * 2, range * 2);
+                    }
+                    gc.setGlobalAlpha(1.0);
                 }
-
-                gc.setGlobalAlpha(1.0);
             }
-            if (lastTime < 0) lastTime = now;
-            double deltaTime = (now - lastTime) / 1_000_000_000.0;
-            lastTime = now;
 
-            gameController.update(deltaTime);
+            gc.restore(); // Restore default transform for drawing UI overlays
+
+            // --- Update game logic ---
+            if (!isPaused) {
+                if (lastTime < 0) lastTime = now;
+                double deltaTime = (now - lastTime) / 1_000_000_000.0;
+                lastTime = now;
+                gameController.update(deltaTime);
+            } else {
+                 lastTime = -1; // Reset delta time calculation when paused
+            }
 
 
-            gc.clearRect(0, 0, gameCanvas.getWidth(), gameCanvas.getHeight());
-
-            gameController.render(gc);
-
-            // Status message (fades after 3 seconds)
+            // --- UI Overlays (drawn directly on canvas, not scaled) ---
+            // Status message (bottom-left)
             long currentTime = System.currentTimeMillis();
             if (currentTime - statusTimestamp < 3000) {
                 double alpha = 1.0 - (currentTime - statusTimestamp) / 3000.0;
                 gc.setGlobalAlpha(alpha);
                 gc.setFill(javafx.scene.paint.Color.WHITE);
                 gc.setStroke(javafx.scene.paint.Color.BLACK);
-                gc.setLineWidth(2);
-                gc.fillText(statusMessage, 10, gameCanvas.getHeight() - 20);
-                gc.strokeText(statusMessage, 10, gameCanvas.getHeight() - 20);
+                gc.setLineWidth(1); // Reduced thickness slightly
+                gc.strokeText(statusMessage, 10, canvasHeight - 10); // Anchor bottom-left
+                gc.fillText(statusMessage, 10, canvasHeight - 10);
                 gc.setGlobalAlpha(1.0);
             }
-            
-            // Debug information to see what's being rendered
+
+            // Debug information (top-left)
             gc.setFill(javafx.scene.paint.Color.WHITE);
             gc.fillText("Towers: " + gameController.getTowers().size(), 10, 20);
             gc.fillText("Enemies: " + gameController.getEnemies().size(), 10, 40);
             gc.fillText("Wave: " + gameController.getCurrentWave(), 10, 60);
-            
-            // Display workaround instructions if assets aren't loading properly
+            // Add FPS counter? (Optional)
+
+            // Asset loading issue message
             if (!gameController.getTowers().isEmpty() && gameController.getTowers().get(0).getImage() == null) {
                 gc.setFill(javafx.scene.paint.Color.RED);
                 gc.fillText("Asset loading issue detected!", 10, 80);
@@ -157,31 +207,46 @@ public class GameScreen extends BorderPane {
         // Create top bar with game info
         HBox topBar = createTopBar();
         
-        // Create the game canvas
-        int canvasWidth = gameController.getGameMap().getWidth() * 32; // 32 pixels per tile
-        int canvasHeight = gameController.getGameMap().getHeight() * 32;
-        gameCanvas = new Canvas(canvasWidth, canvasHeight);
-        
-        // Add click handler for tower placement
+        // Create the game canvas (no initial size)
+        gameCanvas = new Canvas();
+
+        // Place canvas in a container that allows resizing
+        canvasContainer.getChildren().add(gameCanvas);
+        canvasContainer.setStyle("-fx-background-color: #222222;"); // Background for letterboxing
+
+        // Bind canvas size to its container's size
+        gameCanvas.widthProperty().bind(canvasContainer.widthProperty());
+        gameCanvas.heightProperty().bind(canvasContainer.heightProperty());
+
+        // --- Mouse Event Handling ---
+        // Update mouse position for preview rendering
+        gameCanvas.setOnMouseMoved(e -> renderTimer.setMousePosition(e.getX(), e.getY(), true));
+        gameCanvas.setOnMouseExited(e -> renderTimer.setMousePosition(e.getX(), e.getY(), false));
+
+        // Add click handler for tower placement/selection/selling
         gameCanvas.setOnMouseClicked(e -> {
-            if (e.isPrimaryButtonDown()) {
-                // Left click to place tower
+             // Transform click coordinates from canvas space to world space
+            javafx.geometry.Point2D worldCoord = transformMouseCoords(e.getX(), e.getY());
+
+            if (worldCoord == null) return; // Click was outside the scaled world area
+
+            double worldX = worldCoord.getX();
+            double worldY = worldCoord.getY();
+
+            if (e.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
                 if (selectedTower != null) {
-                    int x = (int) e.getX();
-                    int y = (int) e.getY();
-                    placeTower(x, y);
+                    // Pass world coordinates to placeTower
+                    placeTower(worldX, worldY);
                 } else {
-                    // If no tower is selected for placement, try to select an existing tower
-                    selectTowerAt(e.getX(), e.getY());
+                    // Pass world coordinates to selectTowerAt
+                    selectTowerAt(worldX, worldY);
                 }
-            } else if (e.isSecondaryButtonDown()) {
-                // Right click to sell tower
-                int x = (int) e.getX();
-                int y = (int) e.getY();
-                sellTower(x, y);
-            } else if (e.isMiddleButtonDown()) {
-                // Middle click to select/inspect tower
-                selectTowerAt(e.getX(), e.getY());
+            } else if (e.getButton() == javafx.scene.input.MouseButton.SECONDARY) {
+                 // Pass world coordinates to sellTower
+                 sellTower(worldX, worldY);
+            } else if (e.getButton() == javafx.scene.input.MouseButton.MIDDLE) {
+                 // Pass world coordinates to selectTowerAt (consistent with left-click select)
+                 selectTowerAt(worldX, worldY);
             }
         });
         
@@ -190,11 +255,11 @@ public class GameScreen extends BorderPane {
         
         // Layout
         setTop(topBar);
-        setCenter(gameCanvas);
+        setCenter(canvasContainer); // Put the container in the center
         setRight(sidebar);
         
-        // Start the game controller
-        gameController.startGame();
+        // Request focus on the canvas container so keyboard events might work if needed later
+        canvasContainer.requestFocus();
     }
     
     /**
@@ -342,49 +407,76 @@ public class GameScreen extends BorderPane {
      * @return configured button
      */
     private Button createTowerButton(String name, int cost) {
-        Button button = new Button(name + " ($" + cost + ")");
+        Button button = new Button(name + " ($ " + cost + ")");
         button.setPrefWidth(150);
         return button;
     }
     
     /**
-     * Place the selected tower at the specified coordinates.
+     * Place the selected tower at the specified world coordinates.
      *
-     * @param x x coordinate
-     * @param y y coordinate
+     * @param worldX the x-coordinate in the game world
+     * @param worldY the y-coordinate in the game world
      */
-    private void placeTower(int x, int y) {
-        if (selectedTower != null) {
-            // Convert to grid coordinates
-            int tileX = x / 32;
-            int tileY = y / 32;
+    private void placeTower(double worldX, double worldY) {
+        if (selectedTower == null) {
+            renderTimer.setStatusMessage("No tower type selected!");
+            return;
+        }
+
+        // Determine tile based on world coordinates
+        int tileX = (int)(worldX / 32);
+        int tileY = (int)(worldY / 32);
+
+        // Calculate center of the target tile 
+        double centerX = tileX * 32 + 16;
+        double centerY = tileY * 32 + 16;
+
+        // Create the appropriate tower type instance
+        Tower towerToPlace = null;
+        int cost = 0;
+        try {
+             if (selectedTower instanceof ArcherTower) {
+                 towerToPlace = new ArcherTower(0, 0);
+                 cost = ((ArcherTower)selectedTower).getCost();
+             } else if (selectedTower instanceof ArtilleryTower) {
+                 towerToPlace = new ArtilleryTower(0, 0);
+                 cost = ((ArtilleryTower)selectedTower).getCost();
+             } else if (selectedTower instanceof MageTower) {
+                 towerToPlace = new MageTower(0, 0);
+                 cost = ((MageTower)selectedTower).getCost();
+             }
+        } catch (Exception e) {
+             System.err.println("Error creating tower instance: " + e.getMessage());
+             renderTimer.setStatusMessage("Error creating tower!");
+             return;
+        }
+
+        // Try to place the tower via the controller
+        if (towerToPlace != null) {
+            // Set the position to match tile (we draw at 32x32 px now)
+            // Since the rendering now directly uses the entity's top-left corner (x,y) to draw,
+            // we need to position the tower at the top-left of the tile, not the center
+            towerToPlace.setX(tileX * 32); // Align to top-left corner of the tile
+            towerToPlace.setY(tileY * 32);
             
-            // Get center of the tile
-            double centerX = tileX * 32 + 16;
-            double centerY = tileY * 32 + 16;
-            
-            // Create the appropriate tower type at the center of the tile
-            Tower towerToPlace = null;
-            if (selectedTower instanceof ArcherTower) {
-                towerToPlace = new ArcherTower(centerX - 32, centerY - 32); // Adjust for tower size
-            } else if (selectedTower instanceof ArtilleryTower) {
-                towerToPlace = new ArtilleryTower(centerX - 32, centerY - 32);
-            } else if (selectedTower instanceof MageTower) {
-                towerToPlace = new MageTower(centerX - 32, centerY - 32);
-            }
-            
-            // Try to place the tower
-            if (towerToPlace != null) {
-                boolean placed = gameController.placeTower(towerToPlace);
-                if (!placed) {
-                    // Show error message
-                    System.out.println("Cannot place tower here!");
-                    renderTimer.setStatusMessage("Cannot place tower here!");
-                } else {
-                    System.out.println("Tower placed at tile: " + tileX + ", " + tileY);
-                    renderTimer.setStatusMessage("Tower placed at tile: " + tileX + ", " + tileY);
-                }
-            }
+            // For range calculations, ensure the tower knows its correct center
+            // (The entity's getCenterX/Y methods will calculate correctly by adding width/2, height/2)
+
+            // Check cost again before placing
+             if (gameController.getPlayerGold() >= cost) {
+                 boolean placed = gameController.placeTower(towerToPlace);
+                 if (placed) {
+                     renderTimer.setStatusMessage(towerToPlace.getClass().getSimpleName() + " placed!");
+                     selectedTower = null; // Clear selection after successful placement
+                 } else {
+                     renderTimer.setStatusMessage("Cannot place tower here (blocked or path)!");
+                 }
+             } else {
+                 renderTimer.setStatusMessage("Not enough gold! Need $" + cost);
+             }
+        } else {
+             renderTimer.setStatusMessage("Failed to create tower instance.");
         }
     }
     
@@ -437,12 +529,39 @@ public class GameScreen extends BorderPane {
      */
     private void openPauseMenu() {
         // Pause the game controller
-        gameController.stopGame();
+        // gameController.stopGame(); // Maybe just pause?
+        gameController.pauseGame(); // Using pauseGame instead
         renderTimer.stop();
-        
+
         // Create and show pause menu
         // In a real implementation, this would create a popup or overlay
-        System.out.println("Game paused!");
+        // System.out.println("Game paused!"); // No longer just prints
+
+        // --- Navigate back to Main Menu --- 
+        try {
+             System.out.println("Returning to Main Menu...");
+             MainMenuScreen mainMenu = new MainMenuScreen(primaryStage);
+             Scene currentScene = primaryStage.getScene();
+             if (currentScene != null) {
+                 currentScene.setRoot(mainMenu);
+             } else {
+                 // Fallback if scene is somehow null
+                 Scene mainMenuScene = new Scene(mainMenu, 800, 600); // Use default size
+                 // Re-apply CSS if needed
+                 mainMenuScene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+                 // Re-apply cursor if needed
+                 ImageCursor customCursor = UIAssets.getCustomCursor();
+                 if (customCursor != null) {
+                     mainMenuScene.setCursor(customCursor);
+                 }
+                 primaryStage.setScene(mainMenuScene);
+            }
+        } catch (Exception ex) {
+             System.err.println("Error navigating back to main menu: " + ex.getMessage());
+             ex.printStackTrace();
+             // Potentially show an error dialog to the user
+        }
+         // --- End Navigation Logic ---
     }
     
     /**
@@ -460,15 +579,19 @@ public class GameScreen extends BorderPane {
     }
     
     /**
-     * Sell a tower at the specified coordinates.
+     * Sell a tower at the specified world coordinates.
      *
-     * @param x x coordinate
-     * @param y y coordinate
+     * @param worldX the x-coordinate in the game world
+     * @param worldY the y-coordinate in the game world
      */
-    private void sellTower(int x, int y) {
-        int refundAmount = gameController.sellTower(x, y);
+    private void sellTower(double worldX, double worldY) {
+        // Call controller method that accepts doubles
+        int refundAmount = gameController.sellTower(worldX, worldY);
         if (refundAmount > 0) {
-            renderTimer.setStatusMessage("Tower sold for $" + refundAmount + "!");
+            renderTimer.setStatusMessage("Tower sold for " + refundAmount + " gold.");
+        } else {
+             // sellTower returns 0 if no tower found or couldn't sell
+             renderTimer.setStatusMessage("No tower found at this location to sell.");
         }
     }
     
@@ -514,5 +637,21 @@ public class GameScreen extends BorderPane {
         gameCanvas.setOnMouseExited(e -> {
             renderTimer.setMousePosition(0, 0, false);
         });
+    }
+
+    /**
+     * Transforms mouse coordinates from Canvas space to World space.
+     * @param canvasX Mouse X relative to canvas.
+     * @param canvasY Mouse Y relative to canvas.
+     * @return Point2D in world coordinates, or null if transform is invalid.
+     */
+    private javafx.geometry.Point2D transformMouseCoords(double canvasX, double canvasY) {
+        try {
+            // Use the inverse of the world transform to go from canvas -> world
+            return worldTransform.inverseTransform(canvasX, canvasY);
+        } catch (javafx.scene.transform.NonInvertibleTransformException e) {
+            System.err.println("Warning: Could not invert world transform for mouse input.");
+            return null; // Return null if transform is broken
+        }
     }
 }

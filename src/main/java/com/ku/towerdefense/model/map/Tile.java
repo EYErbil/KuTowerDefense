@@ -70,6 +70,9 @@ public class Tile implements Serializable {
 
         // Add coordinates for the logical END_POINT, matching CASTLE1
         TILE_COORDS.put(TileType.END_POINT, new Point2D(0, 6));
+        
+        // Add coordinates for the deprecated PATH type, matching PATH_HORIZONTAL
+        TILE_COORDS.put(TileType.PATH, new Point2D(1, 3));
     }
 
     /* ────────────────────────── Static Resources ───────────────────────── */
@@ -120,13 +123,22 @@ public class Tile implements Serializable {
     }
 
     public boolean isWalkable() {
-        return switch (type) {
-            case PATH_CIRCLE_NW, PATH_CIRCLE_N, PATH_CIRCLE_NE, PATH_CIRCLE_E, PATH_CIRCLE_SE, PATH_CIRCLE_S,
-                    PATH_CIRCLE_SW, PATH_CIRCLE_W, PATH_VERTICAL_N_DE, PATH_VERTICAL, PATH_VERTICAL_S_DE,
-                    PATH_HORIZONTAL_W_DE, PATH_HORIZONTAL, PATH_HORIZONTAL_E_DE ->
-                true;
-            default -> false;
-        };
+        return type == TileType.PATH_HORIZONTAL || 
+               type == TileType.PATH_VERTICAL || 
+               type == TileType.PATH || // Include legacy PATH type
+               type == TileType.PATH_CIRCLE_N || 
+               type == TileType.PATH_CIRCLE_NE || 
+               type == TileType.PATH_CIRCLE_E || 
+               type == TileType.PATH_CIRCLE_SE || 
+               type == TileType.PATH_CIRCLE_S || 
+               type == TileType.PATH_CIRCLE_SW || 
+               type == TileType.PATH_CIRCLE_W || 
+               type == TileType.PATH_CIRCLE_NW ||
+               type == TileType.PATH_VERTICAL_N_DE ||
+               type == TileType.PATH_VERTICAL_S_DE ||
+               type == TileType.PATH_HORIZONTAL_W_DE ||
+               type == TileType.PATH_HORIZONTAL_E_DE ||
+               type == TileType.START_POINT; // Start point is also walkable
     }
 
     public Image getImage() {
@@ -170,12 +182,78 @@ public class Tile implements Serializable {
     }
 
     public void render(GraphicsContext gc, int renderTileSize) {
-        if (image != null && !image.isError()) {
+        if (type == TileType.END_POINT) {
+            // Special case for END_POINT (Castle) - it should be a 2x2 tile structure
+            renderEndPoint(gc, renderTileSize);
+        } else if (type == TileType.START_POINT) {
+            // For START_POINT, render the tile with an indicator overlay
+            if (image != null && !image.isError()) {
+                // Standard rendering for the base tile
+                gc.drawImage(image, x * renderTileSize, y * renderTileSize,
+                        renderTileSize, renderTileSize);
+                
+                // No additional indicator here - we'll add those in MapEditorCanvasView
+                // for better visual separation of game data and editor UI
+            } else {
+                // Fallback for missing images
+                gc.setFill(Color.LIGHTGREEN);
+                gc.fillRect(x * renderTileSize, y * renderTileSize,
+                        renderTileSize, renderTileSize);
+            }
+        } else if (image != null && !image.isError()) {
+            // Standard rendering for normal tiles
             gc.drawImage(image, x * renderTileSize, y * renderTileSize,
                     renderTileSize, renderTileSize);
         } else {
+            // Fallback for missing images
             gc.setFill(Color.MAGENTA);
             gc.fillRect(x * renderTileSize, y * renderTileSize,
+                    renderTileSize, renderTileSize);
+        }
+    }
+
+    /**
+     * Special rendering for the castle (END_POINT)
+     * Draws a proper 2x2 castle using the four castle tiles
+     */
+    private void renderEndPoint(GraphicsContext gc, int renderTileSize) {
+        loadImagesIfNeeded();
+        
+        // Use a larger castle that spans 2x2 tiles
+        double castleSize = renderTileSize * 2;
+        
+        // Grass background
+        Image grassImage = CACHE.get(TileType.GRASS);
+        if (grassImage != null) {
+            // Draw grass under all castle tiles
+            gc.drawImage(grassImage, x * renderTileSize, y * renderTileSize, 
+                    renderTileSize, renderTileSize);
+            gc.drawImage(grassImage, (x+1) * renderTileSize, y * renderTileSize, 
+                    renderTileSize, renderTileSize);
+            gc.drawImage(grassImage, x * renderTileSize, (y+1) * renderTileSize, 
+                    renderTileSize, renderTileSize);
+            gc.drawImage(grassImage, (x+1) * renderTileSize, (y+1) * renderTileSize, 
+                    renderTileSize, renderTileSize);
+        }
+        
+        // Draw the 4 castle quarters
+        drawCastleTile(gc, TileType.CASTLE1, x, y, renderTileSize);
+        drawCastleTile(gc, TileType.CASTLE2, x+1, y, renderTileSize);
+        drawCastleTile(gc, TileType.CASTLE3, x, y+1, renderTileSize);
+        drawCastleTile(gc, TileType.CASTLE4, x+1, y+1, renderTileSize);
+    }
+    
+    /**
+     * Helper to draw a specific castle tile part
+     */
+    private void drawCastleTile(GraphicsContext gc, TileType castleTileType, int tileX, int tileY, int renderTileSize) {
+        Rectangle2D viewport = getSourceViewportForType(castleTileType);
+        if (viewport != null && tileset != null) {
+            // Draw the castle part from the tileset using the viewport
+            gc.drawImage(tileset, 
+                    viewport.getMinX(), viewport.getMinY(), 
+                    viewport.getWidth(), viewport.getHeight(),
+                    tileX * renderTileSize, tileY * renderTileSize, 
                     renderTileSize, renderTileSize);
         }
     }
@@ -407,5 +485,14 @@ public class Tile implements Serializable {
     @Override
     public String toString() {
         return "Tile[x=" + x + ", y=" + y + ", type=" + type + "]";
+    }
+
+    /**
+     * Called after deserialization to reinitialize transient fields.
+     * This ensures images are properly reloaded when the game is loaded from a saved file.
+     */
+    public void reinitializeAfterLoad() {
+        loadImagesIfNeeded();
+        initTransientFields();
     }
 }

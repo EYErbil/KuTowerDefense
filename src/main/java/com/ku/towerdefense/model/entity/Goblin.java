@@ -19,16 +19,13 @@ public class Goblin extends Enemy implements Serializable {
      * @param y y coordinate
      */
     public Goblin(double x, double y) {
-        super(x, y, 64, 64, GameSettings.getInstance().getGoblinHealth(), 
+        super(x, y, 32, 32, GameSettings.getInstance().getGoblinHealth(), 
               GameSettings.getInstance().getGoblinSpeed(),
               GameSettings.getInstance().getGoldPerGoblin(),
               EnemyType.GOBLIN);
         
-        // Set image file from assets
-        String imagePath = System.getProperty("user.dir") + File.separator + 
-                          "Asset_pack" + File.separator + "Enemies" + File.separator + 
-                          "Goblin_Red.png";
-        setImageFile(imagePath);
+        // Note: Image is loaded from the static cache in the Enemy class
+        // No need to set imageFile manually
     }
     
     /**

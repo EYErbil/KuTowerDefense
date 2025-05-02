@@ -19,16 +19,13 @@ public class Knight extends Enemy implements Serializable {
      * @param y y coordinate
      */
     public Knight(double x, double y) {
-        super(x, y, 64, 64, GameSettings.getInstance().getKnightHealth(), 
+        super(x, y, 32, 32, GameSettings.getInstance().getKnightHealth(), 
               GameSettings.getInstance().getKnightSpeed(),
               GameSettings.getInstance().getGoldPerKnight(),
               EnemyType.KNIGHT);
         
-        // Set image file from assets
-        String imagePath = System.getProperty("user.dir") + File.separator + 
-                          "Asset_pack" + File.separator + "Enemies" + File.separator + 
-                          "Warrior_Blue.png";
-        setImageFile(imagePath);
+        // Note: Image is loaded from the static cache in the Enemy class
+        // No need to set imageFile manually
     }
     
     /**
