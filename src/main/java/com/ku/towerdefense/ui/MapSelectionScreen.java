@@ -75,15 +75,16 @@ public class MapSelectionScreen extends BorderPane {
      * @param maps list to add the loaded maps to
      */
     private void loadSavedMaps(List<GameMap> maps) {
-        File mapsDir = new File("maps");
+        String userHome = System.getProperty("user.home");
+        File mapsDir = new File(userHome, "KUTowerDefenseMaps");
         if (!mapsDir.exists() || !mapsDir.isDirectory()) {
-            System.out.println("Maps directory not found, no saved maps will be loaded");
+            System.out.println("Maps directory not found at " + mapsDir.getAbsolutePath() + ", no saved maps will be loaded");
             return;
         }
 
         File[] mapFiles = mapsDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".map"));
         if (mapFiles == null || mapFiles.length == 0) {
-            System.out.println("No map files found in maps directory");
+            System.out.println("No map files found in maps directory: " + mapsDir.getAbsolutePath());
             return;
         }
 
@@ -93,7 +94,7 @@ public class MapSelectionScreen extends BorderPane {
                 if (obj instanceof GameMap) {
                     GameMap map = (GameMap) obj;
                     maps.add(map);
-                    System.out.println("Loaded map: " + map.getName() + " from " + mapFile.getName());
+                    System.out.println("Loaded map: " + map.getName() + " from " + mapFile.getAbsolutePath());
                 }
             } catch (Exception e) {
                 System.err.println("Error loading map from file " + mapFile.getName() + ": " + e.getMessage());
@@ -101,7 +102,7 @@ public class MapSelectionScreen extends BorderPane {
             }
         }
 
-        System.out.println("Loaded " + (maps.size() - 3) + " saved maps");
+        System.out.println("Loaded " + (maps.size() - 3) + " saved maps from " + mapsDir.getAbsolutePath());
     }
 
     /**

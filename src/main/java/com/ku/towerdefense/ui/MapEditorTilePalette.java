@@ -52,6 +52,10 @@ public class MapEditorTilePalette extends VBox {
             TileType.PATH_HORIZONTAL_W_DE,
             TileType.PATH_HORIZONTAL_E_DE,
 
+            // Special points
+            TileType.START_POINT,
+            TileType.END_POINT,
+
             TileType.TOWER_SLOT,
             TileType.CASTLE1,
             TileType.TREE_BIG, TileType.TREE_MEDIUM, TileType.TREE_SMALL,
@@ -69,6 +73,7 @@ public class MapEditorTilePalette extends VBox {
                     TileType.PATH_CIRCLE_SW, TileType.PATH_CIRCLE_W,
                     TileType.PATH_VERTICAL_N_DE, TileType.PATH_VERTICAL_S_DE,
                     TileType.PATH_HORIZONTAL_W_DE, TileType.PATH_HORIZONTAL_E_DE),
+            "Special Points", List.of(TileType.START_POINT, TileType.END_POINT),
             "Game Elements",    List.of(TileType.TOWER_SLOT),
             "Structures",       List.of(TileType.CASTLE1),
             "Trees",            List.of(TileType.TREE_BIG,TileType.TREE_MEDIUM,TileType.TREE_SMALL),

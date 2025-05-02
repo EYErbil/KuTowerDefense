@@ -365,7 +365,7 @@ public class GameController {
                 Enemy next = queue.poll();
                 if (next == null) {
                     isSpawningEnemies = false;
-                    ((Timeline)e.getSource()).stop();
+                    spawner.stop();
                     System.out.println("Wave " + currentWave + " spawning complete.");
                     return;
                 }
@@ -503,5 +503,51 @@ public class GameController {
 
     public boolean isGameOver() {
         return gameOver;
+    }
+
+    /**
+     * Reinitialize all entities after loading a saved game.
+     * This ensures that images and other transient fields are properly reloaded.
+     */
+    public void reinitializeAfterLoad() {
+        System.out.println("GameController: Reinitializing all entities after loading saved game");
+        
+        // First, ensure the map path is properly initialized
+        if (gameMap != null) {
+            // Force map to regenerate tiles and paths
+            if (gameMap.getEnemyPath() == null) {
+                System.out.println("Regenerating enemy path in map...");
+                gameMap.generatePath();
+            }
+            
+            // Reload map tile images if needed
+            for (int x = 0; x < gameMap.getWidth(); x++) {
+                for (int y = 0; y < gameMap.getHeight(); y++) {
+                    if (gameMap.getTile(x, y) != null) {
+                        gameMap.getTile(x, y).reinitializeAfterLoad();
+                    }
+                }
+            }
+        }
+        
+        // Reload enemy images
+        System.out.println("Reinitializing " + enemies.size() + " enemies");
+        for (Enemy enemy : enemies) {
+            enemy.reinitializeAfterLoad();
+        }
+        
+        // Reload projectile images
+        System.out.println("Reinitializing " + projectiles.size() + " projectiles");
+        for (Projectile projectile : projectiles) {
+            projectile.reinitializeAfterLoad();
+        }
+        
+        // Reload tower images
+        System.out.println("Reinitializing " + towers.size() + " towers");
+        for (Tower tower : towers) {
+            tower.reinitializeAfterLoad();
+        }
+        
+        System.out.println("GameController: Reinitialization complete");
     }
 } 

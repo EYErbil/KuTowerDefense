@@ -106,9 +106,9 @@ public abstract class Enemy extends Entity implements Serializable {
      */
     private static void loadEnemyImages() {
         try {
-            // FIX: Use classpath resources instead of absolute file paths
+            // Use classpath resources instead of absolute file paths
             // Load enemy images from the classpath resources
-            String goblinImagePath = "/assets/enemies/Goblin_Red.png";
+            String goblinImagePath = "/Asset_pack/Enemies/Goblin_Red.png";
             Image goblinImage = new Image(Enemy.class.getResourceAsStream(goblinImagePath));
             if (goblinImage != null && !goblinImage.isError()) {
                 ENEMY_IMAGES.put(EnemyType.GOBLIN, goblinImage);
@@ -118,7 +118,7 @@ public abstract class Enemy extends Entity implements Serializable {
             }
 
             // Knight
-            String knightImagePath = "/assets/enemies/Warrior_Blue.png";
+            String knightImagePath = "/Asset_pack/Enemies/Warrior_Blue.png";
             Image knightImage = new Image(Enemy.class.getResourceAsStream(knightImagePath));
             if (knightImage != null && !knightImage.isError()) {
                 ENEMY_IMAGES.put(EnemyType.KNIGHT, knightImage);
@@ -226,10 +226,34 @@ public abstract class Enemy extends Entity implements Serializable {
      */
     protected void loadImage() {
         try {
-            // FIX: Use classpath resources instead of absolute file path
+            // First check if we can get the image from the static cache based on type
+            if (this.type != null) {
+                Image cachedImage = ENEMY_IMAGES.get(this.type);
+                if (cachedImage != null) {
+                    this.image = cachedImage;
+                    return;
+                }
+            }
+            
+            // Then try to parse the imageFile to see if it's an absolute path or a resource path
             if (imageFile != null && !imageFile.isEmpty()) {
-                // Try to load from classpath first
-                String resourcePath = "/assets/" + imageFile;
+                // If it's an absolute path, try to extract just the filename
+                String resourcePath;
+                if (imageFile.contains("Asset_pack") || imageFile.contains("assets")) {
+                    // Extract just the file name from the path
+                    int lastSlash = Math.max(imageFile.lastIndexOf('\\'), imageFile.lastIndexOf('/'));
+                    if (lastSlash >= 0 && lastSlash < imageFile.length() - 1) {
+                        String fileName = imageFile.substring(lastSlash + 1);
+                        // Try to load using the extracted file name in our standard path
+                        resourcePath = "/Asset_pack/Enemies/" + fileName;
+                    } else {
+                        resourcePath = "/Asset_pack/Enemies/" + imageFile;
+                    }
+                } else {
+                    resourcePath = "/Asset_pack/Enemies/" + imageFile;
+                }
+                
+                // Try to load the resource
                 try {
                     image = new Image(getClass().getResourceAsStream(resourcePath));
                     if (image != null && !image.isError()) {
@@ -240,13 +264,17 @@ public abstract class Enemy extends Entity implements Serializable {
                     System.err.println("Could not load image from classpath: " + resourcePath + " - " + e.getMessage());
                 }
                 
-                // Fallback to file system if needed
-                File file = new File(imageFile);
-                if (file.exists()) {
-                    image = new Image(file.toURI().toString());
-                    System.out.println("Loaded image for " + getClass().getSimpleName() + " from file: " + imageFile);
-                } else {
-                    System.err.println("Image file not found: " + imageFile);
+                // Fallback to file system only if absolutely necessary
+                try {
+                    File file = new File(imageFile);
+                    if (file.exists()) {
+                        image = new Image(file.toURI().toString());
+                        System.out.println("Loaded image for " + getClass().getSimpleName() + " from file: " + imageFile);
+                    } else {
+                        System.err.println("Image file not found: " + imageFile);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error loading from file system: " + e.getMessage());
                 }
             }
         } catch (Exception e) {
@@ -413,6 +441,21 @@ public abstract class Enemy extends Entity implements Serializable {
 
     public void setImageFile(String imageFile) {
         this.imageFile = imageFile;
+    }
+
+    /**
+     * Reinitialize after deserialization - use this to reload images
+     */
+    public void reinitializeAfterLoad() {
+        // Reload enemy image from the cache based on type
+        if (this.type != null) {
+            this.image = ENEMY_IMAGES.get(this.type);
+            
+            // If cache didn't have the image, try to reload from file
+            if (this.image == null && this.imageFile != null) {
+                loadImage();
+            }
+        }
     }
 
     /**

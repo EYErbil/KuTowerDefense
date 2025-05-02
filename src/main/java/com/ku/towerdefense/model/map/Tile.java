@@ -123,13 +123,22 @@ public class Tile implements Serializable {
     }
 
     public boolean isWalkable() {
-        return switch (type) {
-            case PATH_CIRCLE_NW, PATH_CIRCLE_N, PATH_CIRCLE_NE, PATH_CIRCLE_E, PATH_CIRCLE_SE, PATH_CIRCLE_S,
-                    PATH_CIRCLE_SW, PATH_CIRCLE_W, PATH_VERTICAL_N_DE, PATH_VERTICAL, PATH_VERTICAL_S_DE,
-                    PATH_HORIZONTAL_W_DE, PATH_HORIZONTAL, PATH_HORIZONTAL_E_DE, PATH ->
-                true;
-            default -> false;
-        };
+        return type == TileType.PATH_HORIZONTAL || 
+               type == TileType.PATH_VERTICAL || 
+               type == TileType.PATH || // Include legacy PATH type
+               type == TileType.PATH_CIRCLE_N || 
+               type == TileType.PATH_CIRCLE_NE || 
+               type == TileType.PATH_CIRCLE_E || 
+               type == TileType.PATH_CIRCLE_SE || 
+               type == TileType.PATH_CIRCLE_S || 
+               type == TileType.PATH_CIRCLE_SW || 
+               type == TileType.PATH_CIRCLE_W || 
+               type == TileType.PATH_CIRCLE_NW ||
+               type == TileType.PATH_VERTICAL_N_DE ||
+               type == TileType.PATH_VERTICAL_S_DE ||
+               type == TileType.PATH_HORIZONTAL_W_DE ||
+               type == TileType.PATH_HORIZONTAL_E_DE ||
+               type == TileType.START_POINT; // Start point is also walkable
     }
 
     public Image getImage() {
@@ -476,5 +485,14 @@ public class Tile implements Serializable {
     @Override
     public String toString() {
         return "Tile[x=" + x + ", y=" + y + ", type=" + type + "]";
+    }
+
+    /**
+     * Called after deserialization to reinitialize transient fields.
+     * This ensures images are properly reloaded when the game is loaded from a saved file.
+     */
+    public void reinitializeAfterLoad() {
+        loadImagesIfNeeded();
+        initTransientFields();
     }
 }

@@ -331,8 +331,7 @@ public class MapEditorScreen extends BorderPane {
     }
 
     /**
-     * Checks if the 2x2 castle structure is correctly placed starting with the
-     * bottom-left at (x, y).
+     * Checks if the 2x2 castle structure is correctly placed starting at the END_POINT.
      * Assumes (x, y) is TileType.END_POINT.
      */
     private boolean isCastleComplete(int baseX, int baseY) {
@@ -357,13 +356,19 @@ public class MapEditorScreen extends BorderPane {
     }
 
     /**
-     * Finds a walkable tile adjacent to the castle base (END_POINT) at (baseX,
-     * baseY).
+     * Finds a walkable tile adjacent to the castle (END_POINT) at (baseX, baseY).
      * Returns the Point of the adjacent walkable tile, or null if none found.
      */
     private Point findAdjacentWalkable(int baseX, int baseY) {
-        int[][] neighbors = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
-        for (int[] offset : neighbors) {
+        // Check all four sides of the 2x2 castle structure
+        int[][] directions = {
+            {-1, 0}, {-1, 1},  // Left side
+            {0, -1}, {1, -1},  // Top side
+            {2, 0}, {2, 1},    // Right side
+            {0, 2}, {1, 2}     // Bottom side
+        };
+        
+        for (int[] offset : directions) {
             int nx = baseX + offset[0];
             int ny = baseY + offset[1];
             if (nx >= 0 && nx < currentMap.getWidth() && ny >= 0 && ny < currentMap.getHeight()) {
@@ -501,6 +506,19 @@ public class MapEditorScreen extends BorderPane {
             try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(selectedFile))) {
                 GameMap loadedMap = (GameMap) ois.readObject();
                 this.currentMap = loadedMap;
+                
+                // Ensure all tiles reinitialize after loading
+                for (int x = 0; x < currentMap.getWidth(); x++) {
+                    for (int y = 0; y < currentMap.getHeight(); y++) {
+                        Tile tile = currentMap.getTile(x, y);
+                        if (tile != null) {
+                            tile.reinitializeAfterLoad();
+                        }
+                    }
+                }
+                
+                // Ensure path is regenerated
+                currentMap.generatePath();
 
                 topToolbar.setGameMap(this.currentMap);
                 canvasView.setGameMap(this.currentMap);

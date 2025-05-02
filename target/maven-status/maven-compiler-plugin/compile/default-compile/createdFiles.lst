@@ -18,6 +18,7 @@ com\ku\towerdefense\ui\OptionsScreen$SliderChangeListener.class
 com\ku\towerdefense\ui\MapEditorTilePalette$1.class
 com\ku\towerdefense\model\entity\Projectile$1.class
 com\ku\towerdefense\util\GameSettings.class
+com\ku\towerdefense\controller\GamePlayScreen$1.class
 com\ku\towerdefense\model\entity\Entity.class
 com\ku\towerdefense\ui\MapEditorTilePalette.class
 com\ku\towerdefense\ui\MapSelectionScreen$1.class
@@ -32,6 +33,7 @@ com\ku\towerdefense\ui\UIAssets.class
 com\ku\towerdefense\model\entity\Projectile.class
 com\ku\towerdefense\model\PathPoint.class
 com\ku\towerdefense\ui\MapEditorScreen$1.class
+com\ku\towerdefense\controller\GamePlayScreen.class
 com\ku\towerdefense\model\entity\Tower.class
 com\ku\towerdefense\ui\MapEditorCanvasView.class
 com\ku\towerdefense\model\entity\Goblin.class

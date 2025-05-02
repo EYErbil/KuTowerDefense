@@ -417,23 +417,41 @@ public class MapEditorCanvasView extends VBox {
                 showAlert("Invalid placement","Castle must be placed on 2×2 grass.");
                 return;
             }
+            
+        // Check if there's at least one adjacent walkable path tile
+        boolean hasAdjacentPath = false;
+        int[][] directions = {{-1,0}, {0,-1}, {2,0}, {0,2}}; // Left, up, right, down from castle
+        for (int[] dir : directions) {
+            int nx = x + dir[0];
+            int ny = y + dir[1];
+            if (nx >= 0 && nx < gameMap.getWidth() && ny >= 0 && ny < gameMap.getHeight()) {
+                Tile tile = gameMap.getTile(nx, ny);
+                if (tile != null && tile.isWalkable()) {
+                    hasAdjacentPath = true;
+                    break;
+                }
+            }
+        }
+        
+        if (!hasAdjacentPath) {
+            showAlert("Invalid placement", "Castle must be adjacent to a path tile for enemies to reach it.");
+            return;
+        }
+            
+        // Clear any existing castle/end point
         clearExistingEndPoint();
-        gameMap.setTileType(x,  y,  TileType.CASTLE1);
+        
+        // Place the 2x2 castle with the END_POINT at the bottom-left
+        gameMap.setTileType(x,  y,  TileType.END_POINT); // Bottom-left is END_POINT
         gameMap.setTileType(x+1,y,  TileType.CASTLE2);
         gameMap.setTileType(x,  y+1,TileType.CASTLE3);
         gameMap.setTileType(x+1,y+1,TileType.CASTLE4);
 
-        // choose outward‑facing End tile
-        int ex=x, ey=y;
-        if(x==0)                           ex = x-1;
-        else if(x+2==gameMap.getWidth())   ex = x+2;
-        else if(y==0)                      ey = y-1;
-        else if(y+2==gameMap.getHeight())  ey = y+2;
-        else                               ey = y+2; // default bottom
-        if(ex>=0 && ex<gameMap.getWidth() && ey>=0 && ey<gameMap.getHeight())
-            gameMap.setTileType(ex,ey,TileType.END_POINT);
-        System.out.printf("Castle @(%d,%d) – End @(%d,%d)%n",x,y,ex,ey);
+        System.out.println("Castle placed with END_POINT at (" + x + "," + y + ")");
         renderMap();
+        
+        // Regenerate the path
+        gameMap.generatePath();
     }
 
     /**
@@ -458,12 +476,56 @@ public class MapEditorCanvasView extends VBox {
             return;
         }
         
+        // Check if there's a path tile adjacent to the START_POINT
+        boolean hasAdjacentPath = false;
+        int[][] directions = {{-1,0}, {1,0}, {0,-1}, {0,1}}; // All four directions
+        for (int[] dir : directions) {
+            int nx = x + dir[0];
+            int ny = y + dir[1];
+            if (nx >= 0 && nx < gameMap.getWidth() && ny >= 0 && ny < gameMap.getHeight()) {
+                TileType neighborType = gameMap.getTileType(nx, ny);
+                if (isPathTile(neighborType)) {
+                    hasAdjacentPath = true;
+                    break;
+                }
+            }
+        }
+        
+        if (!hasAdjacentPath) {
+            showAlert("Invalid Placement", "Start Point must be adjacent to a path tile.");
+            return;
+        }
+        
         // Clear any existing start point
         clearExistingStartPoint();
         
         // Place the new start point
         gameMap.setTileType(x, y, TileType.START_POINT);
         System.out.println("Placed Start Point at (" + x + "," + y + ")");
+        
+        // Regenerate the path
+        gameMap.generatePath();
+    }
+    
+    /**
+     * Check if a tile type is a path tile
+     */
+    private boolean isPathTile(TileType type) {
+        return type == TileType.PATH_HORIZONTAL || 
+               type == TileType.PATH_VERTICAL || 
+               type == TileType.PATH || 
+               type == TileType.PATH_CIRCLE_N || 
+               type == TileType.PATH_CIRCLE_NE || 
+               type == TileType.PATH_CIRCLE_E || 
+               type == TileType.PATH_CIRCLE_SE || 
+               type == TileType.PATH_CIRCLE_S || 
+               type == TileType.PATH_CIRCLE_SW || 
+               type == TileType.PATH_CIRCLE_W || 
+               type == TileType.PATH_CIRCLE_NW ||
+               type == TileType.PATH_VERTICAL_N_DE ||
+               type == TileType.PATH_VERTICAL_S_DE ||
+               type == TileType.PATH_HORIZONTAL_W_DE ||
+               type == TileType.PATH_HORIZONTAL_E_DE;
     }
     
     /**
@@ -489,19 +551,36 @@ public class MapEditorCanvasView extends VBox {
     }
 
     private void clearExistingEndPoint() {
+        // First find the END_POINT (which serves as castle base marker)
         for (int x = 0; x < gameMap.getWidth(); x++) {
             for (int y = 0; y < gameMap.getHeight(); y++) {
                 if (gameMap.getTileType(x, y) == TileType.END_POINT) {
-                    System.out.println("Clearing existing End Point / Castle structure at (" + x + "," + y + ")");
-                    int tx = x, ty = y;
-                    gameMap.setTileType(tx, ty, TileType.GRASS);
-                    if (tx + 1 < gameMap.getWidth())
-                        gameMap.setTileType(tx + 1, ty, TileType.GRASS);
-                    if (ty + 1 < gameMap.getHeight())
-                        gameMap.setTileType(tx, ty + 1, TileType.GRASS);
-                    if (tx + 1 < gameMap.getWidth() && ty + 1 < gameMap.getHeight())
-                        gameMap.setTileType(tx + 1, ty + 1, TileType.GRASS);
+                    System.out.println("Clearing existing Castle/END_POINT at (" + x + "," + y + ")");
+                    
+                    // Clear the entire 2x2 castle structure
+                    gameMap.setTileType(x, y, TileType.GRASS); // END_POINT
+                    
+                    // Clear other castle parts if they exist
+                    if (x + 1 < gameMap.getWidth())
+                        gameMap.setTileType(x + 1, y, TileType.GRASS); // CASTLE2
+                    if (y + 1 < gameMap.getHeight())
+                        gameMap.setTileType(x, y + 1, TileType.GRASS); // CASTLE3
+                    if (x + 1 < gameMap.getWidth() && y + 1 < gameMap.getHeight())
+                        gameMap.setTileType(x + 1, y + 1, TileType.GRASS); // CASTLE4
+                    
                     return;
+                }
+            }
+        }
+        
+        // Also check for any stray castle parts without an END_POINT
+        for (int x = 0; x < gameMap.getWidth(); x++) {
+            for (int y = 0; y < gameMap.getHeight(); y++) {
+                TileType type = gameMap.getTileType(x, y);
+                if (type == TileType.CASTLE1 || type == TileType.CASTLE2 || 
+                    type == TileType.CASTLE3 || type == TileType.CASTLE4) {
+                    System.out.println("Clearing stray castle part at (" + x + "," + y + ")");
+                    gameMap.setTileType(x, y, TileType.GRASS);
                 }
             }
         }
