@@ -151,6 +151,9 @@ public abstract class Enemy extends Entity implements Serializable {
         double progressIncrement = distanceToMove / totalPathDistance;
         pathProgress += progressIncrement;
 
+        // Debug logging
+        System.out.println("Enemy progress: " + pathProgress + ", position: (" + x + "," + y + ")");
+
         // Cap progress at 1.0 (end of path)
         if (pathProgress > 1.0) {
             pathProgress = 1.0;
@@ -203,11 +206,6 @@ public abstract class Enemy extends Entity implements Serializable {
      */
     @Override
     public void render(GraphicsContext gc) {
-        // Load image if not already loaded
-        if (image == null && imageFile != null) {
-            loadImage();
-        }
-
         // Draw the enemy image if available
         if (image != null) {
             gc.drawImage(image, x, y, width, height);
@@ -217,7 +215,7 @@ public abstract class Enemy extends Entity implements Serializable {
             gc.fillOval(x, y, width, height);
         }
 
-        // Draw health bar
+        // Always render the health bar
         renderHealthBar(gc);
     }
 
@@ -250,46 +248,22 @@ public abstract class Enemy extends Entity implements Serializable {
         double barY = y - 15; // Position higher above the enemy
         double barX = x + (width - barWidth) / 2;
 
-        // Draw background (full health bar)
-        gc.setFill(Color.rgb(50, 0, 0)); // Darker red background
+        // Draw background (empty part of health bar)
+        gc.setFill(Color.rgb(50, 0, 0)); // Dark red background
         gc.fillRect(barX, barY, barWidth, barHeight);
 
-        // Draw current health with color gradient based on health percentage
+        // Draw current health in red
         double healthPercentage = (double) currentHealth / maxHealth;
         double healthWidth = barWidth * healthPercentage;
 
-        // Color gradient from red to green based on health percentage
-        Color healthColor;
-        if (healthPercentage > 0.6) {
-            healthColor = Color.rgb(0, 200, 0); // Brighter green
-        } else if (healthPercentage > 0.3) {
-            healthColor = Color.rgb(255, 165, 0); // Brighter orange
-        } else {
-            healthColor = Color.rgb(255, 0, 0); // Brighter red
-        }
-
-        // Draw health bar with a slight glow effect
-        gc.setFill(healthColor);
+        // Draw health bar in red
+        gc.setFill(Color.rgb(255, 0, 0)); // Bright red for health
         gc.fillRect(barX, barY, healthWidth, barHeight);
 
-        // Draw border with a thicker line
+        // Draw border
         gc.setStroke(Color.BLACK);
         gc.setLineWidth(2);
         gc.strokeRect(barX, barY, barWidth, barHeight);
-
-        // Draw health text with better positioning and visibility
-        gc.setFill(Color.WHITE);
-        gc.setStroke(Color.BLACK);
-        gc.setLineWidth(1);
-        String healthText = currentHealth + "/" + maxHealth;
-
-        // Center the text above the health bar
-        double textX = barX + (barWidth - gc.getFont().getSize() * healthText.length() / 2) / 2;
-        double textY = barY - 5;
-
-        // Draw text with outline for better visibility
-        gc.strokeText(healthText, textX, textY);
-        gc.fillText(healthText, textX, textY);
     }
 
     /**

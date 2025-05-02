@@ -59,13 +59,13 @@ public class GameController {
         this.currentWave = 0;
         this.gameOver = false;
 
-        // Initialize a basic path if not already set
-        if (gameMap.getEnemyPath() == null) {
+        // Initialize a basic path if no paths exist
+        if (gameMap.getEnemyPaths().isEmpty()) {
             // Set start and end points
             gameMap.setTileType(0, 5, TileType.START_POINT);
             gameMap.setTileType(gameMap.getWidth() - 1, 5, TileType.END_POINT);
 
-            // This will generate a path between the start and end points
+            // This will generate paths between the start and end points
             gameMap.generatePath();
         }
 
@@ -108,7 +108,7 @@ public class GameController {
     public void resumeGame() {
         // Add any game-specific resume logic here
     }
-    
+
 
 
     /**
@@ -261,13 +261,14 @@ public class GameController {
             enemy = new Knight(50, 50);
         }
 
-        // Set the path for the enemy to follow
-        if (gameMap.getEnemyPath() != null) {
-            enemy.setPath(gameMap.getEnemyPath());
+        // Set a random path for the enemy to follow
+        GamePath randomPath = gameMap.getRandomPath();
+        if (randomPath != null) {
+            enemy.setPath(randomPath);
             enemies.add(enemy);
-            System.out.println("Added test enemy");
+            System.out.println("Added test enemy with random path");
         } else {
-            System.out.println("Cannot add enemy: no path available");
+            System.out.println("Cannot add enemy: no paths available");
         }
     }
 
@@ -339,15 +340,15 @@ public class GameController {
                         remainingKnights[0]--;
                     }
 
-                    // Set the path for the enemy
-                    GamePath enemyPath = gameMap.getEnemyPath();
-                    if (enemyPath != null) {
-                        enemy.setPath(enemyPath);
+                    // Set a random path for the enemy
+                    GamePath randomPath = gameMap.getRandomPath();
+                    if (randomPath != null) {
+                        enemy.setPath(randomPath);
                         enemies.add(enemy);
                         System.out.println("Spawned " + enemy.getClass().getSimpleName() +
-                                " at (" + startPoint.getX() + "," + startPoint.getY() + ")");
+                                " at (" + startPoint.getX() + "," + startPoint.getY() + ") with random path");
                     } else {
-                        System.err.println("No enemy path found on map!");
+                        System.err.println("No paths available!");
                     }
                 })
         );

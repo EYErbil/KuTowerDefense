@@ -430,8 +430,8 @@ public class MapSelectionScreen extends BorderPane {
             case GRASS:
                 color = Color.GREEN;
             case PATH_CIRCLE_NW, PATH_CIRCLE_N, PATH_CIRCLE_NE, PATH_CIRCLE_E, PATH_CIRCLE_SE, PATH_CIRCLE_S,
-                    PATH_CIRCLE_SW, PATH_CIRCLE_W, PATH_VERTICAL_N_DE, PATH_VERTICAL, PATH_VERTICAL_S_DE,
-                    PATH_HORIZONTAL_W_DE, PATH_HORIZONTAL, PATH_HORIZONTAL_E_DE:
+                 PATH_CIRCLE_SW, PATH_CIRCLE_W, PATH_VERTICAL_N_DE, PATH_VERTICAL, PATH_VERTICAL_S_DE,
+                 PATH_HORIZONTAL_W_DE, PATH_HORIZONTAL, PATH_HORIZONTAL_E_DE:
                 color = Color.SANDYBROWN;
                 break;
             case TOWER_SLOT:
@@ -509,8 +509,8 @@ public class MapSelectionScreen extends BorderPane {
     private void startGame() {
         GameMap selectedMap = availableMaps.get(currentMapIndex);
 
-        // Ensure the path is generated for the selected map
-        if (selectedMap.getEnemyPath() == null) {
+        // Ensure paths are generated for the selected map
+        if (selectedMap.getEnemyPaths().isEmpty()) {
             selectedMap.generatePath();
         }
 

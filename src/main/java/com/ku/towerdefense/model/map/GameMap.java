@@ -19,7 +19,7 @@ public class GameMap implements Serializable {
     private int width;
     private int height;
     private Tile[][] tiles;
-    private GamePath enemyPath;
+    private List<GamePath> enemyPaths;
     private List<int[]> pathPoints;
 
     // For caching the start and end points
@@ -37,6 +37,7 @@ public class GameMap implements Serializable {
         this.name = name;
         this.width = width;
         this.height = height;
+        this.enemyPaths = new ArrayList<>();
         initializeTiles();
     }
 
@@ -121,7 +122,7 @@ public class GameMap implements Serializable {
     }
 
     /**
-     * Generate a path from start to end points.
+     * Generate paths from start to end points.
      */
     public void generatePath() {
         // Find start and end tiles
@@ -138,9 +139,9 @@ public class GameMap implements Serializable {
             }
         }
 
-        // Reset path if start or end is missing
+        // Reset paths if start or end is missing
         if (startTile == null || endTile == null) {
-            enemyPath = null;
+            enemyPaths.clear();
             return;
         }
 
@@ -148,64 +149,147 @@ public class GameMap implements Serializable {
         startPoint = new Point2D(startTile.getX() * 32 + 16, startTile.getY() * 32 + 16);
         endPoint = new Point2D(endTile.getX() * 32 + 16, endTile.getY() * 32 + 16);
 
-        // Initialize pathPoints list
-        List<int[]> pathPoints = new ArrayList<>();
+        // Clear existing paths
+        enemyPaths.clear();
 
-        // Add the start point (in pixels)
+        // Generate paths based on the map layout
+        generatePathsFromMapLayout(startTile, endTile);
+    }
+
+    /**
+     * Generate paths based on the actual map layout
+     */
+    private void generatePathsFromMapLayout(Tile startTile, Tile endTile) {
         final int ts = 32; // tileSize
-        pathPoints.add(new int[] { startTile.getX() * ts + ts / 2, startTile.getY() * ts + ts / 2 });
-
-        // Generate horizontal path
+        List<int[]> currentPath = new ArrayList<>();
         int currentX = startTile.getX();
         int currentY = startTile.getY();
-        int endX = endTile.getX();
-        int endY = endTile.getY();
 
-        // First go horizontally
-        while (currentX != endX) {
-            currentX += (endX > currentX) ? 1 : -1;
+        // Add the start point
+        currentPath.add(new int[] { currentX * ts + ts / 2, currentY * ts + ts / 2 });
 
+        // Follow the path tiles until we reach the end
+        while (currentX != endTile.getX() || currentY != endTile.getY()) {
             Tile currentTile = getTile(currentX, currentY);
-            // Skip if tile is not walkable
-            if (currentTile != null && !currentTile.isWalkable()) {
-                continue;
+            if (currentTile == null) break;
+
+            // Check adjacent tiles for path connections
+            boolean moved = false;
+            int nextX = currentX;
+            int nextY = currentY;
+
+            // Check all four directions
+            if (currentX < width - 1 && isPathTile(getTile(currentX + 1, currentY))) {
+                nextX = currentX + 1;
+                moved = true;
+            }
+            else if (currentX > 0 && isPathTile(getTile(currentX - 1, currentY))) {
+                nextX = currentX - 1;
+                moved = true;
+            }
+            else if (currentY < height - 1 && isPathTile(getTile(currentX, currentY + 1))) {
+                nextY = currentY + 1;
+                moved = true;
+            }
+            else if (currentY > 0 && isPathTile(getTile(currentX, currentY - 1))) {
+                nextY = currentY - 1;
+                moved = true;
             }
 
-            // Add point to path (in pixels)
-            pathPoints.add(new int[] { currentX * ts + ts / 2, currentY * ts + ts / 2 });
+            if (moved) {
+                // Add the next point to the path
+                currentPath.add(new int[] { nextX * ts + ts / 2, nextY * ts + ts / 2 });
+                currentX = nextX;
+                currentY = nextY;
+            } else {
+                // If we can't move and we're not at the end, try to find an alternative path
+                if (!currentPath.isEmpty() && (currentX != endTile.getX() || currentY != endTile.getY())) {
+                    // Only create a new path if we have at least 2 points
+                    if (currentPath.size() >= 2) {
+                        GamePath path = new GamePath(new ArrayList<>(currentPath));
+                        path.calculateTotalLength();
+                        enemyPaths.add(path);
+                    }
 
-            // Mark as path tile only if it's currently GRASS
-            if (currentTile != null && currentTile.getType() == TileType.GRASS) {
-                // Choose path type based on direction (simplified)
-                currentTile.setType(TileType.PATH_HORIZONTAL);
+                    // Start a new path from the current position
+                    currentPath.clear();
+                    currentPath.add(new int[] { currentX * ts + ts / 2, currentY * ts + ts / 2 });
+                }
             }
         }
 
-        // Then go vertically
-        while (currentY != endY) {
-            currentY += (endY > currentY) ? 1 : -1;
-
-            Tile currentTile = getTile(currentX, currentY);
-            // Skip if tile is not walkable
-            if (currentTile != null && !currentTile.isWalkable()) {
-                continue;
-            }
-
-            // Add point to path (in pixels)
-            pathPoints.add(new int[] { currentX * ts + ts / 2, currentY * ts + ts / 2 });
-
-            // Mark as path tile only if it's currently GRASS
-            if (currentTile != null && currentTile.getType() == TileType.GRASS) {
-                currentTile.setType(TileType.PATH_VERTICAL);
-            }
+        // Add the final path if it has at least 2 points
+        if (currentPath.size() >= 2) {
+            GamePath path = new GamePath(currentPath);
+            path.calculateTotalLength();
+            enemyPaths.add(path);
         }
 
-        // Add the end point
-        pathPoints.add(new int[] { endTile.getX() * ts + ts / 2, endTile.getY() * ts + ts / 2 });
+        // If no valid paths were found, create a simple direct path
+        if (enemyPaths.isEmpty()) {
+            List<int[]> directPath = new ArrayList<>();
+            directPath.add(new int[] { startTile.getX() * ts + ts / 2, startTile.getY() * ts + ts / 2 });
+            directPath.add(new int[] { endTile.getX() * ts + ts / 2, endTile.getY() * ts + ts / 2 });
+            GamePath path = new GamePath(directPath);
+            path.calculateTotalLength();
+            enemyPaths.add(path);
+        }
+    }
 
-        // Create and set the enemy path with the generated points
-        this.enemyPath = new GamePath(pathPoints);
-        System.out.println("Generated path with " + pathPoints.size() + " points");
+    /**
+     * Check if a tile is part of a path
+     */
+    private boolean isPathTile(Tile tile) {
+        if (tile == null) return false;
+
+        TileType type = tile.getType();
+        return type == TileType.PATH_HORIZONTAL ||
+                type == TileType.PATH_VERTICAL ||
+                type == TileType.PATH_CIRCLE_NW ||
+                type == TileType.PATH_CIRCLE_N ||
+                type == TileType.PATH_CIRCLE_NE ||
+                type == TileType.PATH_CIRCLE_E ||
+                type == TileType.PATH_CIRCLE_SE ||
+                type == TileType.PATH_CIRCLE_S ||
+                type == TileType.PATH_CIRCLE_SW ||
+                type == TileType.PATH_CIRCLE_W ||
+                type == TileType.PATH_VERTICAL_N_DE ||
+                type == TileType.PATH_VERTICAL_S_DE ||
+                type == TileType.PATH_HORIZONTAL_W_DE ||
+                type == TileType.PATH_HORIZONTAL_E_DE ||
+                type == TileType.START_POINT ||
+                type == TileType.END_POINT;
+    }
+
+    /**
+     * Get a random path for enemies to follow.
+     *
+     * @return a random path from the available paths
+     */
+    public GamePath getRandomPath() {
+        if (enemyPaths.isEmpty()) {
+            return null;
+        }
+        int randomIndex = (int) (Math.random() * enemyPaths.size());
+        return enemyPaths.get(randomIndex);
+    }
+
+    /**
+     * Get all enemy paths for this map.
+     *
+     * @return the list of enemy paths
+     */
+    public List<GamePath> getEnemyPaths() {
+        return enemyPaths;
+    }
+
+    /**
+     * Set the enemy paths for this map.
+     *
+     * @param paths the list of enemy paths to set
+     */
+    public void setEnemyPaths(List<GamePath> paths) {
+        this.enemyPaths = paths;
     }
 
     /**
@@ -300,25 +384,23 @@ public class GameMap implements Serializable {
             }
         }
 
-        // Draw path line to visualize enemy path
-        if (enemyPath != null) {
-            List<Point2D> pathPoints = enemyPath.getPoints();
-            if (pathPoints.size() > 1) {
-                gc.setStroke(Color.YELLOW);
-                gc.setLineWidth(2);
-                gc.setGlobalAlpha(0.4);
+        // Draw all paths
+        if (!enemyPaths.isEmpty()) {
+            for (GamePath path : enemyPaths) {
+                List<Point2D> points = path.getPoints();
+                if (points.size() > 1) {
+                    gc.setStroke(Color.YELLOW);
+                    gc.setLineWidth(2);
+                    gc.setGlobalAlpha(0.4);
 
-                for (int i = 0; i < pathPoints.size() - 1; i++) {
-                    Point2D start = pathPoints.get(i);
-                    Point2D end = pathPoints.get(i + 1);
+                    for (int i = 0; i < points.size() - 1; i++) {
+                        Point2D start = points.get(i);
+                        Point2D end = points.get(i + 1);
+                        gc.strokeLine(start.getX(), start.getY(), end.getX(), end.getY());
+                    }
 
-                    // Points are already in pixel coordinates
-                    gc.strokeLine(
-                            start.getX(), start.getY(),
-                            end.getX(), end.getY());
+                    gc.setGlobalAlpha(1.0);
                 }
-
-                gc.setGlobalAlpha(1.0);
             }
         }
 
@@ -338,24 +420,6 @@ public class GameMap implements Serializable {
         gc.setStroke(javafx.scene.paint.Color.rgb(80, 80, 80));
         gc.setLineWidth(2.0);
         gc.strokeRect(0, 0, width * tileSize, height * tileSize);
-    }
-
-    /**
-     * Get the enemy path for this map.
-     *
-     * @return the enemy path
-     */
-    public GamePath getEnemyPath() {
-        return enemyPath;
-    }
-
-    /**
-     * Set the enemy path for this map.
-     *
-     * @param enemyPath the enemy path to set
-     */
-    public void setEnemyPath(GamePath enemyPath) {
-        this.enemyPath = enemyPath;
     }
 
     /**

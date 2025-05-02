@@ -68,8 +68,9 @@ public class Tile implements Serializable {
         TILE_COORDS.put(TileType.TOWER_BARACK, new Point2D(2, 7));
         TILE_COORDS.put(TileType.LOG_PILE, new Point2D(3, 7));
 
-        // Add coordinates for the logical END_POINT, matching CASTLE1
-        TILE_COORDS.put(TileType.END_POINT, new Point2D(0, 6));
+        // Add coordinates for the logical points
+        TILE_COORDS.put(TileType.START_POINT, new Point2D(1, 3)); // Use PATH_HORIZONTAL as base
+        TILE_COORDS.put(TileType.END_POINT, new Point2D(0, 6)); // Use CASTLE1 as base
     }
 
     /* ────────────────────────── Static Resources ───────────────────────── */
@@ -122,9 +123,9 @@ public class Tile implements Serializable {
     public boolean isWalkable() {
         return switch (type) {
             case PATH_CIRCLE_NW, PATH_CIRCLE_N, PATH_CIRCLE_NE, PATH_CIRCLE_E, PATH_CIRCLE_SE, PATH_CIRCLE_S,
-                    PATH_CIRCLE_SW, PATH_CIRCLE_W, PATH_VERTICAL_N_DE, PATH_VERTICAL, PATH_VERTICAL_S_DE,
-                    PATH_HORIZONTAL_W_DE, PATH_HORIZONTAL, PATH_HORIZONTAL_E_DE ->
-                true;
+                 PATH_CIRCLE_SW, PATH_CIRCLE_W, PATH_VERTICAL_N_DE, PATH_VERTICAL, PATH_VERTICAL_S_DE,
+                 PATH_HORIZONTAL_W_DE, PATH_HORIZONTAL, PATH_HORIZONTAL_E_DE ->
+                    true;
             default -> false;
         };
     }
@@ -173,6 +174,21 @@ public class Tile implements Serializable {
         if (image != null && !image.isError()) {
             gc.drawImage(image, x * renderTileSize, y * renderTileSize,
                     renderTileSize, renderTileSize);
+
+            // Add special rendering for start and end points
+            if (type == TileType.START_POINT) {
+                gc.setFill(Color.BLUE);
+                gc.setGlobalAlpha(0.5);
+                gc.fillRect(x * renderTileSize, y * renderTileSize,
+                        renderTileSize, renderTileSize);
+                gc.setGlobalAlpha(1.0);
+            } else if (type == TileType.END_POINT) {
+                gc.setFill(Color.RED);
+                gc.setGlobalAlpha(0.5);
+                gc.fillRect(x * renderTileSize, y * renderTileSize,
+                        renderTileSize, renderTileSize);
+                gc.setGlobalAlpha(1.0);
+            }
         } else {
             gc.setFill(Color.MAGENTA);
             gc.fillRect(x * renderTileSize, y * renderTileSize,
@@ -197,12 +213,13 @@ public class Tile implements Serializable {
     private static boolean isOverlayProp(TileType type) {
         return switch (type) {
             case TREE_BIG, TREE_MEDIUM, TREE_SMALL,
-                    ROCK_SMALL, ROCK_MEDIUM,
-                    HOUSE, WELL, LOG_PILE,
-                    TOWER_ARTILLERY, TOWER_MAGE, ARCHER_TOWER, TOWER_BARACK,
-                    TOWER_SLOT,
-                    CASTLE1, CASTLE2, CASTLE3, CASTLE4, END_POINT ->
-                true;
+                 ROCK_SMALL, ROCK_MEDIUM,
+                 HOUSE, WELL, LOG_PILE,
+                 TOWER_ARTILLERY, TOWER_MAGE, ARCHER_TOWER, TOWER_BARACK,
+                 TOWER_SLOT,
+                 CASTLE1, CASTLE2, CASTLE3, CASTLE4,
+                 START_POINT, END_POINT ->
+                    true;
             default -> false;
         };
     }
