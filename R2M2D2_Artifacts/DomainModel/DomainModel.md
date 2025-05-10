@@ -56,7 +56,7 @@ classDiagram
         level
         damageMultiplier
         updateCostModifier
-        upgrade() <<new>>
+        upgrade()
         showUpgradeMenu()
     }
 
