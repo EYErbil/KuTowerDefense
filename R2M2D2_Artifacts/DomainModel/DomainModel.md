@@ -143,23 +143,25 @@ classDiagram
     Enemy -- Knight : has type
 
     %% --- Status Effects ---
-    class StatusEffect_<<new>> {
+    class StatusEffect {
         type
         duration
         icon
         apply()
         remove()
     }
+    %% NEW: StatusEffect is new in Phase II
     Enemy "1" -- "*" StatusEffect : has
 
     %% --- Dropped Items ---
-    class DroppedItem_<<new>> {
+    class DroppedItem {
         position
         goldAmount
         timeToLive
         collect()
         isCollected
     }
+    %% NEW: DroppedItem is new in Phase II
     GameSession "1" -- "*" DroppedItem : manages
 
     %% --- Waves, Groups, Options ---
