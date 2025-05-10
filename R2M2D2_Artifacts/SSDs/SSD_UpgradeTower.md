@@ -6,12 +6,13 @@ sequenceDiagram
     participant System
 
     Player->>System: select tower on map
-    System->>Player: display tower information and upgrade option
+    System->>Player: display tower upgrade menu
 
     alt Player chooses to upgrade tower
         Player->>System: request tower upgrade
         alt Player has sufficient gold
-            System->>Player: upgrade tower, update display with new stats and visuals
+            System->>System: upgrade tower features
+            System->>Player: display new tower graphic
         else Player lacks sufficient gold
             System->>Player: display "insufficient gold" message
         end
