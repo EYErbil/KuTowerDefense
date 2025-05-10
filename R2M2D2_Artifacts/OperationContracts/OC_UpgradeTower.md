@@ -1,7 +1,7 @@
-## Operation Contract 1: Upgrade Tower
+## Operation Contract: Upgrade Tower
 
 **Operation:**  
-upgradeTower(towerPosition)
+upgradeTower(towerPosition: Position): Boolean
 
 **Cross-References:**  
 - Use Case: Upgrade Tower  
