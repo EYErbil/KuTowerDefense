@@ -6,11 +6,12 @@ sequenceDiagram
     participant System
 
     alt Gold bag is present on map
-        Player->>System: click on dropped gold bag
-        alt Gold bag is still available
-            System->>Player: remove gold bag from map, update player's gold balance, show collection animation
-        else Gold bag already collected or expired
-            System->>Player: display "gold not available" message
+        alt Player clicks on the dropped gold bag within 10 seconds
+            Player->>System: click on dropped gold bag
+            System->>Player: remove gold bag from map
+            System->>System: update player's gold balance
+        else Player don't click on the dropped gold bag within 10 seconds
+            System->>Player: remove gold bag from map
         end
     else No gold bag present
         Player->>System: click on empty space
