@@ -1,20 +1,12 @@
 ```mermaid
 sequenceDiagram
-    participant Player
-    participant UI
-    participant GameSystem
+    actor Player
+    participant System
 
-    Player->>UI: clickTower(towerPosition)
-    UI->>GameSystem: requestTowerInfo(towerPosition)
-    GameSystem-->>UI: towerInfo(level, upgradeCost, canUpgrade)
-    UI-->>Player: showUpgradeMenu(canUpgrade, upgradeCost)
-    Player->>UI: selectUpgrade()
-    UI->>GameSystem: requestUpgradeTower(towerPosition)
+    Player->>System: selectTower(towerPosition)
+    Player->>System: requestUpgradeTower(towerPosition)
     alt Player has enough gold
-        GameSystem->>GameSystem: upgradeTower(towerPosition)
-        GameSystem-->>UI: upgradeSuccess(newLevel)
-        UI-->>Player: showUpgradeSuccess(newLevel)
+        System-->>Player: towerUpgraded(newLevel, newStats)
     else Not enough gold
-        GameSystem-->>UI: upgradeFailed("Insufficient gold")
-        UI-->>Player: showUpgradeFailed()
+        System-->>Player: upgradeFailed("Insufficient gold")
     end
