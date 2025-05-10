@@ -143,7 +143,7 @@ classDiagram
     Enemy -- Knight : has type
 
     %% --- Status Effects ---
-    class StatusEffect <<new>> {
+    class StatusEffect (new) {
         type
         duration
         icon
@@ -153,7 +153,7 @@ classDiagram
     Enemy "1" -- "*" StatusEffect : has
 
     %% --- Dropped Items ---
-    class DroppedItem <<new>> {
+    class DroppedItem (new) {
         position
         goldAmount
         timeToLive
