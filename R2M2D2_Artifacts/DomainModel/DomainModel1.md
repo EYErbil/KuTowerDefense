@@ -1,3 +1,4 @@
+### KU Tower Defense Domain Model (Phase I)
 ```mermaid
 classDiagram
     title KU Tower Defense Domain Model
