@@ -56,8 +56,6 @@ classDiagram
         level
         damageMultiplier
         updateCostModifier
-        upgrade()
-        showUpgradeMenu()
     }
 
     class ArcherTower {
@@ -119,8 +117,6 @@ classDiagram
         position
         pathProgress
         statusEffects
-        onHitByMageTower()
-        onDefeated()
     }
 
     class Goblin {
@@ -147,8 +143,6 @@ classDiagram
         type
         duration
         icon
-        apply()
-        remove()
     }
     Enemy "1" -- "*" StatusEffect : has
 
@@ -157,7 +151,6 @@ classDiagram
         position
         goldAmount
         timeToLive
-        collect()
         isCollected
     }
     GameSession "1" -- "*" DroppedItem : manages
