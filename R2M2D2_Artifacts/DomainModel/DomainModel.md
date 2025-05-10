@@ -1,7 +1,6 @@
+### KU Tower Defense Domain Model (Phase II)
 ```mermaid
 classDiagram
-    title KU Tower Defense Domain Model (Phase II)
-
     %% --- Player and GameSession ---
     class Player {
         currentGold
