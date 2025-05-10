@@ -16,7 +16,7 @@ classDiagram
         aliveEnemies
         gameSpeed
         isPaused
-        droppedItems <<new>>
+        droppedItems
     }
 
     Player "1" -- "1" GameSession : participates in
@@ -57,7 +57,7 @@ classDiagram
         damageMultiplier
         updateCostModifier
         upgrade() <<new>>
-        showUpgradeMenu() <<new>>
+        showUpgradeMenu()
     }
 
     class ArcherTower {
@@ -106,8 +106,8 @@ classDiagram
         effectDuration
         position
         targetEnemy
-        slowEffect <<new>>
-        spellColor <<new>>
+        slowEffect
+        spellColor
     }
 
     ArcherTower  --  Arrow : spawns
@@ -118,9 +118,9 @@ classDiagram
     class Enemy {
         position
         pathProgress
-        statusEffects <<new>>
-        onHitByMageTower() <<new>>
-        onDefeated() <<new>>
+        statusEffects
+        onHitByMageTower()
+        onDefeated()
     }
 
     class Goblin {
@@ -136,7 +136,7 @@ classDiagram
         aoeResistance
         speed
         hitpoint
-        synergyActive <<new>>
+        synergyActive
     }
 
     Enemy -- Goblin : has type
@@ -150,7 +150,6 @@ classDiagram
         apply()
         remove()
     }
-    %% NEW: StatusEffect is new in Phase II
     Enemy "1" -- "*" StatusEffect : has
 
     %% --- Dropped Items ---
@@ -161,7 +160,6 @@ classDiagram
         collect()
         isCollected
     }
-    %% NEW: DroppedItem is new in Phase II
     GameSession "1" -- "*" DroppedItem : manages
 
     %% --- Waves, Groups, Options ---
