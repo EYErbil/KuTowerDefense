@@ -16,7 +16,7 @@ classDiagram
         aliveEnemies
         gameSpeed
         isPaused
-        droppedItems
+        droppedItems <<new>>
     }
 
     Player "1" -- "1" GameSession : participates in
@@ -56,8 +56,8 @@ classDiagram
         level
         damageMultiplier
         updateCostModifier
-        upgrade()  %% new: upgrade method
-        showUpgradeMenu() %% new: show upgrade menu
+        upgrade() <<new>>
+        showUpgradeMenu() <<new>>
     }
 
     class ArcherTower {
@@ -106,8 +106,8 @@ classDiagram
         effectDuration
         position
         targetEnemy
-        slowEffect  %% new: slow effect for L2 MageTower
-        spellColor  %% new: color for L2 MageTower
+        slowEffect <<new>>
+        spellColor <<new>>
     }
 
     ArcherTower  --  Arrow : spawns
@@ -118,9 +118,9 @@ classDiagram
     class Enemy {
         position
         pathProgress
-        statusEffects  %% new: list of status effects (e.g., slow, synergy)
-        onHitByMageTower() %% new: for teleport/slow
-        onDefeated() %% new: for drop
+        statusEffects <<new>>
+        onHitByMageTower() <<new>>
+        onDefeated() <<new>>
     }
 
     class Goblin {
@@ -136,15 +136,15 @@ classDiagram
         aoeResistance
         speed
         hitpoint
-        synergyActive  %% new: for combat synergy
+        synergyActive <<new>>
     }
 
     Enemy -- Goblin : has type
     Enemy -- Knight : has type
 
     %% --- Status Effects ---
-    class StatusEffect {
-        type  %% e.g., "slow", "synergy"
+    class StatusEffect <<new>> {
+        type
         duration
         icon
         apply()
@@ -153,7 +153,7 @@ classDiagram
     Enemy "1" -- "*" StatusEffect : has
 
     %% --- Dropped Items ---
-    class DroppedItem {
+    class DroppedItem <<new>> {
         position
         goldAmount
         timeToLive
