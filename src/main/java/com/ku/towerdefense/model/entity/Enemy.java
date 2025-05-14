@@ -16,13 +16,34 @@ import java.util.Map;
 public abstract class Enemy extends Entity implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    // Static image cache for enemy types
-    private static final Map<EnemyType, Image> ENEMY_IMAGES = new HashMap<>();
+    // --- Sprite Sheet Loading ---
+    private static class SpriteSheetInfo {
+        final Image spriteSheet;
+        final int frameCount;
+        final double frameWidth;
+        final double frameHeight;
+
+        SpriteSheetInfo(Image sheet, int count) {
+            this.spriteSheet = sheet;
+            this.frameCount = count;
+            if (sheet != null && count > 0) {
+                this.frameWidth = sheet.getWidth() / count;
+                this.frameHeight = sheet.getHeight();
+            } else {
+                this.frameWidth = 0;
+                this.frameHeight = 0;
+                System.err.println("Error creating SpriteSheetInfo: Invalid image or frame count.");
+            }
+        }
+    }
+
+    private static final Map<EnemyType, SpriteSheetInfo> ENEMY_SPRITE_INFO = new HashMap<>();
 
     // Static initializer
     static {
-        loadEnemyImages();
+        loadEnemySpriteSheets(); // Renamed method
     }
+    // --- End Sprite Sheet Loading ---
 
     protected int maxHealth;
     protected int currentHealth;
@@ -35,18 +56,25 @@ public abstract class Enemy extends Entity implements Serializable {
     protected double distanceTraveled;
     protected double totalPathDistance;
 
-    protected Image image;
-    protected String imageFile;
+    // --- Animation Fields ---
+    protected transient SpriteSheetInfo spriteInfo; // Transient: will be re-initialized after load
+    protected int currentFrameIndex = 0;
+    protected double frameDuration = 0.1; // seconds per frame (e.g., 10 FPS)
+    protected double animationTimer = 0;
+    // --- End Animation Fields ---
+
+    // protected Image image; // Replaced by spriteInfo
+    protected String imageFile; // Keep for potential future use or different loading mechanisms if needed
 
     /**
      * Constructor for the Enemy class.
      *
-     * @param x initial x position
-     * @param y initial y position
-     * @param width width of the enemy
-     * @param height height of the enemy
-     * @param health the enemy's health
-     * @param speed the movement speed
+     * @param x          initial x position
+     * @param y          initial y position
+     * @param width      width of the enemy
+     * @param height     height of the enemy
+     * @param health     the enemy's health
+     * @param speed      the movement speed
      * @param goldReward the gold rewarded when defeated
      */
     public Enemy(double x, double y, double width, double height, int health, double speed, int goldReward) {
@@ -58,15 +86,18 @@ public abstract class Enemy extends Entity implements Serializable {
         this.goldReward = goldReward;
         this.distanceTraveled = 0;
         this.totalPathDistance = 0;
+        // Note: Type is not set here, so spriteInfo won't be loaded initially.
+        // This constructor might need adjustment depending on how enemies are created
+        // without type.
     }
 
     /**
      * Constructor for the Enemy class with size 64x64.
      *
-     * @param x initial x position
-     * @param y initial y position
-     * @param health the enemy's health
-     * @param speed the movement speed
+     * @param x          initial x position
+     * @param y          initial y position
+     * @param health     the enemy's health
+     * @param speed      the movement speed
      * @param goldReward the gold rewarded when defeated
      */
     public Enemy(double x, double y, int health, double speed, int goldReward) {
@@ -76,17 +107,17 @@ public abstract class Enemy extends Entity implements Serializable {
     /**
      * Constructor for an enemy.
      *
-     * @param x initial x position
-     * @param y initial y position
-     * @param width width
-     * @param height height
-     * @param health health points
-     * @param speed movement speed in pixels per second
+     * @param x          initial x position
+     * @param y          initial y position
+     * @param width      width
+     * @param height     height
+     * @param health     health points
+     * @param speed      movement speed in pixels per second
      * @param goldReward gold reward when defeated
-     * @param type the type of enemy
+     * @param type       the type of enemy
      */
     public Enemy(double x, double y, double width, double height,
-                 int health, double speed, int goldReward, EnemyType type) {
+            int health, double speed, int goldReward, EnemyType type) {
         super(x, y, width, height);
         this.maxHealth = health;
         this.currentHealth = health;
@@ -97,50 +128,82 @@ public abstract class Enemy extends Entity implements Serializable {
         this.totalPathDistance = 0;
         this.pathProgress = 0.0;
 
-        // Set image from cache
-        this.image = ENEMY_IMAGES.get(type);
+        // Set sprite info from cache
+        this.spriteInfo = ENEMY_SPRITE_INFO.get(type);
+        if (this.spriteInfo == null) {
+            System.err.println("SpriteSheetInfo not found for type: " + type);
+            // Consider setting a default/fallback if needed
+        }
+
+        // Reset animation state
+        this.currentFrameIndex = 0;
+        this.animationTimer = 0;
     }
 
     /**
-     * Load all enemy images into the static cache
+     * Load all enemy sprite sheets into the static cache
      */
-    private static void loadEnemyImages() {
+    private static void loadEnemySpriteSheets() {
+        // --- Load Goblin ---
+        String goblinSheetPath = "/Asset_pack/Enemies/Goblin_Red.png"; // Corrected filename
         try {
-            // Use classpath resources instead of absolute file paths
-            // Load enemy images from the classpath resources
-            String goblinImagePath = "/Asset_pack/Enemies/Goblin_Red.png";
-            Image goblinImage = new Image(Enemy.class.getResourceAsStream(goblinImagePath));
-            if (goblinImage != null && !goblinImage.isError()) {
-                ENEMY_IMAGES.put(EnemyType.GOBLIN, goblinImage);
-                System.out.println("Loaded Goblin image from classpath: " + goblinImagePath);
+            Image goblinSheet = new Image(Enemy.class.getResourceAsStream(goblinSheetPath));
+            if (goblinSheet != null && !goblinSheet.isError()) {
+                int frameCount = 6; // Assuming 6 frames
+                ENEMY_SPRITE_INFO.put(EnemyType.GOBLIN, new SpriteSheetInfo(goblinSheet, frameCount));
+                System.out.println(
+                        "Loaded Goblin spritesheet (" + frameCount + " frames) from classpath: " + goblinSheetPath);
             } else {
-                System.err.println("Error loading Goblin image from classpath: " + goblinImagePath);
-            }
-
-            // Knight
-            String knightImagePath = "/Asset_pack/Enemies/Warrior_Blue.png";
-            Image knightImage = new Image(Enemy.class.getResourceAsStream(knightImagePath));
-            if (knightImage != null && !knightImage.isError()) {
-                ENEMY_IMAGES.put(EnemyType.KNIGHT, knightImage);
-                System.out.println("Loaded Knight image from classpath: " + knightImagePath);
-            } else {
-                System.err.println("Error loading Knight image from classpath: " + knightImagePath);
+                System.err.println("Error loading Goblin spritesheet from classpath: " + goblinSheetPath
+                        + (goblinSheet == null ? " - Stream is null" : " - Image has error"));
             }
         } catch (Exception e) {
-            System.err.println("Error loading enemy images: " + e.getMessage());
+            System.err.println("Exception loading Goblin spritesheet: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        // --- Load Knight ---
+        String knightSheetPath = "/Asset_pack/Enemies/Warrior_Blue.png"; // Corrected filename
+        try {
+            Image knightSheet = new Image(Enemy.class.getResourceAsStream(knightSheetPath));
+            if (knightSheet != null && !knightSheet.isError()) {
+                int frameCount = 6; // Assuming 6 frames
+                ENEMY_SPRITE_INFO.put(EnemyType.KNIGHT, new SpriteSheetInfo(knightSheet, frameCount));
+                System.out.println(
+                        "Loaded Knight spritesheet (" + frameCount + " frames) from classpath: " + knightSheetPath);
+            } else {
+                System.err.println("Error loading Knight spritesheet from classpath: " + knightSheetPath
+                        + (knightSheet == null ? " - Stream is null" : " - Image has error"));
+            }
+        } catch (Exception e) {
+            System.err.println("Exception loading Knight spritesheet: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     /**
-     * Updates the enemy state.
+     * Updates the enemy state, including movement and animation.
      *
      * @param deltaTime time elapsed since last update in seconds
      * @return true if the enemy reached the end of the path
      */
     public boolean update(double deltaTime) {
+        // --- Animation Update ---
+        if (spriteInfo != null && spriteInfo.frameCount > 1) { // Only animate if there are multiple frames
+            animationTimer += deltaTime;
+            if (animationTimer >= frameDuration) {
+                animationTimer -= frameDuration;
+                currentFrameIndex = (currentFrameIndex + 1) % spriteInfo.frameCount;
+            }
+        }
+        // --- End Animation Update ---
+
+        // --- Movement Update ---
         if (path == null) {
-            System.err.println("Enemy has no path to follow!");
+            // System.err.println("Enemy has no path to follow!"); // Reduced verbosity
+            return false;
+        }
+        if (totalPathDistance <= 0) { // Avoid division by zero if path length is 0
             return false;
         }
 
@@ -152,8 +215,14 @@ public abstract class Enemy extends Entity implements Serializable {
         pathProgress += progressIncrement;
 
         // Cap progress at 1.0 (end of path)
-        if (pathProgress > 1.0) {
+        if (pathProgress >= 1.0) {
             pathProgress = 1.0;
+            // Set position to the exact end point before returning true
+            double[] endPos = path.getPositionAt(1.0);
+            if (endPos != null) {
+                this.x = endPos[0] - width / 2;
+                this.y = endPos[1] - height / 2;
+            }
             return true; // Reached the end
         }
 
@@ -170,6 +239,7 @@ public abstract class Enemy extends Entity implements Serializable {
 
         // Update distance traveled
         distanceTraveled += distanceToMove;
+        // --- End Movement Update ---
 
         return false;
     }
@@ -197,24 +267,44 @@ public abstract class Enemy extends Entity implements Serializable {
     }
 
     /**
-     * Render the enemy and its health bar.
+     * Render the enemy (current animation frame) and its health bar.
      *
      * @param gc the graphics context to render on
      */
     @Override
     public void render(GraphicsContext gc) {
-        // Load image if not already loaded
-        if (image == null && imageFile != null) {
-            loadImage();
+        // Re-check spriteInfo in case it was loaded late or after deserialization
+        if (spriteInfo == null && this.type != null) {
+            this.spriteInfo = ENEMY_SPRITE_INFO.get(this.type);
+            // If still null after check, log error once?
+            if (this.spriteInfo == null) {
+                System.err.println("Missing SpriteSheetInfo for rendering type: " + type);
+            }
         }
 
-        // Draw the enemy image if available
-        if (image != null) {
-            gc.drawImage(image, x, y, width, height);
+        // Draw the current frame of the enemy sprite sheet if available
+        if (spriteInfo != null && spriteInfo.spriteSheet != null && spriteInfo.frameCount > 0) {
+            // Source rectangle (sx, sy, sw, sh) within the sprite sheet
+            double sx = spriteInfo.frameWidth * currentFrameIndex;
+            double sy = 0; // Assuming frames are only horizontal
+            double sw = spriteInfo.frameWidth;
+            double sh = spriteInfo.frameHeight;
+
+            // Destination rectangle (dx, dy, dw, dh) on the canvas
+            double dx = this.x;
+            double dy = this.y;
+            double dw = this.width; // Use the enemy's defined width/height for drawing
+            double dh = this.height;
+
+            gc.drawImage(spriteInfo.spriteSheet, sx, sy, sw, sh, dx, dy, dw, dh);
         } else {
-            // Fallback to a simple shape if no image
+            // Fallback to a simple shape if no image/sprite info
             gc.setFill(Color.RED);
             gc.fillOval(x, y, width, height);
+            // Draw frame index for debugging if needed
+            // gc.setFill(Color.WHITE);
+            // gc.fillText(String.valueOf(currentFrameIndex), x + width / 2, y + height /
+            // 2);
         }
 
         // Draw health bar
@@ -228,14 +318,15 @@ public abstract class Enemy extends Entity implements Serializable {
         try {
             // First check if we can get the image from the static cache based on type
             if (this.type != null) {
-                Image cachedImage = ENEMY_IMAGES.get(this.type);
-                if (cachedImage != null) {
-                    this.image = cachedImage;
+                SpriteSheetInfo cachedInfo = ENEMY_SPRITE_INFO.get(this.type);
+                if (cachedInfo != null) {
+                    this.spriteInfo = cachedInfo;
                     return;
                 }
             }
-            
-            // Then try to parse the imageFile to see if it's an absolute path or a resource path
+
+            // Then try to parse the imageFile to see if it's an absolute path or a resource
+            // path
             if (imageFile != null && !imageFile.isEmpty()) {
                 // If it's an absolute path, try to extract just the filename
                 String resourcePath;
@@ -252,24 +343,28 @@ public abstract class Enemy extends Entity implements Serializable {
                 } else {
                     resourcePath = "/Asset_pack/Enemies/" + imageFile;
                 }
-                
+
                 // Try to load the resource
                 try {
-                    image = new Image(getClass().getResourceAsStream(resourcePath));
+                    Image image = new Image(getClass().getResourceAsStream(resourcePath));
                     if (image != null && !image.isError()) {
-                        System.out.println("Loaded image for " + getClass().getSimpleName() + " from classpath: " + resourcePath);
+                        System.out.println(
+                                "Loaded image for " + getClass().getSimpleName() + " from classpath: " + resourcePath);
+                        this.spriteInfo = new SpriteSheetInfo(image, 1); // Assuming single frame
                         return;
                     }
                 } catch (Exception e) {
                     System.err.println("Could not load image from classpath: " + resourcePath + " - " + e.getMessage());
                 }
-                
+
                 // Fallback to file system only if absolutely necessary
                 try {
                     File file = new File(imageFile);
                     if (file.exists()) {
-                        image = new Image(file.toURI().toString());
-                        System.out.println("Loaded image for " + getClass().getSimpleName() + " from file: " + imageFile);
+                        Image image = new Image(file.toURI().toString());
+                        System.out
+                                .println("Loaded image for " + getClass().getSimpleName() + " from file: " + imageFile);
+                        this.spriteInfo = new SpriteSheetInfo(image, 1); // Assuming single frame
                     } else {
                         System.err.println("Image file not found: " + imageFile);
                     }
@@ -350,7 +445,7 @@ public abstract class Enemy extends Entity implements Serializable {
     /**
      * Apply damage to the enemy with a specific damage type.
      *
-     * @param amount amount of damage to apply
+     * @param amount     amount of damage to apply
      * @param damageType type of damage
      * @return true if the enemy was defeated
      */
@@ -444,18 +539,18 @@ public abstract class Enemy extends Entity implements Serializable {
     }
 
     /**
-     * Reinitialize after deserialization - use this to reload images
+     * Reinitialize after deserialization - use this to reload sprite info
      */
     public void reinitializeAfterLoad() {
-        // Reload enemy image from the cache based on type
         if (this.type != null) {
-            this.image = ENEMY_IMAGES.get(this.type);
-            
-            // If cache didn't have the image, try to reload from file
-            if (this.image == null && this.imageFile != null) {
-                loadImage();
+            this.spriteInfo = ENEMY_SPRITE_INFO.get(this.type);
+            if (this.spriteInfo == null) {
+                System.err.println("Failed to reinitialize SpriteSheetInfo for type: " + this.type);
             }
         }
+        // Reset animation state
+        this.currentFrameIndex = 0;
+        this.animationTimer = 0;
     }
 
     /**
@@ -465,4 +560,4 @@ public abstract class Enemy extends Entity implements Serializable {
         GOBLIN,
         KNIGHT
     }
-} 
+}
