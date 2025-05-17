@@ -63,6 +63,9 @@ public class UIAssets {
             loadImage("FireEffect",      "/Asset_pack/Effects/Fire.png");
             loadImage("GoldSpawnEffect", "/Asset_pack/Effects/G_Spawn.png");
 
+            // Item Images
+            loadImage("GoldBag",         "/Asset_pack/Items/gold_bag.png");
+
             // Tower specific effects/icons
             // loadImage("ThunderEffect",   "/Asset_pack/Towers/thunder_icon.png"); // Removed
 
@@ -127,6 +130,50 @@ public class UIAssets {
      */
     public static Image getImage(String name) {
         return imageCache.get(name);
+    }
+
+    /**
+     * Extracts a specific frame from a cached sprite sheet.
+     *
+     * @param sheetName The key of the loaded sprite sheet in the cache.
+     * @param frameIndex The 0-based index of the frame to extract.
+     * @param frameWidth The width of a single frame in the sprite sheet.
+     * @param frameHeight The height of a single frame in the sprite sheet.
+     * @return An Image object of the specified frame, or null if an error occurs.
+     */
+    public static Image getSpriteFrame(String sheetName, int frameIndex, int frameWidth, int frameHeight) {
+        Image spriteSheet = imageCache.get(sheetName);
+        if (spriteSheet == null) {
+            System.err.println("Sprite sheet not found in cache: " + sheetName);
+            return null;
+        }
+
+        int sheetWidth = (int) spriteSheet.getWidth();
+        // int sheetHeight = (int) spriteSheet.getHeight(); // Assuming all frames are in one row for now
+
+        int framesPerRow = sheetWidth / frameWidth;
+        if (frameIndex < 0 || frameIndex >= framesPerRow) { // Basic check, assumes single row of frames
+            System.err.println("Frame index " + frameIndex + " is out of bounds for sheet " + sheetName + " with " + framesPerRow + " frames.");
+            return null;
+        }
+
+        try {
+            javafx.scene.image.PixelReader reader = spriteSheet.getPixelReader();
+            if (reader == null) {
+                System.err.println("PixelReader not available for sprite sheet: " + sheetName);
+                return null;
+            }
+            // Corrected: x coordinate of the frame
+            int x = frameIndex * frameWidth;
+            int y = 0; // Assuming frames are in a single horizontal row
+
+            javafx.scene.image.WritableImage frameImage = new javafx.scene.image.WritableImage(reader, x, y, frameWidth, frameHeight);
+            return frameImage;
+        } catch (Exception e) {
+            System.err.println("Error extracting frame " + frameIndex + " from sheet " + sheetName + ": " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
     }
 
     /**

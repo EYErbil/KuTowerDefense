@@ -32,7 +32,7 @@ public abstract class Tower extends Entity implements Serializable {
     protected long baseFireRate; // Store base fire rate for scaling
 
     protected static final double UPGRADE_COST_MULTIPLIER = 0.75; // How much base cost to add per level
-    protected static final double UPGRADE_STAT_MULTIPLIER = 0.25; // How much stats increase per level (25% of base)
+    // protected static final double UPGRADE_STAT_MULTIPLIER = 0.25; // No longer used here, handled by subclasses
 
     /**
      * Constructor for towers with specified properties.
@@ -368,25 +368,19 @@ public abstract class Tower extends Entity implements Serializable {
         }
         level++;
 
-        // Update stats based on the new level
-        // Simple scaling: damage and range increase by UPGRADE_STAT_MULTIPLIER of base per level beyond 1
-        // Fire rate could decrease (become faster)
-        this.damage = (int) (baseDamage * (1 + (level - 1) * UPGRADE_STAT_MULTIPLIER));
-        this.range = (int) (baseRange * (1 + (level - 1) * UPGRADE_STAT_MULTIPLIER));
-        // Example: fire rate decreases by 10% of base per level. Ensure it doesn't go to 0 or negative.
-        // this.fireRate = (long) (baseFireRate * (1 - (level -1) * 0.10)); 
-        // For now, let's assume fire rate doesn't change with this simple upgrade.
+        // Subclasses will apply specific L2 stat changes after calling super.upgrade()
 
-        // Update image
-        if (level == 2) {
+        // Update image to L2 image
+        if (level == MAX_TOWER_LEVEL) { // Check against MAX_TOWER_LEVEL for clarity
             this.imageFile = getUpgradedImageName();
-        }
-        // Add more conditions if MAX_TOWER_LEVEL > 2
-        // else { this.imageFile = getBaseImageName(); } // Fallback or error
+        } 
+        // else if (level == 1) { // If downgrading was possible, reset to base image
+        //     this.imageFile = getBaseImageName();
+        // }
 
-        loadImage(); // Reload the image
+        loadImage(); // Reload the image for the new level
         
-        System.out.println(getName() + " upgraded to level " + level + ". New image: " + imageFile);
+        System.out.println(getName() + " upgraded to level " + level + ". Image will be updated.");
         return true;
     }
 

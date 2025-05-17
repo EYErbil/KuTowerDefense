@@ -22,6 +22,7 @@ public class Projectile extends Entity implements Serializable {
     private double speed;
     private boolean active;
     private boolean hasHit;
+    private Tower sourceTower;
     
     // AOE properties
     private boolean hasAoeEffect;
@@ -45,7 +46,8 @@ public class Projectile extends Entity implements Serializable {
      * @param speed speed in pixels per second
      */
     public Projectile(double x, double y, double width, double height, 
-                      Enemy target, int damage, DamageType damageType, double speed) {
+                      Enemy target, int damage, DamageType damageType, double speed,
+                      Tower sourceTower) {
         super(x, y, width, height);
         this.target = target;
         this.damage = damage;
@@ -55,6 +57,7 @@ public class Projectile extends Entity implements Serializable {
         this.hasHit = false;
         this.hasAoeEffect = false;
         this.aoeRange = 0;
+        this.sourceTower = sourceTower;
         
         // Default appearance based on damage type
         switch (damageType) {
@@ -331,4 +334,8 @@ public class Projectile extends Entity implements Serializable {
     
     public void setImpactEffect(ImpactEffect e) { this.impactEffect = e; }
     public ImpactEffect getImpactEffect() { return impactEffect; }
+
+    public Tower getSourceTower() {
+        return sourceTower;
+    }
 } 

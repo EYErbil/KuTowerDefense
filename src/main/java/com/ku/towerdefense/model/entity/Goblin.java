@@ -14,6 +14,7 @@ public class Goblin extends Enemy implements Serializable {
     
     private static final int GOBLIN_HEALTH = GameSettings.getInstance().getGoblinHealth();
     private static final double GOBLIN_SPEED = GameSettings.getInstance().getGoblinSpeed(); // Example: 1.5 tiles per second
+    public static final double PUBLIC_STATIC_FINAL_BASE_SPEED = GameSettings.getInstance().getGoblinSpeed(); // For Knight synergy
     private static final int GOBLIN_GOLD_REWARD = GameSettings.getInstance().getGoldPerGoblin();
     private static final double GOBLIN_WIDTH = 64; // Increased from 32
     private static final double GOBLIN_HEIGHT = 64; // Increased from 32

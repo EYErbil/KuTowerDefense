@@ -5,6 +5,7 @@ import com.ku.towerdefense.model.entity.ArcherTower;
 import com.ku.towerdefense.model.entity.ArtilleryTower;
 import com.ku.towerdefense.model.entity.MageTower;
 import com.ku.towerdefense.model.entity.Tower;
+import com.ku.towerdefense.model.entity.DroppedGold;
 import com.ku.towerdefense.model.map.Tile;
 import com.ku.towerdefense.model.map.TileType;
 
@@ -315,14 +316,14 @@ public class GameScreen extends BorderPane {
             if (dragOccurred) { 
                 dragOccurred = false; 
                 e.consume();
-                System.out.println("[GameScreen] Click ignored due to drag."); // DEBUG
+                System.out.println("[GameScreen] Click ignored due to drag.");
                 return;
             }
-            System.out.println("[GameScreen] Canvas clicked. Screen Coords: (" + e.getX() + "," + e.getY() + ") Button: " + e.getButton()); // DEBUG
+            System.out.println("[GameScreen] Canvas clicked. Screen Coords: (" + e.getX() + "," + e.getY() + ") Button: " + e.getButton());
 
             javafx.geometry.Point2D worldCoord = transformMouseCoords(e.getX(), e.getY());
             if (worldCoord == null) {
-                System.out.println("[GameScreen] World coordinate transformation failed."); // DEBUG
+                System.out.println("[GameScreen] World coordinate transformation failed.");
                 return;
             }
 
@@ -330,53 +331,75 @@ public class GameScreen extends BorderPane {
             double worldY = worldCoord.getY();
             int tileX = (int) (worldX / TILE_SIZE);
             int tileY = (int) (worldY / TILE_SIZE);
-            System.out.println("[GameScreen] World Coords: (" + worldX + "," + worldY + ") -> Tile: (" + tileX + "," + tileY + ")"); // DEBUG
+            System.out.println("[GameScreen] World Coords: (" + worldX + "," + worldY + ") -> Tile: (" + tileX + "," + tileY + ")");
 
             Point2D tileCenterWorld = new Point2D(tileX * TILE_SIZE + HALF_TILE_SIZE, tileY * TILE_SIZE + HALF_TILE_SIZE);
             Point2D tileCenterScreen = worldTransform.transform(tileCenterWorld);
 
-            boolean actionTaken = false; // Flag to see if we did something that warrants consuming the event
+            boolean actionTaken = false; 
+
+            // --- Check for Gold Bag Click FIRST ---
             if (e.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
-                System.out.println("[GameScreen] Primary click. Attempting to find tower at world: (" + worldX + "," + worldY + ")"); // DEBUG
+                List<DroppedGold> bags = gameController.getActiveGoldBags();
+                // Iterate in reverse to allow safe removal if multiple bags overlap
+                for (int i = bags.size() - 1; i >= 0; i--) {
+                    DroppedGold bag = bags.get(i);
+                    // Check if click (worldX, worldY) is within bag's bounds
+                    if (worldX >= bag.getX() && worldX <= (bag.getX() + bag.getWidth()) &&
+                        worldY >= bag.getY() && worldY <= (bag.getY() + bag.getHeight())) {
+                        
+                        gameController.collectGoldBag(bag); // Controller handles adding gold and removing bag
+                        renderTimer.setStatusMessage("Collected " + bag.getGoldAmount() + " Gold!");
+                        actionTaken = true;
+                        break; // Stop checking other bags if one is clicked
+                    }
+                }
+            }
+            // --- End Gold Bag Click Check ---
+
+            if (actionTaken) {
+                System.out.println("[GameScreen] Consuming click event because gold bag was collected.");
+                e.consume();
+                return; // Do not process tower/tile clicks if a bag was collected
+            }
+
+            // --- Tower/Tile Click Logic (existing) ---
+            if (e.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
+                System.out.println("[GameScreen] Primary click. Attempting to find tower at world: (" + worldX + "," + worldY + ")");
                 Tower existingTower = gameController.getTowerAt(worldX, worldY);
-                System.out.println("[GameScreen] gameController.getTowerAt returned: " + (existingTower != null ? existingTower.getName() : "null")); // DEBUG
+                System.out.println("[GameScreen] gameController.getTowerAt returned: " + (existingTower != null ? existingTower.getName() : "null"));
 
                 if (existingTower != null) {
-                    System.out.println("[GameScreen] Existing tower found: " + existingTower.getName() + ". Showing upgrade/sell popup."); // DEBUG
+                    System.out.println("[GameScreen] Existing tower found: " + existingTower.getName() + ". Showing upgrade/sell popup.");
                     clearActivePopup();
                     createUpgradeSellPopup(tileCenterScreen.getX(), tileCenterScreen.getY(), existingTower, tileX, tileY);
                     actionTaken = true;
                 } else {
-                    System.out.println("[GameScreen] No existing tower found by getTowerAt. Checking tile type."); // DEBUG
+                    System.out.println("[GameScreen] No existing tower found by getTowerAt. Checking tile type.");
                     Tile clickedTile = gameController.getGameMap().getTile(tileX, tileY);
                     if (clickedTile != null) {
-                        System.out.println("[GameScreen] Clicked tile type: " + clickedTile.getType()); // DEBUG
+                        System.out.println("[GameScreen] Clicked tile type: " + clickedTile.getType());
                         if (clickedTile.getType() == TileType.TOWER_SLOT) {
-                            System.out.println("[GameScreen] Tile is TOWER_SLOT. Showing build popup."); // DEBUG
+                            System.out.println("[GameScreen] Tile is TOWER_SLOT. Showing build popup.");
                             clearActivePopup();
                             createBuildTowerPopup(tileCenterScreen.getX(), tileCenterScreen.getY(), tileX, tileY);
                             actionTaken = true;
                         } else {
-                            System.out.println("[GameScreen] Tile is not TOWER_SLOT. Clearing active popup."); // DEBUG
+                            System.out.println("[GameScreen] Tile is not TOWER_SLOT. Clearing active popup.");
                             clearActivePopup(); // Clears if clicked on non-actionable tile like PATH or GRASS
                         }
                     } else {
-                        System.out.println("[GameScreen] Clicked tile is null. Clearing active popup."); // DEBUG
+                        System.out.println("[GameScreen] Clicked tile is null. Clearing active popup.");
                         clearActivePopup(); 
                     }
                 }
             } else if (e.getButton() == javafx.scene.input.MouseButton.SECONDARY) {
-                 System.out.println("[GameScreen] Secondary click. Clearing active popup."); // DEBUG
+                 System.out.println("[GameScreen] Secondary click. Clearing active popup.");
                  clearActivePopup();
-                 // actionTaken might be true if secondary click should also consume for some reason
             } 
 
-            if (actionTaken) {
-                System.out.println("[GameScreen] Consuming click event because an action was taken."); // DEBUG
-                e.consume(); 
-            } else {
-                System.out.println("[GameScreen] Not consuming click event. No specific action taken for this click on canvas."); // DEBUG
-            }
+            // No explicit consume here, let existing logic decide or consume at the end if needed
+            // if (actionTakenOnTowerOrTile) { e.consume(); }
         });
         
         // Initialize and start the top bar update timer
@@ -604,20 +627,33 @@ public class GameScreen extends BorderPane {
         double radius = UPGRADE_SELL_POPUP_RADIUS;
 
         // Upgrade Button
-        if (existingTower.canUpgrade() && gameController.getPlayerGold() >= existingTower.getUpgradeCost()) {
-            Button upgradeButton = UIAssets.createIconButton("Upgrade (" + existingTower.getUpgradeCost() + "G)", 1, 2, POPUP_ICON_SIZE); // Upgrade icon (1,2)
-            upgradeButton.setOnAction(e -> {
-                // Store screen coordinates before clearing popup or changing state, relative to uiOverlayPane
-                // final double effectX = centerXScreen; 
-                // final double effectY = centerYScreen;
+        if (existingTower.canUpgrade()) {
+            int upgradeCost = existingTower.getUpgradeCost();
+            boolean canAfford = gameController.getPlayerGold() >= upgradeCost;
+            String upgradeText = "Upgrade (";
+            if (upgradeCost == Integer.MAX_VALUE) { // Should not happen if canUpgrade is true, but good check
+                upgradeText += "N/A)";
+            } else {
+                upgradeText += upgradeCost + "G)";
+            }
 
-                /*boolean upgraded = */ gameController.upgradeTower(existingTower, tileX, tileY);
-                // if (upgraded) {
-                //    playThunderEffect(effectX, effectY);
-                // }
-                clearActivePopup();
-                e.consume();
-            });
+            Button upgradeButton = UIAssets.createIconButton(upgradeText, 1, 2, POPUP_ICON_SIZE); // Upgrade icon (1,2)
+            
+            if (canAfford) {
+                upgradeButton.setOnAction(e -> {
+                    boolean upgraded = gameController.upgradeTower(existingTower, tileX, tileY);
+                    // if (upgraded) { // Effect removed
+                    // }
+                    clearActivePopup();
+                    e.consume();
+                });
+            } else {
+                upgradeButton.setDisable(true);
+                // Optionally add a specific style class for better visual indication
+                // e.g., upgradeButton.getStyleClass().add("disabled-upgrade-button");
+                // Tooltip could also indicate why it's disabled
+                upgradeButton.setTooltip(new javafx.scene.control.Tooltip("Not enough gold! Needs: " + upgradeCost + "G"));
+            }
             buttons.add(upgradeButton);
         }
         // Sell Button

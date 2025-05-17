@@ -1,6 +1,7 @@
 package com.ku.towerdefense.model.entity;
 
 import com.ku.towerdefense.model.GamePath;
+import com.ku.towerdefense.ui.UIAssets;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
@@ -8,6 +9,7 @@ import javafx.scene.paint.Color;
 import java.io.File;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -38,10 +40,13 @@ public abstract class Enemy extends Entity implements Serializable {
     }
 
     private static final Map<EnemyType, SpriteSheetInfo> ENEMY_SPRITE_INFO = new HashMap<>();
+    private static transient Image snowflakeIcon; // For slow effect
+    private static transient Image thunderIcon; // For Knight synergy (corrected name)
 
     // Static initializer
     static {
         loadEnemySpriteSheets(); // Renamed method
+        loadEffectIcons();
     }
     // --- End Sprite Sheet Loading ---
 
@@ -62,6 +67,13 @@ public abstract class Enemy extends Entity implements Serializable {
     protected double frameDuration = 0.1; // seconds per frame (e.g., 10 FPS)
     protected double animationTimer = 0;
     // --- End Animation Fields ---
+
+    // --- Status Effect Fields ---
+    protected boolean isSlowed = false;
+    protected double slowTimer = 0; // seconds
+    protected double slowFactor = 1.0; // e.g., 0.8 for 20% slow (speed * factor)
+    protected boolean isKnightSpeedBoosted = false; // For combat synergy thunder icon
+    // --- End Status Effect Fields ---
 
     // protected Image image; // Replaced by spriteInfo
     protected String imageFile; // Keep for potential future use or different loading mechanisms if needed
@@ -181,13 +193,48 @@ public abstract class Enemy extends Entity implements Serializable {
         }
     }
 
+    private static void loadEffectIcons() {
+        try {
+            String snowflakePath = "/Asset_pack/Effects/snow_flake_icon.png"; // Corrected name
+            snowflakeIcon = new Image(Enemy.class.getResourceAsStream(snowflakePath));
+            if (snowflakeIcon != null && !snowflakeIcon.isError()) {
+                System.out.println("Loaded snow_flake_icon.png");
+            } else {
+                System.err.println("Error loading snow_flake_icon.png" + (snowflakeIcon == null ? " - Stream is null" : " - Image has error"));
+            }
+
+            String thunderBoltPath = "/Asset_pack/Effects/thunder_icon.png"; // Corrected name
+            thunderIcon = new Image(Enemy.class.getResourceAsStream(thunderBoltPath));
+            if (thunderIcon != null && !thunderIcon.isError()) {
+                System.out.println("Loaded thunder_icon.png for synergy");
+            } else {
+                System.err.println("Error loading thunder_icon.png for synergy" + (thunderIcon == null ? " - Stream is null" : " - Image has error"));
+            }
+        } catch (Exception e) {
+            System.err.println("Exception loading effect icons: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     /**
      * Updates the enemy state, including movement and animation.
      *
      * @param deltaTime time elapsed since last update in seconds
+     * @param allEnemies list of all active enemies for synergy checks
      * @return true if the enemy reached the end of the path
      */
-    public boolean update(double deltaTime) {
+    public boolean update(double deltaTime, List<Enemy> allEnemies) {
+        // --- Status Effects Update ---
+        if (isSlowed) {
+            slowTimer -= deltaTime;
+            if (slowTimer <= 0) {
+                isSlowed = false;
+                slowFactor = 1.0;
+                slowTimer = 0;
+            }
+        }
+        // --- End Status Effects Update ---
+
         // --- Animation Update ---
         if (spriteInfo != null && spriteInfo.frameCount > 1) { // Only animate if there are multiple frames
             animationTimer += deltaTime;
@@ -208,7 +255,15 @@ public abstract class Enemy extends Entity implements Serializable {
         }
 
         // Calculate the distance to move based on speed and time
-        double distanceToMove = speed * deltaTime;
+        double currentSpeed = this.speed;
+        if (isSlowed) {
+            currentSpeed *= slowFactor;
+        }
+        // Knight combat synergy speed adjustment will be handled in Knight.update() before this
+        // or passed into this update method if Enemy class needs to be aware of the final speed source.
+        // For now, assume Knight.update() adjusts this.speed directly if boosted.
+
+        double distanceToMove = currentSpeed * deltaTime;
 
         // Convert to path progress (0.0 to 1.0)
         double progressIncrement = distanceToMove / totalPathDistance;
@@ -309,6 +364,22 @@ public abstract class Enemy extends Entity implements Serializable {
 
         // Draw health bar
         renderHealthBar(gc);
+
+        // Render status icons
+        double iconX = this.x + this.width; // Start right of the enemy
+        double iconY = this.y;
+        double iconSize = 16; // Or dynamic based on enemy height/health bar
+        int iconOffset = 0;
+
+        if (isSlowed && snowflakeIcon != null) {
+            gc.drawImage(snowflakeIcon, iconX + iconOffset, iconY, iconSize, iconSize);
+            iconOffset += iconSize + 2; // Add padding for next icon
+        }
+        
+        if (isKnightSpeedBoosted && thunderIcon != null) { // Use corrected thunderIcon
+            gc.drawImage(thunderIcon, iconX + iconOffset, iconY, iconSize, iconSize);
+            // iconOffset += iconSize + 2; // If more icons could follow
+        }
     }
 
     /**
@@ -551,6 +622,33 @@ public abstract class Enemy extends Entity implements Serializable {
         // Reset animation state
         this.currentFrameIndex = 0;
         this.animationTimer = 0;
+    }
+
+    public void applySlow(double factor, double duration) {
+        this.isSlowed = true;
+        this.slowFactor = factor;
+        this.slowTimer = duration;
+        System.out.println(this.getType() + " slowed by " + ((1-factor)*100) + "% for " + duration + "s");
+    }
+
+    public boolean isSlowed() {
+        return isSlowed;
+    }
+
+    // For Knight synergy visual
+    public void setKnightSpeedBoosted(boolean boosted) {
+        this.isKnightSpeedBoosted = boosted;
+    }
+
+    public void teleportTo(double newX, double newY) {
+        // newX and newY are the center of the start tile/point.
+        // Enemy's x, y are top-left. Adjust accordingly.
+        this.x = newX - this.width / 2.0;
+        this.y = newY - this.height / 2.0;
+        this.pathProgress = 0.0; // Reset path progress
+        this.distanceTraveled = 0.0; // Reset distance traveled
+        // Current health and status effects (like slow) are maintained as per requirement.
+        System.out.println(this.getType() + " teleported to (" + this.x + "," + this.y + "). Path progress reset.");
     }
 
     /**

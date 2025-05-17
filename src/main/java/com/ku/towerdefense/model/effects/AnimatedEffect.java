@@ -13,6 +13,7 @@ public class AnimatedEffect {
     private int currentFrame = 0;
     private double timeAccum = 0;
     private boolean active = true;
+    private Runnable onCompletionCallback;
 
     public AnimatedEffect(Image spriteSheet,
                           double x, double y, // World coordinates for the center of the effect
@@ -40,6 +41,10 @@ public class AnimatedEffect {
         this(spriteSheet, x, y, frameWidth, frameHeight, totalFrames, frameDurationSeconds, frameWidth, frameHeight);
     }
 
+    public void setOnCompletion(Runnable callback) {
+        this.onCompletionCallback = callback;
+    }
+
     public void update(double dt) {
         if (!active) return;
         timeAccum += dt;
@@ -48,6 +53,9 @@ public class AnimatedEffect {
             currentFrame++;
             if (currentFrame >= totalFrames) {
                 active = false;
+                if (onCompletionCallback != null) {
+                    onCompletionCallback.run();
+                }
             }
         }
     }

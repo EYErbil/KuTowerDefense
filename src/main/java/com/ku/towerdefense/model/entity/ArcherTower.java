@@ -32,6 +32,8 @@ public class ArcherTower extends Tower implements Serializable {
      */
     public ArcherTower(double x, double y) {
         super(x, y, 64, 64, BASE_DAMAGE, BASE_RANGE, BASE_FIRE_RATE, BASE_COST, DamageType.ARROW); // Corrected DamageType
+        // Stats are now initialized in the super constructor using base values.
+        // Level 1 specific stats (damage, range, fireRate) are set from baseDamage, baseRange, baseFireRate.
     }
     
     /**
@@ -44,7 +46,7 @@ public class ArcherTower extends Tower implements Serializable {
     protected Projectile createProjectile(Enemy target) {
         double projectileX = getCenterX() - PROJECTILE_WIDTH / 2;
         double projectileY = getCenterY() - PROJECTILE_HEIGHT / 2;
-        Projectile projectile = new Projectile(projectileX, projectileY, PROJECTILE_WIDTH, PROJECTILE_HEIGHT, target, this.damage, DamageType.ARROW, PROJECTILE_SPEED); // Corrected DamageType and used constants
+        Projectile projectile = new Projectile(projectileX, projectileY, PROJECTILE_WIDTH, PROJECTILE_HEIGHT, target, this.damage, DamageType.ARROW, PROJECTILE_SPEED, this); // Added this as sourceTower
         projectile.setImageFile(PROJECTILE_IMAGE_FILE); // Set image for projectile if applicable
         projectile.setImpactEffect(Projectile.ImpactEffect.NONE);
         return projectile; 
@@ -74,5 +76,28 @@ public class ArcherTower extends Tower implements Serializable {
     public Tower cloneTower() {
         ArcherTower clone = new ArcherTower(this.x, this.y);
         return clone;
+    }
+
+    @Override
+    public boolean upgrade() {
+        if (!super.upgrade()) { // This increments level and changes imageFile
+            return false;
+        }
+
+        if (this.level == 2) {
+            // Apply Level 2 specific stats for Archer Tower
+            this.range = (int) (this.baseRange * 1.5); // 50% wider attack range
+            this.fireRate = this.baseFireRate / 2;    // 2x higher rate of fire
+            // this.damage remains this.baseDamage as per requirements
+            
+            System.out.println(getName() + " L2 stats applied: Range=" + this.range + ", FireRate=" + this.fireRate);
+        } else {
+            // If somehow upgraded beyond L2 or back to L1 (if supported), reset to L1 stats
+            this.damage = this.baseDamage;
+            this.range = this.baseRange;
+            this.fireRate = this.baseFireRate;
+            System.out.println(getName() + " reverted to L1 stats.");
+        }
+        return true;
     }
 } 

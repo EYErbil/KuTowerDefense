@@ -34,6 +34,7 @@ public class ArtilleryTower extends Tower implements Serializable {
      */
     public ArtilleryTower(double x, double y) {
         super(x, y, 64, 64, BASE_DAMAGE, BASE_RANGE, BASE_FIRE_RATE, BASE_COST, DamageType.EXPLOSIVE);
+        // Stats are now initialized in the super constructor using base values.
     }
     
     /**
@@ -47,7 +48,7 @@ public class ArtilleryTower extends Tower implements Serializable {
     protected Projectile createProjectile(Enemy target) {
         double projectileX = getCenterX() - PROJECTILE_WIDTH / 2;
         double projectileY = getCenterY() - PROJECTILE_HEIGHT / 2;
-        Projectile projectile = new Projectile(projectileX, projectileY, PROJECTILE_WIDTH, PROJECTILE_HEIGHT, target, this.damage, DamageType.EXPLOSIVE, PROJECTILE_SPEED);
+        Projectile projectile = new Projectile(projectileX, projectileY, PROJECTILE_WIDTH, PROJECTILE_HEIGHT, target, this.damage, DamageType.EXPLOSIVE, PROJECTILE_SPEED, this);
         projectile.setImageFile(PROJECTILE_IMAGE_FILE);
         projectile.setImpactEffect(Projectile.ImpactEffect.EXPLOSION);
         projectile.setHasAoeEffect(true);
@@ -73,6 +74,30 @@ public class ArtilleryTower extends Tower implements Serializable {
     @Override
     protected String getUpgradedImageName() {
         return "Asset_pack/Towers/" + UPGRADED_IMAGE_FILENAME;
+    }
+
+    @Override
+    public boolean upgrade() {
+        if (!super.upgrade()) { // This increments level and changes imageFile
+            return false;
+        }
+
+        if (this.level == 2) {
+            // Apply Level 2 specific stats for Artillery Tower
+            this.range = (int) (this.baseRange * 1.2);  // +20% attack range
+            this.damage = (int) (this.baseDamage * 1.2); // +20% base damage (which will affect AOE damage)
+            // Fire rate remains this.baseFireRate
+            // AOE radius is handled by projectile and remains same as L1.
+
+            System.out.println(getName() + " L2 stats applied: Range=" + this.range + ", Damage=" + this.damage);
+        } else {
+            // Revert to L1 stats
+            this.damage = this.baseDamage;
+            this.range = this.baseRange;
+            this.fireRate = this.baseFireRate;
+            System.out.println(getName() + " reverted to L1 stats.");
+        }
+        return true;
     }
 
     @Override

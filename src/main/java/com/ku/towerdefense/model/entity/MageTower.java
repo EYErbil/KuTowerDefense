@@ -22,7 +22,8 @@ public class MageTower extends Tower implements Serializable {
     private static final double PROJECTILE_WIDTH = 12;
     private static final double PROJECTILE_HEIGHT = 12;
     private static final double PROJECTILE_SPEED = 300;
-    private static final String PROJECTILE_IMAGE_FILE = "magic_bolt.png"; // Placeholder
+    private static final String L1_PROJECTILE_IMAGE_FILE = "magic_bolt.png"; // Placeholder
+    private static final String L2_PROJECTILE_IMAGE_FILE = "magic_bolt_level2.png"; // Placeholder
 
     /**
      * Create a new mage tower at the specified position.
@@ -44,9 +45,15 @@ public class MageTower extends Tower implements Serializable {
     protected Projectile createProjectile(Enemy target) {
         double projectileX = getCenterX() - PROJECTILE_WIDTH / 2;
         double projectileY = getCenterY() - PROJECTILE_HEIGHT / 2;
-        Projectile projectile = new Projectile(projectileX, projectileY, PROJECTILE_WIDTH, PROJECTILE_HEIGHT, target, this.damage, DamageType.MAGIC, PROJECTILE_SPEED);
-        projectile.setImageFile(PROJECTILE_IMAGE_FILE);
-        projectile.setImpactEffect(Projectile.ImpactEffect.FIRE); // Mage tower has FIRE effect
+        
+        String currentProjectileImage = L1_PROJECTILE_IMAGE_FILE;
+        if (this.level == 2) {
+            currentProjectileImage = L2_PROJECTILE_IMAGE_FILE;
+        }
+
+        Projectile projectile = new Projectile(projectileX, projectileY, PROJECTILE_WIDTH, PROJECTILE_HEIGHT, target, this.damage, DamageType.MAGIC, PROJECTILE_SPEED, this);
+        projectile.setImageFile(currentProjectileImage);
+        projectile.setImpactEffect(Projectile.ImpactEffect.FIRE);
         return projectile;
     }
 

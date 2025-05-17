@@ -11,6 +11,9 @@ import com.ku.towerdefense.model.entity.Goblin;
 import com.ku.towerdefense.model.entity.Knight;
 import com.ku.towerdefense.model.entity.Projectile;
 import com.ku.towerdefense.model.entity.Tower;
+import com.ku.towerdefense.model.entity.MageTower;
+import com.ku.towerdefense.model.entity.ArcherTower;
+import com.ku.towerdefense.model.entity.DroppedGold;
 import com.ku.towerdefense.model.map.GameMap;
 import com.ku.towerdefense.model.map.TileType;
 import com.ku.towerdefense.util.GameSettings;
@@ -36,6 +39,7 @@ public class GameController {
     private List<Tower> towers;
     private List<Enemy> enemies;
     private List<Projectile> projectiles;
+    private List<DroppedGold> activeGoldBags = new ArrayList<>();
     private int playerGold;
     private int playerLives;
     private int currentWave;
@@ -69,6 +73,7 @@ public class GameController {
         this.towers = new ArrayList<>();
         this.enemies = new ArrayList<>();
         this.projectiles = new ArrayList<>();
+        this.activeGoldBags = new ArrayList<>();
         this.playerGold = GameSettings.getInstance().getStartingGold();
         this.playerLives = GameSettings.getInstance().getStartingLives();
         this.currentWave = 0;
@@ -170,6 +175,25 @@ public class GameController {
                     if (target != null) {
                         target.applyDamage(projectile.getDamage(), projectile.getDamageType());
 
+                        // Mage Tower specific effects
+                        Tower sourceTower = projectile.getSourceTower();
+                        if (sourceTower instanceof MageTower) {
+                            // Teleport: 3% chance for any Mage Tower hit
+                            if (Math.random() < 0.03) {
+                                Point2D startPoint = gameMap.getStartPoint();
+                                if (startPoint != null) {
+                                    target.teleportTo(startPoint.getX(), startPoint.getY());
+                                    System.out.println("Enemy " + target.hashCode() + " teleported by Mage Tower.");
+                                }
+                            }
+
+                            // Slow: Only for Level 2 Mage Tower
+                            if (sourceTower.getLevel() >= 2) {
+                                target.applySlow(0.8, 4.0); // 20% slow (1.0 - 0.8 = 0.2) for 4 seconds
+                                System.out.println("Enemy " + target.hashCode() + " slowed by L2 Mage Tower.");
+                            }
+                        }
+
                         // Apply AOE damage if applicable
                         if (projectile.hasAoeEffect()) {
                             // Log primary target impact location for AOE reference
@@ -238,7 +262,7 @@ public class GameController {
         // Update enemies and check for ones that reached the end
         List<Enemy> enemiesToRemove = new ArrayList<>();
         for (Enemy enemy : enemies) {
-            boolean reachedEnd = enemy.update(currentDeltaTime);
+            boolean reachedEnd = enemy.update(currentDeltaTime, enemies);
 
             if (reachedEnd) {
                 enemiesToRemove.add(enemy);
@@ -252,18 +276,52 @@ public class GameController {
                 }
             } else if (enemy.getCurrentHealth() <= 0 && !enemiesToRemove.contains(enemy)) {
                 enemiesToRemove.add(enemy);
-                playerGold += enemy.getGoldReward();
-                
-                // Spawn gold drop animation
-                Image goldSpawnSheet = UIAssets.getImage("GoldSpawnEffect");
-                if (goldSpawnSheet != null) {
-                    activeEffects.add(new AnimatedEffect(goldSpawnSheet,
-                        enemy.getCenterX(), enemy.getCenterY(), // Position at enemy center
-                        128, 128, // Frame width, height for G_Spawn.png (assuming 128x128 frames)
-                        7,       // Total frames (896px width / 128px frame width = 7 frames)
-                        0.07));  // Frame duration in seconds (e.g., 0.07s * 7 frames = ~0.5s anim)
-                } else {
-                    System.err.println("GoldSpawnEffect spritesheet not loaded!");
+                playerGold += enemy.getGoldReward(); // Base gold reward
+
+                if (Math.random() < 0.25) { // 25% chance to drop a bag
+                    int archerBaseCost = ArcherTower.BASE_COST; 
+                    int minGoldInBag = 2;
+                    int maxGoldInBag = archerBaseCost / 2;
+                    if (maxGoldInBag < minGoldInBag) maxGoldInBag = minGoldInBag; 
+                    if (minGoldInBag > maxGoldInBag && minGoldInBag > 0) minGoldInBag = maxGoldInBag > 0 ? maxGoldInBag : 1; 
+                    else if (minGoldInBag <=0) minGoldInBag = 1; 
+                    if (maxGoldInBag <=0) maxGoldInBag = 1; 
+                    if (minGoldInBag > maxGoldInBag) minGoldInBag = maxGoldInBag; 
+
+                    final int randomGold = minGoldInBag + (int)(Math.random() * (maxGoldInBag - minGoldInBag + 1));
+                    final int finalRandomGold = (randomGold <= 0) ? 1 : randomGold; 
+
+                    final double dropX = enemy.getCenterX();
+                    final double dropY = enemy.getCenterY();
+
+                    // 1. Spawn the G_Spawn.png animation
+                    Image goldSpawnSheet = UIAssets.getImage("GoldSpawnEffect");
+                    if (goldSpawnSheet != null) {
+                        AnimatedEffect goldAnimation = new AnimatedEffect(goldSpawnSheet,
+                            dropX, dropY, // Position at enemy center
+                            128, 128, // Frame width, height for G_Spawn.png
+                            7,       // Total frames
+                            0.07,    // Frame duration in seconds (approx 0.5s total animation)
+                            128, 128  // Display width/height for the animation itself
+                        );
+                        goldAnimation.setOnCompletion(() -> {
+                            DroppedGold bag = new DroppedGold(dropX, dropY, finalRandomGold);
+                            activeGoldBags.add(bag);
+                            System.out.println("Dropped gold bag (value: " + finalRandomGold + "G) created AFTER animation at (" + dropX + "," + dropY + ")");
+                        });
+                        activeEffects.add(goldAnimation);
+                        System.out.println("Spawned gold drop animation at (" + dropX + "," + dropY + ")");
+                    } else {
+                        System.err.println("GoldSpawnEffect spritesheet not loaded for animation! Dropping bag directly.");
+                        // Fallback: If animation sheet is missing, drop the bag directly
+                        DroppedGold bag = new DroppedGold(dropX, dropY, finalRandomGold);
+                        activeGoldBags.add(bag);
+                    }
+
+                    // 2. Spawn the clickable DroppedGold entity (which uses last frame of G_Spawn.png)
+                    // DroppedGold bag = new DroppedGold(dropX, dropY, randomGold); // MOVED to onCompletion
+                    // activeGoldBags.add(bag); // MOVED to onCompletion
+                    // System.out.println("Dropped gold bag (value: " + randomGold + "G) and spawned animation at (" + dropX + "," + dropY + ")"); // Old log
                 }
             }
         }
@@ -274,6 +332,17 @@ public class GameController {
         activeEffects.removeIf(effect -> {
             effect.update(finalDeltaTimeForEffects);
             return !effect.isActive();
+        });
+
+        // Update and remove expired gold bags
+        activeGoldBags.removeIf(bag -> {
+            // DroppedGold.update() isn't strictly needed if it has no animation or per-frame logic
+            // We just check expiry here.
+            if (bag.isExpired()) {
+                System.out.println("Gold bag expired and removed.");
+                return true;
+            }
+            return false;
         });
 
         // Check if wave is completed and all enemies are spawned
@@ -327,6 +396,11 @@ public class GameController {
         // Render active visual effects
         for (AnimatedEffect effect : activeEffects) {
             effect.render(gc);
+        }
+
+        // Render dropped gold bags
+        for (DroppedGold bag : activeGoldBags) {
+            bag.render(gc);
         }
 
         // Additional UI rendering can be handled elsewhere
@@ -749,6 +823,12 @@ public class GameController {
             tower.reinitializeAfterLoad();
         }
         
+        // Reinitialize gold bags if they are part of save/load
+        System.out.println("Reinitializing " + activeGoldBags.size() + " gold bags");
+        for (DroppedGold bag : activeGoldBags) {
+            bag.reinitializeAfterLoad();
+        }
+        
         System.out.println("GameController: Reinitialization complete");
     }
 
@@ -860,5 +940,21 @@ public class GameController {
             }
         }
         return null;
+    }
+
+    // Method to collect a gold bag (called by GameScreen)
+    public void collectGoldBag(DroppedGold bag) {
+        if (activeGoldBags.contains(bag)) {
+            playerGold += bag.getGoldAmount();
+            activeGoldBags.remove(bag);
+            System.out.println("Collected gold bag with " + bag.getGoldAmount() + "G. Total gold: " + playerGold);
+        } else {
+            System.err.println("Attempted to collect an already collected or non-existent gold bag.");
+        }
+    }
+
+    // Getter for GameScreen to check gold bags for clicks
+    public List<DroppedGold> getActiveGoldBags() {
+        return activeGoldBags;
     }
 } 
