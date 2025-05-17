@@ -12,10 +12,18 @@ import java.io.Serializable;
  */
 public class ArcherTower extends Tower implements Serializable {
     private static final long serialVersionUID = 1L;
-    public static final int COST = GameSettings.getInstance().getArcherTowerCost(); // 50
-    private static final int BASE_DAMAGE = GameSettings.getInstance().getArcherTowerDamage();
-    private static final int BASE_RANGE = GameSettings.getInstance().getArcherTowerRange();
-    
+    public static final int BASE_COST = 50;
+    private static final int BASE_DAMAGE = 10; // Assuming GameSettings would provide these, hardcoding for now
+    private static final int BASE_RANGE = 150;
+    private static final long BASE_FIRE_RATE = 1000; // milliseconds
+    private static final String BASE_IMAGE_FILENAME = "Tower_archer128.png";
+    private static final String UPGRADED_IMAGE_FILENAME = "archer_up.png";
+
+    private static final double PROJECTILE_WIDTH = 16;
+    private static final double PROJECTILE_HEIGHT = 8;
+    private static final double PROJECTILE_SPEED = 450;
+    private static final String PROJECTILE_IMAGE_FILE = "arrow.png"; // Example, if arrows have their own image
+
     /**
      * Create a new archer tower at the specified position.
      *
@@ -23,16 +31,7 @@ public class ArcherTower extends Tower implements Serializable {
      * @param y y coordinate
      */
     public ArcherTower(double x, double y) {
-        super(x, y, 64, 64, 
-              BASE_DAMAGE,
-              BASE_RANGE,
-              GameSettings.getInstance().getArcherTowerFireRate(),
-              COST, // Pass the static COST here
-              DamageType.ARROW);
-        
-        // Set image file from assets - using classpath reference instead of absolute path
-        String imagePath = "/Asset_pack/Towers/Tower_archer128.png";
-        setImageFile(imagePath);
+        super(x, y, 64, 64, BASE_DAMAGE, BASE_RANGE, BASE_FIRE_RATE, BASE_COST, DamageType.ARROW); // Corrected DamageType
     }
     
     /**
@@ -43,17 +42,12 @@ public class ArcherTower extends Tower implements Serializable {
      */
     @Override
     protected Projectile createProjectile(Enemy target) {
-        double centerX = x + width / 2;
-        double centerY = y + height / 2;
-        
-        Projectile arrow = new Projectile(
-            centerX, centerY, 16, 8,
-            target, damage, DamageType.ARROW, 450);
-        
-        // Set arrow appearance
-        arrow.setColor(javafx.scene.paint.Color.DARKGREEN);
-        
-        return arrow;
+        double projectileX = getCenterX() - PROJECTILE_WIDTH / 2;
+        double projectileY = getCenterY() - PROJECTILE_HEIGHT / 2;
+        Projectile projectile = new Projectile(projectileX, projectileY, PROJECTILE_WIDTH, PROJECTILE_HEIGHT, target, this.damage, DamageType.ARROW, PROJECTILE_SPEED); // Corrected DamageType and used constants
+        projectile.setImageFile(PROJECTILE_IMAGE_FILE); // Set image for projectile if applicable
+        projectile.setImpactEffect(Projectile.ImpactEffect.NONE);
+        return projectile; 
     }
 
     @Override
@@ -63,19 +57,22 @@ public class ArcherTower extends Tower implements Serializable {
 
     @Override
     public int getBaseCost() {
-        return COST;
+        return BASE_COST;
     }
 
     @Override
-    public boolean upgrade() {
-        if (!super.upgrade()) {
-            return false;
-        }
-        // Increase damage and range based on level and base stats
-        this.damage = BASE_DAMAGE + (int)(BASE_DAMAGE * (level -1) * UPGRADE_STAT_MULTIPLIER);
-        this.range = BASE_RANGE + (int)(BASE_RANGE * (level -1) * (UPGRADE_STAT_MULTIPLIER / 2)); // Range upgrades slower
-        // Fire rate could also be adjusted: this.fireRate = (long) (BASE_FIRE_RATE * (1 - (level-1) * 0.1)); e.g. 10% faster per level
-        System.out.println("Archer Tower upgraded to level " + level + ". Damage: " + this.damage + ", Range: " + this.range);
-        return true;
+    protected String getBaseImageName() {
+        return "Asset_pack/Towers/" + BASE_IMAGE_FILENAME;
+    }
+
+    @Override
+    protected String getUpgradedImageName() {
+        return "Asset_pack/Towers/" + UPGRADED_IMAGE_FILENAME;
+    }
+
+    @Override
+    public Tower cloneTower() {
+        ArcherTower clone = new ArcherTower(this.x, this.y);
+        return clone;
     }
 } 

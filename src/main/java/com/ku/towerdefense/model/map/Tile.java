@@ -211,7 +211,7 @@ public class Tile implements Serializable {
                 gc.setLineWidth(1);
                 gc.strokeText("E", x * tileSize + tileSize * 0.30, y * tileSize + tileSize * 0.70);
                 gc.fillText("E", x * tileSize + tileSize * 0.30, y * tileSize + tileSize * 0.70);
-
+                
                 // For editor, also show the 2x2 footprint of the castle faintly if this is the base
                 // Note: This doesn't check map boundaries, so it might draw partially off-canvas
                 // if the END_POINT is at the very edge of the map. This is an editor-only visual aid.

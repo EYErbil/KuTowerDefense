@@ -21,13 +21,16 @@ public abstract class Tower extends Entity implements Serializable {
     protected long lastFireTime;
     protected long fireRate; // milliseconds between shots
     protected boolean selected;
-    protected Image image;
-    protected String imageFile;
+    protected transient Image image; // Made transient, will be reloaded
+    protected String imageFile; // Stores the *current* image file name
     protected DamageType damageType;
 
     protected int level;
-    protected int maxLevel;
-    protected static final int DEFAULT_MAX_LEVEL = 3; // Default max level for towers
+    protected static final int MAX_TOWER_LEVEL = 2; // User requirement
+    protected int baseDamage; // Store base damage for scaling
+    protected int baseRange;  // Store base range for scaling
+    protected long baseFireRate; // Store base fire rate for scaling
+
     protected static final double UPGRADE_COST_MULTIPLIER = 0.75; // How much base cost to add per level
     protected static final double UPGRADE_STAT_MULTIPLIER = 0.25; // How much stats increase per level (25% of base)
 
@@ -47,6 +50,9 @@ public abstract class Tower extends Entity implements Serializable {
     public Tower(double x, double y, double width, double height, int damage, int range, 
                 long fireRate, int cost, DamageType damageType) {
         super(x, y, width, height);
+        this.baseDamage = damage;
+        this.baseRange = range;
+        this.baseFireRate = fireRate;
         this.damage = damage;
         this.range = range;
         this.fireRate = fireRate;
@@ -54,7 +60,8 @@ public abstract class Tower extends Entity implements Serializable {
         this.selected = false;
         this.damageType = damageType;
         this.level = 1;
-        this.maxLevel = DEFAULT_MAX_LEVEL; // Can be overridden by subclasses if needed
+        this.imageFile = getBaseImageName(); // Set initial image
+        loadImage(); // Load initial image
     }
     
     /**
@@ -149,8 +156,8 @@ public abstract class Tower extends Entity implements Serializable {
      */
     @Override
     public void render(GraphicsContext gc) {
-        // Load image if not already loaded
-        if (image == null && imageFile != null) {
+        // Load image if not already loaded (e.g., after deserialization or if it failed first time)
+        if (image == null && imageFile != null && !imageFile.isEmpty()) {
             loadImage();
         }
 
@@ -184,60 +191,39 @@ public abstract class Tower extends Entity implements Serializable {
      */
     public void reinitializeAfterLoad() {
         // If we have an image file, try to reload the image
-        if (this.image == null && this.imageFile != null) {
-            loadImage();
+        if (this.imageFile != null && !this.imageFile.isEmpty()) {
+            loadImage(); // This will load based on current imageFile (which might be upgraded)
         }
     }
     
     /**
-     * Loads the tower image from the specified file
+     * Loads the tower image from the specified file path (relative to resources).
+     * Expects imageFile to be like "Asset_pack/Towers/tower_name.png"
      */
     protected void loadImage() {
+        if (imageFile == null || imageFile.isEmpty()) {
+            System.err.println("Cannot load image: imageFile is null or empty for " + getName());
+            return;
+        }
         try {
-            // Try loading from classpath first
-            if (imageFile != null && !imageFile.isEmpty()) {
-                // Handle both situations - when imageFile is an absolute path or just a filename
-                String resourcePath;
-                if (imageFile.contains("Asset_pack") || imageFile.contains("assets")) {
-                    // Extract just the file name from the path
-                    int lastSlash = Math.max(imageFile.lastIndexOf('\\'), imageFile.lastIndexOf('/'));
-                    if (lastSlash >= 0 && lastSlash < imageFile.length() - 1) {
-                        String fileName = imageFile.substring(lastSlash + 1);
-                        // Try to load using the extracted file name
-                        resourcePath = "/Asset_pack/Towers/" + fileName;
-                    } else {
-                        resourcePath = "/Asset_pack/Towers/" + imageFile;
-                    }
+            String resourcePath = "/" + imageFile; // Assuming imageFile is relative to resources root e.g. "Asset_pack/Towers/archer.png"
+            Image newImage = new Image(getClass().getResourceAsStream(resourcePath));
+            if (newImage != null && !newImage.isError()) {
+                this.image = newImage;
+                // System.out.println("Successfully loaded tower image: " + resourcePath + " for " + getName());
+            } else {
+                if (newImage != null && newImage.isError()) {
+                    System.err.println("Error loading tower image (isError=true): " + resourcePath + " for " + getName() + ". Error: " + newImage.getException());
                 } else {
-                    resourcePath = "/Asset_pack/Towers/" + imageFile;
+                    System.err.println("Failed to load tower image (null): " + resourcePath + " for " + getName());
                 }
-                
-                // Try to load from the classpath
-                try {
-                    image = new Image(getClass().getResourceAsStream(resourcePath));
-                    if (image != null && !image.isError()) {
-                        System.out.println("Loaded tower image from classpath: " + resourcePath);
-                        return;
-                    }
-                } catch (Exception e) {
-                    System.err.println("Could not load tower image from classpath: " + resourcePath);
-                }
-                
-                // Fallback to file system only if absolutely necessary
-                try {
-                    File file = new File(imageFile);
-                    if (file.exists()) {
-                        image = new Image(file.toURI().toString());
-                        System.out.println("Loaded tower image from file: " + imageFile);
-                    } else {
-                        System.err.println("Tower image file not found: " + imageFile);
-                    }
-                } catch (Exception e) {
-                    System.err.println("Error loading from file system: " + e.getMessage());
-                }
+                // Fallback if needed - though ideally all images should load
+                // this.image = null; // or a default placeholder
             }
         } catch (Exception e) {
-            System.err.println("Error loading tower image " + imageFile + ": " + e.getMessage());
+            System.err.println("Exception loading tower image " + imageFile + " for " + getName() + ": " + e.getMessage());
+            e.printStackTrace(); // More detailed error
+            // this.image = null;
         }
     }
     
@@ -338,31 +324,42 @@ public abstract class Tower extends Entity implements Serializable {
 
     public abstract String getName(); // e.g., "Archer Tower"
     public abstract int getBaseCost(); // The initial cost of the tower at level 1
+    protected abstract String getBaseImageName(); // e.g., "Asset_pack/Towers/archer.png"
+    protected abstract String getUpgradedImageName(); // e.g., "Asset_pack/Towers/archer_up.png"
 
     public int getLevel() {
         return level;
     }
 
     public int getMaxLevel() {
-        return maxLevel;
+        return MAX_TOWER_LEVEL;
     }
 
     public boolean canUpgrade() {
-        return level < maxLevel;
+        return level < MAX_TOWER_LEVEL;
     }
 
+    /**
+     * Gets the cost to upgrade to the next level.
+     * For simplicity, let's say upgrading from L1 to L2 costs UPGRADE_COST_MULTIPLIER * baseCost.
+     * If already max level, cost is effectively infinite (or not applicable).
+     * @return The cost to upgrade, or -1 (or Integer.MAX_VALUE) if not upgradeable.
+     */
     public int getUpgradeCost() {
-        if (!canUpgrade()) {
-            return Integer.MAX_VALUE; // Or 0, or throw exception
+        if (canUpgrade()) {
+            // Cost to upgrade from level 1 to level 2
+            if (level == 1) { 
+                return (int) (getBaseCost() * UPGRADE_COST_MULTIPLIER);
+            }
+            // Add more tiers if MAX_TOWER_LEVEL > 2
+            // else if (level == 2) { ... } 
         }
-        // Example: Each level costs BaseCost * (currentLevel * multiplier)
-        return (int) (getBaseCost() * (level * UPGRADE_COST_MULTIPLIER));
+        return Integer.MAX_VALUE; // Cannot be upgraded or no defined cost for this level
     }
 
     /**
      * Upgrades the tower to the next level if possible.
-     * Increases damage and potentially range or fire rate.
-     * Subclasses should override to apply specific stat increases.
+     * Increases stats and changes image.
      * @return true if upgrade was successful, false otherwise.
      */
     public boolean upgrade() {
@@ -370,10 +367,42 @@ public abstract class Tower extends Entity implements Serializable {
             return false;
         }
         level++;
-        // Subclasses will call super.upgrade() and then apply their specific stat boosts.
-        // Example base stat increase (can be fine-tuned or made abstract)
-        // this.damage += (int) (this.damage * UPGRADE_STAT_MULTIPLIER); // Careful with compounding if base damage isn't stored
-        // this.range += (int) (this.range * (UPGRADE_STAT_MULTIPLIER / 2)); // Range might upgrade slower
+
+        // Update stats based on the new level
+        // Simple scaling: damage and range increase by UPGRADE_STAT_MULTIPLIER of base per level beyond 1
+        // Fire rate could decrease (become faster)
+        this.damage = (int) (baseDamage * (1 + (level - 1) * UPGRADE_STAT_MULTIPLIER));
+        this.range = (int) (baseRange * (1 + (level - 1) * UPGRADE_STAT_MULTIPLIER));
+        // Example: fire rate decreases by 10% of base per level. Ensure it doesn't go to 0 or negative.
+        // this.fireRate = (long) (baseFireRate * (1 - (level -1) * 0.10)); 
+        // For now, let's assume fire rate doesn't change with this simple upgrade.
+
+        // Update image
+        if (level == 2) {
+            this.imageFile = getUpgradedImageName();
+        }
+        // Add more conditions if MAX_TOWER_LEVEL > 2
+        // else { this.imageFile = getBaseImageName(); } // Fallback or error
+
+        loadImage(); // Reload the image
+        
+        System.out.println(getName() + " upgraded to level " + level + ". New image: " + imageFile);
         return true;
     }
+
+    public void setLevel(int level) {
+        if (level > 0 && level <= this.getMaxLevel()) {
+            // Potentially recalculate stats if setLevel is meant to also apply stat changes
+            // For now, just sets the level. The upgrade() method handles stat increases.
+            // If this is for loading, stats should be loaded separately or recalculated.
+            this.level = level;
+            // If stats are derived purely from level and base stats, they could be updated here.
+            // Example: this.damage = getBaseDamage() + (level - 1) * getStatIncreasePerLevel(getBaseDamage());
+            // This requires base stats to be stored or accessible.
+        } else {
+            System.err.println("Attempted to set invalid level: " + level + " for tower. Max: " + this.getMaxLevel());
+        }
+    }
+
+    public abstract Tower cloneTower();
 } 

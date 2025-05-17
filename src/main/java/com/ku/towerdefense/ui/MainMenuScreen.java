@@ -4,7 +4,9 @@ import javafx.animation.FadeTransition;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-
+import javafx.scene.ImageCursor;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
@@ -54,6 +56,14 @@ public class MainMenuScreen extends VBox {
         // background entirely
         getStyleClass().add("main-menu-layout"); // Add style class for CSS targeting
 
+        // Attempt to prevent dragging the window by its content
+        this.setOnMousePressed(event -> {
+            if (event.getTarget() == this) {
+                // System.out.println("MainMenuScreen VBox pressed, consuming event to prevent potential drag.");
+                event.consume();
+            }
+        });
+
         // Game title
         Text gameTitle = new Text("KU Tower Defense");
         gameTitle.getStyleClass().add("menu-title");
@@ -101,6 +111,13 @@ public class MainMenuScreen extends VBox {
             } catch (NullPointerException | IllegalArgumentException e) { // Catch potential exceptions
                 System.err.println("Could not load stylesheet /css/style.css for the new scene: " + e.getMessage());
             }
+            
+            // Set custom cursor if available
+            ImageCursor customCursor = UIAssets.getCustomCursor();
+            if (customCursor != null) {
+                newScene.setCursor(customCursor);
+            }
+
             primaryStage.setScene(newScene);
             // Optional: Add a fade-in transition for the new scene's root node if desired
             if (newScene.getRoot() != null) {

@@ -3,6 +3,7 @@ package com.ku.towerdefense.ui;
 import com.ku.towerdefense.controller.GameController;
 import com.ku.towerdefense.model.map.GameMap;
 import com.ku.towerdefense.model.map.TileType;
+import com.ku.towerdefense.model.map.Tile;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -17,6 +18,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import javafx.scene.ImageCursor;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -191,7 +193,7 @@ public class MapSelectionScreen extends BorderPane {
 
         // Simplified path: (0,7) -> (15,7) -> corner to (16,6)
         for (int x = 0; x <= 15; x++) {
-             map.setTileType(x, 7, TileType.PATH_HORIZONTAL);
+            map.setTileType(x, 7, TileType.PATH_HORIZONTAL);
         }
         map.setTileType(16, 7, TileType.PATH_CIRCLE_NE); // Corner from (15,7) to (16,6)
         map.setTileType(16, 6, TileType.PATH_VERTICAL);  // Path segment at (16,6)
@@ -222,7 +224,7 @@ public class MapSelectionScreen extends BorderPane {
      */
     private void initializeUI() {
         getStyleClass().add("map-selection-screen");
-        setPadding(new Insets(20));
+        setPadding(new Insets(20, 20, 40, 20));
 
         // Title
         Text title = new Text("Select Map");
@@ -344,90 +346,53 @@ public class MapSelectionScreen extends BorderPane {
 
         // Get the current map
         GameMap map = availableMaps.get(currentMapIndex);
+        if (map == null) return;
 
-        // Calculate the scale factor to fit the map within the canvas
-        double scaleX = mapPreviewCanvas.getWidth() / (map.getWidth() * 32);
-        double scaleY = mapPreviewCanvas.getHeight() / (map.getHeight() * 32);
-        double scale = Math.min(scaleX, scaleY) * 0.9; // 90% to leave some margin
+        // Calculate the scale factor to fit the map (based on source tile size) onto the canvas
+        double sourceWorldWidth = map.getWidth() * Tile.SOURCE_TILE_SIZE;
+        double sourceWorldHeight = map.getHeight() * Tile.SOURCE_TILE_SIZE;
+
+        double scaleX = mapPreviewCanvas.getWidth() / sourceWorldWidth;
+        double scaleY = mapPreviewCanvas.getHeight() / sourceWorldHeight;
+        double finalScale = Math.min(scaleX, scaleY) * 0.95; // Use 95% to leave a small margin
 
         // Calculate the offset to center the map
-        double offsetX = (mapPreviewCanvas.getWidth() - (map.getWidth() * 32 * scale)) / 2;
-        double offsetY = (mapPreviewCanvas.getHeight() - (map.getHeight() * 32 * scale)) / 2;
+        double scaledWorldWidth = sourceWorldWidth * finalScale;
+        double scaledWorldHeight = sourceWorldHeight * finalScale;
+        double offsetX = (mapPreviewCanvas.getWidth() - scaledWorldWidth) / 2.0;
+        double offsetY = (mapPreviewCanvas.getHeight() - scaledWorldHeight) / 2.0;
 
-        // Draw background
-        gc.setFill(Color.DARKGRAY);
+        // Draw background for the preview area
+        gc.setFill(Color.web("#3c3c3c")); // A slightly darker gray, can be adjusted
         gc.fillRect(0, 0, mapPreviewCanvas.getWidth(), mapPreviewCanvas.getHeight());
 
         // Save the original transform
         gc.save();
 
-        // Apply the scale and translation
+        // Apply the scale and translation to the graphics context
         gc.translate(offsetX, offsetY);
-        gc.scale(scale, scale);
+        gc.scale(finalScale, finalScale);
 
-        // Draw the map tiles
+        // Draw the map tiles using Tile.render()
         for (int y = 0; y < map.getHeight(); y++) {
             for (int x = 0; x < map.getWidth(); x++) {
-                if (map.getTile(x, y) != null) {
-                    drawTile(gc, x, y, map.getTile(x, y).getType());
+                com.ku.towerdefense.model.map.Tile tile = map.getTile(x, y); // Use fully qualified name or ensure import
+                if (tile != null) {
+                    // Tile.render expects tile coordinates (x,y) and the size to render each tile at.
+                    // Since our gc is already scaled to fit the whole map,
+                    // the effective "tileSize" for rendering within this scaled context
+                    // is the original SOURCE_TILE_SIZE.
+                    tile.render(gc, x, y, Tile.SOURCE_TILE_SIZE, false); 
                 } else {
-                    // Draw empty/grass tiles
-                    gc.setFill(Color.GREEN);
-                    gc.fillRect(x * 32, y * 32, 32, 32);
+                    // Fallback for null tiles (e.g. if map data is incomplete)
+                    gc.setFill(Color.BLACK); 
+                    gc.fillRect(x * Tile.SOURCE_TILE_SIZE, y * Tile.SOURCE_TILE_SIZE, Tile.SOURCE_TILE_SIZE, Tile.SOURCE_TILE_SIZE);
                 }
             }
         }
 
         // Restore the original transform
         gc.restore();
-    }
-
-    /**
-     * Draw a single tile on the canvas.
-     *
-     * @param gc   the graphics context
-     * @param x    x coordinate in tile units
-     * @param y    y coordinate in tile units
-     * @param type the tile type to draw
-     */
-    private void drawTile(GraphicsContext gc, int x, int y, TileType type) {
-        Color color;
-        switch (type) {
-            case GRASS:
-                color = Color.GREEN;
-            case PATH_CIRCLE_NW, PATH_CIRCLE_N, PATH_CIRCLE_NE, PATH_CIRCLE_E, PATH_CIRCLE_SE, PATH_CIRCLE_S,
-                    PATH_CIRCLE_SW, PATH_CIRCLE_W, PATH_VERTICAL_N_DE, PATH_VERTICAL, PATH_VERTICAL_S_DE,
-                    PATH_HORIZONTAL_W_DE, PATH_HORIZONTAL, PATH_HORIZONTAL_E_DE:
-                color = Color.SANDYBROWN;
-                break;
-            case TOWER_SLOT:
-                color = Color.DARKGRAY;
-            case CASTLE1, CASTLE2, CASTLE3, CASTLE4:
-                color = Color.LIGHTGRAY;
-                break;
-            case TREE_BIG, TREE_MEDIUM, TREE_SMALL:
-                color = Color.DARKGREEN;
-            case ROCK_SMALL, ROCK_MEDIUM:
-                color = Color.GRAY;
-            case HOUSE:
-                color = Color.BROWN;
-            case WELL:
-                color = Color.BLUE;
-            case LOG_PILE:
-                color = Color.SIENNA;
-            case TOWER_ARTILLERY, TOWER_MAGE, ARCHER_TOWER, TOWER_BARACK:
-                color = Color.PURPLE;
-                break;
-            case START_POINT:
-                color = Color.BLUE;
-            case END_POINT:
-                color = Color.RED;
-            default:
-                color = Color.PINK;
-        }
-
-        gc.setFill(color);
-        gc.fillRect(x * 32, y * 32, 32, 32);
     }
 
     /**
@@ -483,8 +448,16 @@ public class MapSelectionScreen extends BorderPane {
         GameController gameController = new GameController(selectedMap);
         GameScreen gameScreen = new GameScreen(primaryStage, gameController);
 
+        // Use current stage dimensions
         Scene gameScene = new Scene(gameScreen, primaryStage.getWidth(), primaryStage.getHeight());
         gameScene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+        
+        // Set custom cursor if available
+        ImageCursor customCursor = UIAssets.getCustomCursor();
+        if (customCursor != null) {
+            gameScene.setCursor(customCursor);
+        }
+
         primaryStage.setScene(gameScene);
 
         // Start the game loop
@@ -496,8 +469,16 @@ public class MapSelectionScreen extends BorderPane {
      */
     private void goBack() {
         MainMenuScreen mainMenu = new MainMenuScreen(primaryStage);
+        // Use current stage dimensions
         Scene mainMenuScene = new Scene(mainMenu, primaryStage.getWidth(), primaryStage.getHeight());
         mainMenuScene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+        
+        // Set custom cursor if available
+        ImageCursor customCursor = UIAssets.getCustomCursor(); // Re-fetch or ensure it's available
+        if (customCursor != null) {
+            mainMenuScene.setCursor(customCursor);
+        }
+
         primaryStage.setScene(mainMenuScene);
     }
 }

@@ -19,6 +19,7 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.scene.Scene;
+import javafx.scene.ImageCursor;
 
 import java.io.File;
 import java.io.IOException;
@@ -548,13 +549,15 @@ public class MapEditorScreen extends BorderPane {
      */
     private void goBack() {
         MainMenuScreen mainMenu = new MainMenuScreen(primaryStage);
-        Scene mainMenuScene = new Scene(mainMenu, 800, 600);
-        try {
-            String css = getClass().getResource("/css/style.css").toExternalForm();
-            mainMenuScene.getStylesheets().add(css);
-        } catch (NullPointerException e) {
-            System.err.println("Warning: Could not load stylesheet /css/style.css");
+        Scene mainMenuScene = new Scene(mainMenu, primaryStage.getWidth(), primaryStage.getHeight());
+        mainMenuScene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+        
+        // Set custom cursor if available
+        ImageCursor customCursor = UIAssets.getCustomCursor();
+        if (customCursor != null) {
+            mainMenuScene.setCursor(customCursor);
         }
+
         primaryStage.setScene(mainMenuScene);
     }
 

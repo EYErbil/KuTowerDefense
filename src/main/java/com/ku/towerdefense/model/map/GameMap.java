@@ -40,6 +40,8 @@ public class GameMap implements Serializable {
     private transient Point2D endPoint;
     private transient GamePath enemyPath;
 
+    public static final int TILE_SIZE = 64; // Made public and static
+
     /* ------------------------------------------------------------------
      *  C‑TOR
      * ------------------------------------------------------------------ */
@@ -62,11 +64,6 @@ public class GameMap implements Serializable {
 
     public int  getWidth()  { return width; }
     public int  getHeight() { return height; }
-
-    // Constant for tile size, used throughout the game logic for this map
-    // It's important this matches the TS used in pathfinding and rendering if they are hardcoded there.
-    // For now, we assume 64 based on recent fixes.
-    private static final int TILE_SIZE = 64;
 
     public int getTileSize() { return TILE_SIZE; }
 
@@ -293,5 +290,28 @@ public class GameMap implements Serializable {
         if(startXY!=null) startPoint = new Point2D(startXY[0], startXY[1]);
         if(endXY!=null) endPoint = new Point2D(endXY[0], endXY[1]);
         generatePath(); // rebuild enemyPath + tile markings
+    }
+
+    public void setTileAsOccupiedByTower(int tileX, int tileY, boolean isOccupied) {
+        if (tileX >= 0 && tileX < width && tileY >= 0 && tileY < height) {
+            Tile tile = getTile(tileX, tileY);
+            if (tile != null) {
+                if (isOccupied) {
+                    // Make sure it was a tower slot before changing it, to avoid issues if logic is flawed
+                    if (tile.getType() == TileType.TOWER_SLOT) {
+                        tile.setType(TileType.GRASS); // Occupy by changing to a non-placeable type
+                        System.out.println("Tile (" + tileX + "," + tileY + ") changed to GRASS (occupied).");
+                    } else {
+                        System.err.println("Attempted to occupy a non-TOWER_SLOT tile at (" + tileX + "," + tileY + ") Type: " + tile.getType());
+                    }
+                } else {
+                    // When selling, change it back to a tower slot
+                    // This assumes the tile was originally a TOWER_SLOT and became GRASS (or other)
+                    // A more robust system might store original tile type or use a specific OCCUPIED_TOWER_SLOT type
+                    tile.setType(TileType.TOWER_SLOT); // Free up by changing back to TOWER_SLOT
+                    System.out.println("Tile (" + tileX + "," + tileY + ") changed back to TOWER_SLOT (unoccupied).");
+                }
+            }
+        }
     }
 }

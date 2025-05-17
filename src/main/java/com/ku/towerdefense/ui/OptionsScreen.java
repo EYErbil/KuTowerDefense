@@ -15,6 +15,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import javafx.scene.ImageCursor;
 
 /**
  * Options screen for configuring game parameters.
@@ -329,8 +330,15 @@ public class OptionsScreen extends BorderPane {
      */
     private void goBack() {
         MainMenuScreen mainMenu = new MainMenuScreen(primaryStage);
-        Scene mainMenuScene = new Scene(mainMenu, 800, 600);
+        Scene mainMenuScene = new Scene(mainMenu, primaryStage.getWidth(), primaryStage.getHeight());
         mainMenuScene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+        
+        // Set custom cursor if available
+        ImageCursor customCursor = UIAssets.getCustomCursor();
+        if (customCursor != null) {
+            mainMenuScene.setCursor(customCursor);
+        }
+
         primaryStage.setScene(mainMenuScene);
     }
     

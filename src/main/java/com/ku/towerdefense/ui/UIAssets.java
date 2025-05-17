@@ -28,8 +28,7 @@ public class UIAssets {
      */
     private static void loadImages() {
         // Get the base path from the class loader
-        String basePathUI = "/Asset_pack/UI/";
-        String basePathEffects = "/Asset_pack/Effects/";
+        String basePath = "/Asset_pack/UI/";
 
         try {
             // Load all button images
@@ -48,20 +47,24 @@ public class UIAssets {
 
             for (String file : buttonFiles) {
                 String key = file.replace(".png", "");
-                loadImage(key, basePathUI + file);
+                loadImage(key, basePath + file);
             }
 
             // Load other UI images
-            loadImage("GameUI", basePathUI + "Coin_Health_Wave.png");
-            loadImage("Ribbon_Blue", basePathUI + "Ribbon_Blue_3Slides.png");
-            loadImage("Ribbon_Red", basePathUI + "Ribbon_Red_3Slides.png");
-            loadImage("Ribbon_Yellow", basePathUI + "Ribbon_Yellow_3Slides.png");
-            loadImage("KUTowerButtons", basePathUI + "kutowerbuttons4.png");
-            loadImage("01", basePathUI + "01.png");
+            loadImage("GameUI", basePath + "Coin_Health_Wave.png");
+            loadImage("Ribbon_Blue", basePath + "Ribbon_Blue_3Slides.png");
+            loadImage("Ribbon_Red", basePath + "Ribbon_Red_3Slides.png");
+            loadImage("Ribbon_Yellow", basePath + "Ribbon_Yellow_3Slides.png");
+            loadImage("KUTowerButtons", basePath + "kutowerbuttons4.png");
+            loadImage("01", basePath + "01.png");
 
-            // Load effect animations
-            loadImage("ExplosionEffect", basePathEffects + "Explosions.png");
-            loadImage("FireEffect", basePathEffects + "Fire.png");
+            // Effect sprite sheets
+            loadImage("ExplosionEffect", "/Asset_pack/Effects/Explosions.png");
+            loadImage("FireEffect",      "/Asset_pack/Effects/Fire.png");
+            loadImage("GoldSpawnEffect", "/Asset_pack/Effects/G_Spawn.png");
+
+            // Tower specific effects/icons
+            // loadImage("ThunderEffect",   "/Asset_pack/Towers/thunder_icon.png"); // Removed
 
             System.out.println("UI assets loaded successfully - " + imageCache.size() + " images");
         } catch (Exception e) {
@@ -210,10 +213,17 @@ public class UIAssets {
             button.setGraphic(iconView);
             button.getStyleClass().add("icon-button"); // For CSS styling
              // Basic styling for icon buttons (can be overridden/enhanced in CSS)
-            button.setStyle("-fx-background-color: transparent; -fx-padding: 3px;");
-            button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: #e0e0e0; -fx-padding: 3px; -fx-cursor: hand;")); // Light grey on hover
-            button.setOnMouseExited(e -> button.setStyle("-fx-background-color: transparent; -fx-padding: 3px;"));
+            // button.setStyle("-fx-background-color: transparent; -fx-padding: 3px;"); // REMOVED
+            // button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: #e0e0e0; -fx-padding: 3px; -fx-cursor: hand;")); // REMOVED
+            // button.setOnMouseExited(e -> button.setStyle("-fx-background-color: transparent; -fx-padding: 3px;")); // REMOVED
 
+            // CSS (.icon-button) should handle -fx-cursor: hand;
+            // Revert to custom cursor on exit if it was changed by something else (though less likely now)
+            button.setOnMouseExited(e -> {
+                if (button.getScene() != null && button.getScene().getCursor() != UIAssets.getCustomCursor()) {
+                     button.getScene().setCursor(UIAssets.getCustomCursor());
+                }
+            });
 
         } else {
             // Fallback if the sprite sheet isn't loaded

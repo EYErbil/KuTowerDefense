@@ -1,6 +1,5 @@
 package com.ku.towerdefense.model.entity;
 
-import com.ku.towerdefense.ui.UIAssets;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
@@ -13,6 +12,9 @@ import java.io.Serializable;
  */
 public class Projectile extends Entity implements Serializable {
     private static final long serialVersionUID = 1L;
+    
+    public enum ImpactEffect { NONE, EXPLOSION, FIRE }
+    private ImpactEffect impactEffect = ImpactEffect.NONE;
     
     private Enemy target;
     private int damage;
@@ -29,19 +31,6 @@ public class Projectile extends Entity implements Serializable {
     private Color color;
     private Image image;
     private String imageFile;
-
-    // Effect Animation Fields
-    private transient Image effectAnimationSheet;
-    private String effectAnimationSheetKey; // e.g., "ExplosionEffect" or "FireEffect"
-    private int effectAnimationTotalFrames;
-    private int effectAnimationFrameWidth;
-    private int effectAnimationFrameHeight;
-    private int effectAnimationCurrentFrame;
-    private long effectAnimationFrameDurationMs; // Duration of each frame in ms
-    private long effectLastFrameTimeMs;
-    private boolean isPlayingEffectAnimation;
-    private double effectCenterX, effectCenterY; // Position to play the effect
-    private double effectDisplaySizeMultiplier = 1.0; // To scale the effect animation
     
     /**
      * Create a new projectile.
@@ -66,31 +55,17 @@ public class Projectile extends Entity implements Serializable {
         this.hasHit = false;
         this.hasAoeEffect = false;
         this.aoeRange = 0;
-        this.isPlayingEffectAnimation = false;
-        this.effectAnimationCurrentFrame = 0;
         
-        // Default appearance based on damage type & setup effect animation params
+        // Default appearance based on damage type
         switch (damageType) {
             case ARROW:
                 this.color = Color.DARKGREEN;
                 break;
-            case MAGIC: // Fire Effect
+            case MAGIC:
                 this.color = Color.PURPLE;
-                this.effectAnimationSheetKey = "FireEffect";
-                this.effectAnimationTotalFrames = 16; // Assuming 4x4 grid
-                this.effectAnimationFrameWidth = 64;  // Assuming 256x256 sheet -> 64x64 frames
-                this.effectAnimationFrameHeight = 64;
-                this.effectAnimationFrameDurationMs = 80; // ms per frame
-                this.effectDisplaySizeMultiplier = 1.2;
                 break;
             case EXPLOSIVE:
                 this.color = Color.RED;
-                this.effectAnimationSheetKey = "ExplosionEffect";
-                this.effectAnimationTotalFrames = 16; // Assuming 4x4 grid
-                this.effectAnimationFrameWidth = 64;  // Assuming 256x256 sheet -> 64x64 frames
-                this.effectAnimationFrameHeight = 64;
-                this.effectAnimationFrameDurationMs = 60; // ms per frame, faster for explosion
-                this.effectDisplaySizeMultiplier = 1.8; // Explosions are larger
                 break;
             default:
                 this.color = Color.GRAY;
@@ -101,24 +76,11 @@ public class Projectile extends Entity implements Serializable {
      * Update the projectile position and check for collision with target.
      *
      * @param deltaTime time elapsed since last update in seconds
-     * @return true if the projectile hit its target THIS FRAME, false otherwise
+     * @return true if the projectile hit its target, false otherwise
      */
     public boolean update(double deltaTime) {
-        if (isPlayingEffectAnimation) {
-            long currentTime = System.currentTimeMillis();
-            if (currentTime - effectLastFrameTimeMs >= effectAnimationFrameDurationMs) {
-                effectAnimationCurrentFrame++;
-                effectLastFrameTimeMs = currentTime;
-                if (effectAnimationCurrentFrame >= effectAnimationTotalFrames) {
-                    isPlayingEffectAnimation = false;
-                    active = false; // Animation finished, projectile is done
-                }
-            }
-            return false; // Not a new "hit" while animating effect
-        }
-
-        if (!active || hasHit) { // If already hit (and not animating) or inactive, do nothing
-            return false; // No new hit, and it wasn't a hit this frame if hasHit is already true
+        if (!active || hasHit) {
+            return hasHit;
         }
         
         // Check if target is still valid
@@ -139,27 +101,9 @@ public class Projectile extends Entity implements Serializable {
         
         // If we're close enough to hit the target
         if (distance < 10) {
-            hasHit = true; // Mark as hit
-
-            if (effectAnimationSheetKey != null && effectAnimationSheet == null) { // Lazy load sheet if needed
-                this.effectAnimationSheet = UIAssets.getImage(this.effectAnimationSheetKey);
-            }
-
-            if (effectAnimationSheet != null) {
-                isPlayingEffectAnimation = true;
-                effectAnimationCurrentFrame = 0;
-                effectLastFrameTimeMs = System.currentTimeMillis();
-                // Set effect position to target's center at the moment of impact
-                this.effectCenterX = targetCenterX;
-                this.effectCenterY = targetCenterY;
-                // Snap projectile logical position to the effect center, mostly for visual consistency if projectile itself was rendered during effect
-                this.x = targetCenterX - this.width / 2;
-                this.y = targetCenterY - this.height / 2;
-                // Projectile remains active = true while animation plays
-            } else {
-                active = false; // No animation to play, so projectile is done
-            }
-            return true; // Signal that a hit occurred this frame
+            hasHit = true;
+            active = false;
+            return true;
         }
         
         // Otherwise move toward the target
@@ -185,26 +129,6 @@ public class Projectile extends Entity implements Serializable {
      */
     @Override
     public void render(GraphicsContext gc) {
-        if (isPlayingEffectAnimation && effectAnimationSheet != null) {
-            int framesPerRow = (int) (effectAnimationSheet.getWidth() / effectAnimationFrameWidth);
-            int frameCol = effectAnimationCurrentFrame % framesPerRow;
-            int frameRow = effectAnimationCurrentFrame / framesPerRow;
-
-            double sx = frameCol * effectAnimationFrameWidth;
-            double sy = frameRow * effectAnimationFrameHeight;
-
-            double drawWidth = effectAnimationFrameWidth * effectDisplaySizeMultiplier;
-            double drawHeight = effectAnimationFrameHeight * effectDisplaySizeMultiplier;
-            
-            gc.drawImage(effectAnimationSheet, 
-                         sx, sy, effectAnimationFrameWidth, effectAnimationFrameHeight, 
-                         effectCenterX - drawWidth / 2, effectCenterY - drawHeight / 2, 
-                         drawWidth, drawHeight);
-            return; // Don't render original projectile if effect is playing
-        }
-
-        if (!active) return; // Don't render if inactive and not playing effect
-
         // Load image if specified and not already loaded
         if (image == null && imageFile != null) {
             loadImage();
@@ -327,15 +251,25 @@ public class Projectile extends Entity implements Serializable {
      * Reinitialize after deserialization to reload images
      */
     public void reinitializeAfterLoad() {
-        // If we have an image file, try to reload the image
-        if (this.image == null && this.imageFile != null) {
+        if (image == null && imageFile != null) {
             loadImage();
         }
-        // Reload effect animation sheet
-        if (this.effectAnimationSheetKey != null && !this.effectAnimationSheetKey.isEmpty()) {
-            this.effectAnimationSheet = UIAssets.getImage(this.effectAnimationSheetKey);
-            if (this.effectAnimationSheet == null) {
-                 System.err.println("Failed to reload effect animation sheet: " + this.effectAnimationSheetKey);
+        
+        // If image still couldn't be loaded, ensure color is set for fallback rendering
+        if (image == null && color == null) {
+            // Set a default color based on damage type
+            switch (damageType) {
+                case ARROW:
+                    color = Color.BROWN;
+                    break;
+                case MAGIC:
+                    color = Color.PURPLE;
+                    break;
+                case EXPLOSIVE:
+                    color = Color.ORANGE;
+                    break;
+                default:
+                    color = Color.GRAY;
             }
         }
     }
@@ -392,5 +326,9 @@ public class Projectile extends Entity implements Serializable {
     
     public void setImageFile(String imageFile) {
         this.imageFile = imageFile;
+        this.image = null; // Force reload
     }
+    
+    public void setImpactEffect(ImpactEffect e) { this.impactEffect = e; }
+    public ImpactEffect getImpactEffect() { return impactEffect; }
 } 

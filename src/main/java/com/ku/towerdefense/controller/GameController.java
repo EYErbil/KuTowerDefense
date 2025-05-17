@@ -14,6 +14,9 @@ import com.ku.towerdefense.model.entity.Tower;
 import com.ku.towerdefense.model.map.GameMap;
 import com.ku.towerdefense.model.map.TileType;
 import com.ku.towerdefense.util.GameSettings;
+import com.ku.towerdefense.ui.UIAssets;
+import com.ku.towerdefense.model.effects.AnimatedEffect;
+import javafx.scene.image.Image;
 
 import javafx.animation.AnimationTimer;
 import javafx.geometry.Point2D;
@@ -22,6 +25,8 @@ import javafx.animation.Timeline;
 import javafx.animation.KeyFrame;
 import javafx.util.Duration;
 import javafx.animation.Animation;
+import com.ku.towerdefense.model.wave.Wave;
+import com.ku.towerdefense.model.wave.WaveConfig;
 
 /**
  * Main controller for the game, handling the game loop, entities, and game state.
@@ -36,6 +41,7 @@ public class GameController {
     private int currentWave;
     private boolean gameOver;
     private AnimationTimer gameLoop;
+    private List<AnimatedEffect> activeEffects = new ArrayList<>();
 
     // Time between waves in milliseconds
     private static final long WAVE_BREAK_TIME = 5000;
@@ -49,6 +55,9 @@ public class GameController {
 
     // Listener for wave events
     private WaveCompletedListener onWaveCompletedListener;
+
+    private boolean isPaused = false; // Added to track pause state internally
+    private Timeline waveTimer; // For timed wave progression
 
     /**
      * Creates a new game controller with the specified game map.
@@ -88,15 +97,22 @@ public class GameController {
      * Starts the game loop.
      */
     public void startGame() {
-        gameLoop.start();
+        // gameLoop.start(); // GameScreen handles AnimationTimer start/stop via its own pause
+        if (currentWave == 0) { // Auto-start first wave
+            startNextWave();
+        }
     }
 
     /**
      * Stops the game loop.
      */
     public void stopGame() {
-        gameLoop.stop();
+        // gameLoop.stop(); // GameScreen handles AnimationTimer
+        if (waveTimer != null) {
+            waveTimer.stop();
+        }
     }
+
     public void pauseGame() {
         // Add any game-specific pause logic here
     }
@@ -105,26 +121,38 @@ public class GameController {
         // Add any game-specific resume logic here
     }
     
+    public void setPaused(boolean isPaused) {
+        this.isPaused = isPaused;
+        if (isPaused) {
+            if (waveTimer != null) waveTimer.pause();
+        } else {
+            if (waveTimer != null && waveTimer.getStatus() == Animation.Status.PAUSED) waveTimer.play();
+        }
+    }
 
+    public boolean isPaused() {
+        return isPaused;
+    }
 
     /**
      * Updates the game state.
      *
      * @param deltaTime time elapsed since the last update in seconds
      */
-    public void update(double deltaTime) {
-        if (gameOver) {
+    public void update(double initialDeltaTime) {
+        if (gameOver || isPaused) { // Check internal pause state
             return;
         }
 
+        double currentDeltaTime = initialDeltaTime;
         // Apply speed multiplier if accelerated
         if (speedAccelerated) {
-            deltaTime *= SPEED_MULTIPLIER;
+            currentDeltaTime *= SPEED_MULTIPLIER;
         }
 
         // Update towers and collect projectiles
         for (Tower tower : towers) {
-            Projectile projectile = tower.update(deltaTime, enemies);
+            Projectile projectile = tower.update(currentDeltaTime, enemies);
             if (projectile != null) {
                 projectiles.add(projectile);
             }
@@ -133,7 +161,7 @@ public class GameController {
         // Update projectiles and check for hits
         List<Projectile> projectilesToRemove = new ArrayList<>();
         for (Projectile projectile : projectiles) {
-            boolean hit = projectile.update(deltaTime);
+            boolean hit = projectile.update(currentDeltaTime);
             if (hit || !projectile.isActive()) {
                 projectilesToRemove.add(projectile);
                 if (hit) {
@@ -169,6 +197,39 @@ public class GameController {
                             }
                         }
                     }
+                    // Spawn impact visual effect
+                    Point2D impactPointForEffect = projectile.getTarget() != null ? 
+                                                   new Point2D(projectile.getTarget().getCenterX(), projectile.getTarget().getCenterY()) :
+                                                   new Point2D(projectile.getCenterX(), projectile.getCenterY()); // Fallback if target is gone
+
+                    switch (projectile.getImpactEffect()) {
+                        case EXPLOSION:
+                            Image explSheet = UIAssets.getImage("ExplosionEffect");
+                            if (explSheet != null) {
+                                activeEffects.add(new AnimatedEffect(explSheet,
+                                    impactPointForEffect.getX(), impactPointForEffect.getY(),
+                                    192, 192, // frameW, frameH for Explosion.png
+                                    9,       // totalFrames for Explosion.png
+                                    0.05));  // frameDurationSeconds
+                            } else {
+                                System.err.println("ExplosionEffect spritesheet not loaded!");
+                            }
+                            break;
+                        case FIRE:
+                            Image fireSheet = UIAssets.getImage("FireEffect");
+                            if (fireSheet != null) {
+                                activeEffects.add(new AnimatedEffect(fireSheet,
+                                    impactPointForEffect.getX(), impactPointForEffect.getY(),
+                                    128, 128, // frameW, frameH for Fire.png
+                                    7,       // totalFrames for Fire.png
+                                    0.05));  // frameDurationSeconds
+                            } else {
+                                System.err.println("FireEffect spritesheet not loaded!");
+                            }
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
         }
@@ -177,7 +238,7 @@ public class GameController {
         // Update enemies and check for ones that reached the end
         List<Enemy> enemiesToRemove = new ArrayList<>();
         for (Enemy enemy : enemies) {
-            boolean reachedEnd = enemy.update(deltaTime);
+            boolean reachedEnd = enemy.update(currentDeltaTime);
 
             if (reachedEnd) {
                 enemiesToRemove.add(enemy);
@@ -186,36 +247,56 @@ public class GameController {
                 if (playerLives <= 0) {
                     gameOver = true;
                     stopGame();
+                    // Potentially trigger a game over UI event or screen change from here
+                    // or GameScreen can check isGameOver() state
                 }
-            } else if (enemy.getCurrentHealth() <= 0) {
+            } else if (enemy.getCurrentHealth() <= 0 && !enemiesToRemove.contains(enemy)) {
                 enemiesToRemove.add(enemy);
                 playerGold += enemy.getGoldReward();
+                
+                // Spawn gold drop animation
+                Image goldSpawnSheet = UIAssets.getImage("GoldSpawnEffect");
+                if (goldSpawnSheet != null) {
+                    activeEffects.add(new AnimatedEffect(goldSpawnSheet,
+                        enemy.getCenterX(), enemy.getCenterY(), // Position at enemy center
+                        128, 128, // Frame width, height for G_Spawn.png (assuming 128x128 frames)
+                        7,       // Total frames (896px width / 128px frame width = 7 frames)
+                        0.07));  // Frame duration in seconds (e.g., 0.07s * 7 frames = ~0.5s anim)
+                } else {
+                    System.err.println("GoldSpawnEffect spritesheet not loaded!");
+                }
             }
         }
-
-        // Remove dead or escaped enemies
         enemies.removeAll(enemiesToRemove);
 
+        // Update and remove inactive visual effects
+        final double finalDeltaTimeForEffects = currentDeltaTime; // Effectively final for lambda
+        activeEffects.removeIf(effect -> {
+            effect.update(finalDeltaTimeForEffects);
+            return !effect.isActive();
+        });
+
         // Check if wave is completed and all enemies are spawned
-        if (enemies.isEmpty() && !isSpawningEnemies && currentWave > 0) {
-            // Give player time before the next wave
-            if (!betweenWaves) {
+        // AND if waveTimer is not already running (to prevent multiple timers)
+        if (enemies.isEmpty() && !isSpawningEnemies && currentWave > 0 && !betweenWaves && (waveTimer == null || waveTimer.getStatus() != Animation.Status.RUNNING)) {
                 betweenWaves = true;
-                waveStartTime = System.currentTimeMillis() + WAVE_BREAK_TIME; // 5 seconds break
-
-                // Give gold bonus for completing the wave
-                int waveBonus = currentWave * 10;
-                playerGold += waveBonus;
-
-                // Notify listeners for UI update
+            System.out.println("Wave " + currentWave + " cleared! Next wave in " + (WAVE_BREAK_TIME / 1000) + " seconds.");
                 if (onWaveCompletedListener != null) {
-                    onWaveCompletedListener.onWaveCompleted(currentWave, waveBonus);
+                onWaveCompletedListener.onWaveCompleted(currentWave, 100); // Example bonus gold
                 }
-            } else if (System.currentTimeMillis() >= waveStartTime) {
-                // Start the next wave after the break time has passed
+            
+            waveTimer = new Timeline(new KeyFrame(Duration.millis(WAVE_BREAK_TIME), ae -> {
                 betweenWaves = false;
+                isSpawningEnemies = false; // Ensure this is reset before starting next wave
                 startNextWave();
-            }
+            }));
+            waveTimer.play();
+        } else if (isSpawningEnemies && enemies.isEmpty() && !anyEnemiesLeftInWave()) {
+            // This case handles if all enemies of a wave are killed before the spawning queue is empty
+            // (e.g. very fast killing). Effectively ends the spawning part of the wave.
+            isSpawningEnemies = false;
+            System.out.println("All spawned enemies for wave " + currentWave + " defeated.");
+            // The main betweenWaves logic above will then trigger the timer for the next wave.
         }
     }
 
@@ -241,6 +322,11 @@ public class GameController {
         // Render projectiles
         for (Projectile projectile : projectiles) {
             projectile.render(gc);
+        }
+
+        // Render active visual effects
+        for (AnimatedEffect effect : activeEffects) {
+            effect.render(gc);
         }
 
         // Additional UI rendering can be handled elsewhere
@@ -548,20 +634,27 @@ public class GameController {
      * @return The tower at the given coordinates, or null if no tower is present.
      */
     public Tower getTowerAt(double worldX, double worldY) {
-        int tileX = (int) (worldX / gameMap.getTileSize());
-        int tileY = (int) (worldY / gameMap.getTileSize());
+        // Ensure GameMap.TILE_SIZE is used or gameMap.getTileSize() is reliable
+        double tileSize = gameMap.getTileSize(); 
+        if (tileSize <= 0) tileSize = GameMap.TILE_SIZE; // Fallback if somehow not initialized
+
+        int clickTileX = (int) (worldX / tileSize);
+        int clickTileY = (int) (worldY / tileSize);
+        System.out.println("[GameController.getTowerAt] Checking for tower at world (" + worldX + "," + worldY + ") -> tile (" + clickTileX + "," + clickTileY + ")"); // DEBUG
 
         for (Tower tower : towers) {
-            // Check if the tower's origin (top-left) matches the calculated tile's origin
-            // Assuming tower.getX() and tower.getY() are already tile-aligned (e.g. tileX * tileSize)
-            int towerTileX = (int) (tower.getX() / gameMap.getTileSize());
-            int towerTileY = (int) (tower.getY() / gameMap.getTileSize());
+            // Calculate tower's tile coordinates based on its top-left position
+            int towerStoredTileX = (int) (tower.getX() / tileSize);
+            int towerStoredTileY = (int) (tower.getY() / tileSize);
+            System.out.println("[GameController.getTowerAt]   Comparing with tower '" + tower.getName() + "' at stored tile (" + towerStoredTileX + "," + towerStoredTileY + ") / world (" + tower.getX() + "," + tower.getY() + ")"); // DEBUG
 
-            if (towerTileX == tileX && towerTileY == tileY) {
+            if (towerStoredTileX == clickTileX && towerStoredTileY == clickTileY) {
+                System.out.println("[GameController.getTowerAt]     Found matching tower: " + tower.getName()); // DEBUG
                 return tower;
             }
         }
-        return null; // No tower found at this location
+        System.out.println("[GameController.getTowerAt]   No tower found at these coordinates."); // DEBUG
+        return null; 
     }
 
     /**
@@ -657,5 +750,115 @@ public class GameController {
         }
         
         System.out.println("GameController: Reinitialization complete");
+    }
+
+    // Helper to check if any enemies are scheduled for the current wave but not yet spawned
+    private boolean anyEnemiesLeftInWave() {
+        Wave currentWaveData = WaveConfig.getWave(this.currentWave);
+        if (currentWaveData == null) return false;
+        // This is a simplified check. Real implementation would need to track spawned vs total for the wave.
+        // For now, if isSpawningEnemies is true, we assume some might still be in a queue.
+        // The logic in startNextWave needs to manage this queue properly.
+        return isSpawningEnemies; // Placeholder, proper check depends on startNextWave implementation
+    }
+
+    // Method to purchase and place tower using TILE coordinates
+    public boolean purchaseAndPlaceTower(Tower towerTemplate, int tileX, int tileY) {
+        if (towerTemplate == null) return false;
+
+        // Set tower position based on tile coordinates (top-left of the tile)
+        double worldX = tileX * GameMap.TILE_SIZE;
+        double worldY = tileY * GameMap.TILE_SIZE;
+        towerTemplate.setX(worldX);
+        towerTemplate.setY(worldY);
+        // Ensure cost is based on the template's base cost, not a potentially leveled instance
+        int cost = towerTemplate.getBaseCost(); 
+
+        if (playerGold >= cost) {
+            if (gameMap.canPlaceTower(worldX + GameMap.TILE_SIZE / 2.0, worldY + GameMap.TILE_SIZE / 2.0, towers)) {
+                // Create a new instance for placement using the template's type
+                Tower newTower = towerTemplate.cloneTower(); // Assumes a cloneTower() or similar method exists
+                newTower.setX(worldX);
+                newTower.setY(worldY);
+                newTower.setLevel(1); // Ensure it's level 1
+
+                towers.add(newTower);
+                playerGold -= cost;
+                System.out.println(newTower.getName() + " purchased and placed at (" + tileX + "," + tileY + "). Gold: " + playerGold);
+                gameMap.setTileAsOccupiedByTower(tileX, tileY, true);
+                return true;
+            }
+            System.err.println("Cannot place tower: Tile (" + tileX + "," + tileY + ") is not suitable or blocked.");
+        } else {
+            System.err.println("Cannot place tower: Not enough gold. Need " + cost + ", have " + playerGold);
+        }
+        return false;
+    }
+
+    public boolean upgradeTower(Tower towerToUpgrade, int tileX, int tileY) {
+        if (towerToUpgrade == null) {
+            // Attempt to find tower if only coordinates are implicitly known by context
+            towerToUpgrade = getTowerAtTile(tileX, tileY);
+            if (towerToUpgrade == null) {
+                System.err.println("Upgrade failed: No tower at tile (" + tileX + "," + tileY + ")");
+                return false;
+            }
+        }
+        
+        if (towerToUpgrade.canUpgrade() && playerGold >= towerToUpgrade.getUpgradeCost()) {
+            playerGold -= towerToUpgrade.getUpgradeCost();
+            towerToUpgrade.upgrade();
+            System.out.println("Tower at ("+ tileX + "," + tileY + ") upgraded to level " + towerToUpgrade.getLevel() + ". Gold: " + playerGold);
+            return true;
+        } else if (!towerToUpgrade.canUpgrade()) {
+             System.err.println("Upgrade failed: Tower at max level.");
+        } else {
+            System.err.println("Upgrade failed: Not enough gold. Need " + towerToUpgrade.getUpgradeCost() + ", have " + playerGold);
+        }
+        return false;
+    }
+
+    public int sellTower(int tileX, int tileY) {
+        System.out.println("[GameController.sellTower] Attempting to sell tower at TILE: (" + tileX + "," + tileY + ")"); // DEBUG
+        Tower towerToSell = null;
+        int indexToRemove = -1;
+        double tileSize = gameMap.getTileSize(); // Use getter for consistency, or GameMap.TILE_SIZE directly
+        if (tileSize <= 0) tileSize = GameMap.TILE_SIZE;
+
+        for (int i = 0; i < towers.size(); i++) {
+            Tower t = towers.get(i);
+            int tTileX = (int) (t.getX() / tileSize);
+            int tTileY = (int) (t.getY() / tileSize);
+            System.out.println("[GameController.sellTower]   Checking against tower '" + t.getName() + "' at tile (" + tTileX + "," + tTileY + ")"); // DEBUG
+            if (tTileX == tileX && tTileY == tileY) {
+                towerToSell = t;
+                indexToRemove = i;
+                System.out.println("[GameController.sellTower]     Found tower to sell: " + t.getName()); // DEBUG
+                break;
+            }
+        }
+
+        if (towerToSell != null) {
+            int refund = towerToSell.getSellRefund();
+            towers.remove(indexToRemove);
+            playerGold += refund;
+            System.out.println("[GameController.sellTower]     Tower removed. Gold after refund: " + playerGold); // DEBUG
+            gameMap.setTileAsOccupiedByTower(tileX, tileY, false);
+            System.out.println("[GameController.sellTower]     Called setTileAsOccupiedByTower for (" + tileX + "," + tileY + ") to false."); // DEBUG
+            return refund;
+        }
+        System.err.println("[GameController.sellTower] Sell failed: No tower found at tile (" + tileX + "," + tileY + ") to sell."); // DEBUG
+        return 0;
+    }
+
+    public Tower getTowerAtTile(int tileX, int tileY) {
+        for (Tower t : towers) {
+            int tTileX = (int) (t.getX() / GameMap.TILE_SIZE);
+            int tTileY = (int) (t.getY() / GameMap.TILE_SIZE);
+            if (tTileX == tileX && tTileY == tileY) {
+                return t;
+            }
+        }
+        return null;
     }
 } 

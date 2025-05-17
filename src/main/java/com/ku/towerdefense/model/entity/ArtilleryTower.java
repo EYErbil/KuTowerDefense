@@ -12,10 +12,19 @@ import java.io.Serializable;
  */
 public class ArtilleryTower extends Tower implements Serializable {
     private static final long serialVersionUID = 1L;
-    public static final int COST = GameSettings.getInstance().getArtilleryTowerCost(); // 100
+    public static final int BASE_COST = 100; // Added base cost
     private static final int BASE_DAMAGE = GameSettings.getInstance().getArtilleryTowerDamage();
     private static final int BASE_RANGE = GameSettings.getInstance().getArtilleryTowerRange();
     private static final int BASE_AOE_RANGE = GameSettings.getInstance().getArtilleryAOERange();
+    private static final long BASE_FIRE_RATE = GameSettings.getInstance().getArtilleryTowerFireRate();
+    private static final String BASE_IMAGE_FILENAME = "Tower_bomb128.png";
+    private static final String UPGRADED_IMAGE_FILENAME = "artillery_up.png";
+
+    private static final double PROJECTILE_WIDTH = 20;
+    private static final double PROJECTILE_HEIGHT = 20;
+    private static final double PROJECTILE_SPEED = 200;
+    private static final String PROJECTILE_IMAGE_FILE = "cannon_ball.png"; // Placeholder
+    private static final int AOE_RANGE = 50; // Example AOE range
     
     /**
      * Create a new artillery tower at the specified position.
@@ -24,16 +33,7 @@ public class ArtilleryTower extends Tower implements Serializable {
      * @param y y coordinate
      */
     public ArtilleryTower(double x, double y) {
-        super(x, y, 64, 64, 
-              BASE_DAMAGE,
-              BASE_RANGE,
-              GameSettings.getInstance().getArtilleryTowerFireRate(),
-              COST, // Pass the static COST here
-              DamageType.EXPLOSIVE);
-        
-        // Set image file from assets - using classpath reference instead of absolute path
-        String imagePath = "/Asset_pack/Towers/Tower_bomb128.png";
-        setImageFile(imagePath);
+        super(x, y, 64, 64, BASE_DAMAGE, BASE_RANGE, BASE_FIRE_RATE, BASE_COST, DamageType.EXPLOSIVE);
     }
     
     /**
@@ -45,21 +45,14 @@ public class ArtilleryTower extends Tower implements Serializable {
      */
     @Override
     protected Projectile createProjectile(Enemy target) {
-        double centerX = x + width / 2;
-        double centerY = y + height / 2;
-        
-        Projectile shell = new Projectile(
-            centerX, centerY, 16, 16,
-            target, damage, DamageType.EXPLOSIVE, 350);
-        
-        // Set shell appearance
-        shell.setColor(javafx.scene.paint.Color.RED);
-        
-        // Configure AOE effect
-        shell.setHasAoeEffect(true);
-        shell.setAoeRange(BASE_AOE_RANGE); // Use base AOE range initially
-        
-        return shell;
+        double projectileX = getCenterX() - PROJECTILE_WIDTH / 2;
+        double projectileY = getCenterY() - PROJECTILE_HEIGHT / 2;
+        Projectile projectile = new Projectile(projectileX, projectileY, PROJECTILE_WIDTH, PROJECTILE_HEIGHT, target, this.damage, DamageType.EXPLOSIVE, PROJECTILE_SPEED);
+        projectile.setImageFile(PROJECTILE_IMAGE_FILE);
+        projectile.setImpactEffect(Projectile.ImpactEffect.EXPLOSION);
+        projectile.setHasAoeEffect(true);
+        projectile.setAoeRange(AOE_RANGE);
+        return projectile;
     }
 
     @Override
@@ -69,25 +62,22 @@ public class ArtilleryTower extends Tower implements Serializable {
 
     @Override
     public int getBaseCost() {
-        return COST;
+        return BASE_COST;
     }
 
     @Override
-    public boolean upgrade() {
-        if (!super.upgrade()) {
-            return false;
-        }
-        // Increase damage, range, and AOE range
-        this.damage = BASE_DAMAGE + (int)(BASE_DAMAGE * (level -1) * UPGRADE_STAT_MULTIPLIER);
-        this.range = BASE_RANGE + (int)(BASE_RANGE * (level -1) * (UPGRADE_STAT_MULTIPLIER / 2)); 
-        // AOE range can also be upgraded, perhaps less aggressively or tied to specific level thresholds.
-        // For now, let's do a small increase. Projectile's AOE range will be set at creation time.
-        // To make this effective, createProjectile would need to use the tower's current AOE range.
-        // This requires adding an aoeRange field to ArtilleryTower and updating it here.
-        // For simplicity now, we assume the projectile's AOE range is fixed after creation or the base one is fine.
-        // If projectile's AOE needs to change, createProjectile needs to access parent tower's current AOE range.
+    protected String getBaseImageName() {
+        return "Asset_pack/Towers/" + BASE_IMAGE_FILENAME;
+    }
 
-        System.out.println("Artillery Tower upgraded to level " + level + ". Damage: " + this.damage + ", Range: " + this.range);
-        return true;
+    @Override
+    protected String getUpgradedImageName() {
+        return "Asset_pack/Towers/" + UPGRADED_IMAGE_FILENAME;
+    }
+
+    @Override
+    public Tower cloneTower() {
+        ArtilleryTower clone = new ArtilleryTower(this.x, this.y);
+        return clone;
     }
 } 
