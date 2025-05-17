@@ -1,0 +1,429 @@
+/* General styles */
+.root {
+    -fx-font-family: 'Segoe UI', Arial, sans-serif;
+    -fx-font-size: 14px;
+    -fx-background-color: #333333;
+    -fx-text-fill: white;
+}
+
+.label {
+    -fx-text-fill: white;
+}
+
+.button {
+    -fx-background-color: #555555;
+    -fx-text-fill: white;
+    -fx-border-color: #777777;
+    -fx-border-width: 1px;
+    -fx-padding: 8px 16px;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #666666;
+}
+
+.button:pressed {
+    -fx-background-color: #444444;
+}
+
+/* Menu screen styles */
+.menu-title {
+    -fx-font-size: 36px;
+    -fx-font-weight: bold;
+    -fx-fill: white;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.8), 5, 0, 0, 3);
+}
+
+/* Game screen styles */
+.game-info-text {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.sidebar-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-fill: white;
+    -fx-margin-bottom: 10px;
+}
+
+.action-button {
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+}
+
+.action-button:hover {
+    -fx-background-color: #3e8e41;
+}
+
+.action-button:pressed {
+    -fx-background-color: #444444;
+}
+
+.secondary-button {
+    -fx-background-color: #3498db;
+    -fx-text-fill: white;
+}
+
+.secondary-button:hover {
+    -fx-background-color: #2980b9;
+}
+
+.cancel-button {
+    -fx-background-color: #e74c3c;
+    -fx-text-fill: white;
+}
+
+.cancel-button:hover {
+    -fx-background-color: #c0392b;
+}
+
+/* Map editor styles */
+.section-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.map-editor-screen {
+    /* Styles for the root pane of the map editor. 
+       Inherits background from .root by default. 
+    */
+}
+
+.editor-top-toolbar { /* Renamed from .editor-toolbar and added background image */
+    -fx-background-image: url("/Asset_pack/UI/Ribbon_Blue_3Slides.png");
+    -fx-background-repeat: repeat-x; /* Repeat horizontally, common for ribbons */
+    -fx-background-position: center center;
+    -fx-background-size: auto 100%; /* Height matches toolbar, width auto or stretches */
+    /* Fallback background if image fails to load */
+    -fx-background-color: linear-gradient(to bottom, #3498db, #2980b9);
+    -fx-padding: 10px 15px 15px 15px; /* Matches Java code */
+    /* Spacing is set in HBox constructor, -fx-spacing here would be redundant unless constructor spacing is removed */
+}
+
+.toolbar-label {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.editor-bottom-toolbar {
+    -fx-background-color: #444444; /* Similar to previous inline style */
+    -fx-border-color: #555555;
+    -fx-border-width: 1px 0 0 0; /* Top border */
+    -fx-padding: 10px;
+    -fx-spacing: 10px; /* If HBox spacing is desired via CSS */
+    -fx-alignment: center-left; /* Example alignment */
+}
+
+.selected-tile {
+    -fx-background-color: #ffcc00;
+    -fx-text-fill: #333333;
+    -fx-border-color: #ff9900;
+    -fx-border-width: 2px;
+}
+
+.map-name {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+/* Settings screen styles */
+.screen-title {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-fill: white;
+    -fx-margin-bottom: 20px;
+}
+
+.options-screen { /* Style for the OptionsScreen root pane */
+    -fx-background-image: url("/Asset_pack/Background/WithoutTitle.png");
+    -fx-background-color: transparent; /* Ensure no solid color interferes */
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center center;
+    -fx-background-size: 100% 100%; /* Make the image cover the entire area */
+}
+
+.options-label {
+    -fx-font-size: 14px; /* Example, adjust as needed */
+    -fx-text-fill: #f0f0f0; /* Lighter text for options */
+    -fx-font-weight: normal;
+}
+
+.options-section {
+    -fx-background-color: rgba(50, 50, 50, 0.9);
+    -fx-background-radius: 10;
+    -fx-padding: 15;
+    -fx-spacing: 10;
+}
+
+.options-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffd700;
+}
+
+.slider {
+    -fx-show-tick-labels: true;
+    -fx-show-tick-marks: true;
+}
+
+.slider .track {
+    -fx-background-color: #777777;
+}
+
+.slider .thumb {
+    -fx-background-color: #4CAF50;
+}
+
+/* Tooltip styles */
+.tooltip {
+    -fx-background-color: #333333;
+    -fx-text-fill: white;
+    -fx-font-size: 12px;
+    -fx-padding: 5px;
+    -fx-border-color: #777777;
+    -fx-border-width: 1px;
+}
+
+/* Health bar styles */
+.health-text {
+    -fx-fill: white;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+/* Main application styling */
+.root {
+    -fx-font-family: "Arial";
+    -fx-background-color: #333333;
+    /* Default fallback */
+}
+
+/* Main menu styling */
+.main-menu-layout {
+    /* Style for the MainMenuScreen VBox itself */
+    -fx-background-image: url("/Asset_pack/Background/WithoutTitle.png");
+    -fx-background-color: transparent;
+    /* Ensure no solid color interferes */
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center center;
+    -fx-background-size: 100% 100%;
+    /* Make the image cover the entire VBox area */
+}
+
+.menu-title {
+    -fx-font-size: 80px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffd700;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.8), 10, 0, 0, 2);
+    -fx-margin-bottom: 50px;
+}
+
+.menu-button {
+    -fx-background-image: url("/Asset_pack/UI/Button_Blue_3Slides.png");
+    -fx-background-color: transparent;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center;
+    -fx-background-size: stretch;
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+    -fx-padding: 15 50 35 50;
+    -fx-min-height: 80px;
+    -fx-pref-width: 300px;
+    -fx-cursor: hand;
+    -fx-background-radius: 0;
+    -fx-border-width: 0;
+    -fx-effect: null;
+    -fx-alignment: center;
+    -fx-transition-property: -fx-effect, -fx-scale-x, -fx-scale-y, -fx-background-image;
+    -fx-transition-duration: 0.2s;
+    -fx-transition-timing-function: ease-in-out;
+    -fx-scale-x: 1.0;
+    -fx-scale-y: 1.0;
+}
+
+/* Apply outline effect specifically to the text node within the button */
+.menu-button .text {
+    -fx-effect: dropshadow(gaussian, black, 2, 0.7, 0, 0);
+}
+
+.menu-button:hover {
+    -fx-background-image: url("/Asset_pack/UI/Button_Hover_3Slides.png");
+    -fx-background-color: transparent;
+    -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.3), 10, 0, 0, 2);
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+}
+
+.menu-button:pressed {
+    -fx-background-image: url("/Asset_pack/UI/Button_Blue_Pressed.png");
+    -fx-background-color: transparent;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.6), 5, 0, 0, 1);
+    -fx-scale-x: 0.98;
+    -fx-scale-y: 0.98;
+}
+
+/* Game screen styling */
+.game-info {
+    -fx-background-color: rgba(0, 0, 0, 0.7);
+    -fx-padding: 5;
+    -fx-background-radius: 5;
+}
+
+.game-screen { /* Style for the GameScreen root pane */
+    /* Inherits .root background by default. 
+       Can use main menu background if desired:
+       -fx-background-image: url("/Asset_pack/Background/WithoutTitle.png");
+       -fx-background-color: transparent; 
+       -fx-background-repeat: no-repeat;
+       -fx-background-position: center center;
+       -fx-background-size: 100% 100%; 
+    */
+    -fx-background-color: #111111; /* Or use the original dark color */
+}
+
+.game-canvas-container { /* For letterboxing the canvas */
+    -fx-background-color: #222222; /* Original letterbox color */
+}
+
+.game-top-bar {
+    /* -fx-background-color: #333333; */ /* Fallback color, image is primary */
+    -fx-background-image: url("/Asset_pack/UI/Ribbon_Blue_3Slides.png");
+    -fx-background-repeat: repeat-x; /* Repeat horizontally */
+    -fx-background-position: center center;
+    -fx-background-size: auto 100%; /* Height matches bar, width repeats */
+    -fx-border-color: #222222; /* Optional subtle border */
+    -fx-border-width: 0 0 1px 0; /* Bottom border */
+}
+
+.game-sidebar {
+    /* -fx-background-color: #333333; */ /* Fallback color */
+    -fx-background-image: url("/Asset_pack/UI/Ribbon_Red_3Slides.png"); /* Example using red ribbon */
+    -fx-background-repeat: repeat-x;
+    -fx-background-position: top center;
+    -fx-background-size: auto auto; /* Let it size naturally or set specific height */
+    -fx-border-color: #222222;
+    -fx-border-width: 0 0 0 1px; /* Left border */
+}
+
+.gold-text {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffd700;
+}
+
+.wave-text {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #64b5f6;
+}
+
+/* Tower selection menu */
+.tower-selection-menu {
+    -fx-background-color: rgba(50, 50, 50, 0.9);
+    -fx-background-radius: 10;
+    -fx-padding: 10;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.8), 10, 0, 0, 0);
+}
+
+.tower-option {
+    -fx-background-color: #4a5c8c;
+    -fx-background-radius: 5;
+    -fx-padding: 5;
+    -fx-cursor: hand;
+}
+
+.tower-option:hover {
+    -fx-background-color: #5a6c9c;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.6), 5, 0, 0, 0);
+}
+
+/* Map editor styling */
+.tile-palette {
+    -fx-background-color: #444444;
+    -fx-padding: 10;
+    -fx-background-radius: 5;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.6), 5, 0, 0, 0);
+    -fx-border-color: #666666;
+    -fx-border-width: 1px;
+    -fx-border-radius: 5px;
+}
+
+.tile-option {
+    -fx-background-color: #555555;
+    -fx-border-color: #777777;
+    -fx-border-width: 1;
+    -fx-cursor: hand;
+    -fx-padding: 4px;
+    -fx-background-radius: 3px;
+    -fx-border-radius: 3px;
+}
+
+.tile-option:hover {
+    -fx-background-color: #666666;
+    -fx-border-color: #999999;
+}
+
+.tile-option:selected {
+    -fx-background-color: #6a6a9e;
+    -fx-border-color: #ffd700;
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(three-pass-box, rgba(255, 215, 0, 0.6), 5, 0, 0, 0);
+}
+
+.category-header {
+    -fx-font-weight: bold;
+    -fx-padding: 5px 0px;
+    -fx-text-fill: #ffffff;
+    -fx-background-color: #555555;
+    -fx-background-radius: 3px;
+    -fx-alignment: center;
+    -fx-border-color: #777777;
+    -fx-border-width: 0 0 1 0;
+    -fx-font-size: 13px;
+}
+
+.map-selection-screen { /* Style for the MapSelectionScreen root pane */
+    -fx-background-image: url("/Asset_pack/Background/WithoutTitle.png");
+    -fx-background-color: transparent; 
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center center;
+    -fx-background-size: 100% 100%;
+}
+
+.info-label {
+    -fx-text-fill: #e0e0e0; /* Light grey for info text */
+    -fx-font-size: 14px;
+}
+
+.map-preview-container {
+    -fx-border-color: #555555;
+    -fx-border-width: 1px;
+    -fx-background-color: #222222; /* Dark background for preview */
+}
+
+/* Icon Button style for popups */
+.icon-button {
+    -fx-background-color: transparent;
+    -fx-padding: 3px; /* Small padding around the icon */
+    -fx-border-width: 1px;
+    -fx-border-color: #666666; /* Subtle border */
+    -fx-background-radius: 3px;
+    -fx-border-radius: 3px;
+}
+
+.icon-button:hover {
+    -fx-background-color: rgba(200, 200, 200, 0.3); /* Light semi-transparent highlight */
+    -fx-border-color: #888888;
+    -fx-cursor: hand;
+}
+
+.icon-button:pressed {
+    -fx-background-color: rgba(150, 150, 150, 0.5); /* Darker highlight when pressed */
+    -fx-border-color: #aaaaaa;
+}
