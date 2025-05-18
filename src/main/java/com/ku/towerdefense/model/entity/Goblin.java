@@ -12,6 +12,13 @@ import java.io.Serializable;
 public class Goblin extends Enemy implements Serializable {
     private static final long serialVersionUID = 1L;
     
+    private static final int GOBLIN_HEALTH = GameSettings.getInstance().getGoblinHealth();
+    private static final double GOBLIN_SPEED = GameSettings.getInstance().getGoblinSpeed(); // Example: 1.5 tiles per second
+    public static final double PUBLIC_STATIC_FINAL_BASE_SPEED = GameSettings.getInstance().getGoblinSpeed(); // For Knight synergy
+    private static final int GOBLIN_GOLD_REWARD = GameSettings.getInstance().getGoldPerGoblin();
+    private static final double GOBLIN_WIDTH = 64; // Increased from 32
+    private static final double GOBLIN_HEIGHT = 64; // Increased from 32
+    
     /**
      * Create a new goblin at the specified position.
      *
@@ -19,10 +26,7 @@ public class Goblin extends Enemy implements Serializable {
      * @param y y coordinate
      */
     public Goblin(double x, double y) {
-        super(x, y, 32, 32, GameSettings.getInstance().getGoblinHealth(), 
-              GameSettings.getInstance().getGoblinSpeed(),
-              GameSettings.getInstance().getGoldPerGoblin(),
-              EnemyType.GOBLIN);
+        super(x, y, GOBLIN_WIDTH, GOBLIN_HEIGHT, GOBLIN_HEALTH, GOBLIN_SPEED, GOBLIN_GOLD_REWARD, EnemyType.GOBLIN);
         
         // Note: Image is loaded from the static cache in the Enemy class
         // No need to set imageFile manually

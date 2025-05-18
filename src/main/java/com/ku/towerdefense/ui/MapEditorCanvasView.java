@@ -144,9 +144,10 @@ public class MapEditorCanvasView extends VBox {
         mapCanvas.getTransforms().clear();
         mapCanvas.getTransforms().add(new Scale(zoomLevel, zoomLevel));
         zoomLabel.setText(String.format("Zoom: %.0f%%", zoomLevel * 100));
-        // Adjust scrollpane view based on new canvas scale
-        // This requires knowing available space, better handled by calling
-        // updateScrollPaneSize from parent
+        // The canvas width/height should be unzoomed; the Scale transform handles visual size.
+        mapCanvas.setWidth(gameMap.getWidth() * tileSize);
+        mapCanvas.setHeight(gameMap.getHeight() * tileSize);
+        renderMap(); // Re-render after zoom change and canvas size update
     }
 
     // --- Rendering ---
@@ -156,30 +157,25 @@ public class MapEditorCanvasView extends VBox {
 
         int mapWidth = gameMap.getWidth();
         int mapHeight = gameMap.getHeight();
-        int pixelWidth = mapWidth * tileSize;
-        int pixelHeight = mapHeight * tileSize;
 
-        // Calculate the enlarged size needed with zoom
-        double zoomedWidth = pixelWidth * zoomLevel;
-        double zoomedHeight = pixelHeight * zoomLevel;
-
-        // Resize canvas if needed to fit the zoomed map
-        mapCanvas.setWidth(zoomedWidth);
-        mapCanvas.setHeight(zoomedHeight);
+        // Canvas logical size should be the unzoomed pixel size of the map
+        mapCanvas.setWidth(mapWidth * tileSize);
+        mapCanvas.setHeight(mapHeight * tileSize);
 
         GraphicsContext gc = mapCanvas.getGraphicsContext2D();
-        gc.clearRect(0, 0, zoomedWidth, zoomedHeight);
+        // Clear using unzoomed dimensions, as the canvas node itself is scaled by transform
+        gc.clearRect(0, 0, mapCanvas.getWidth(), mapCanvas.getHeight());
 
-        // Apply zoom transformation
-        gc.save();
-        gc.scale(zoomLevel, zoomLevel);
+        // DO NOT apply gc.scale here if the Canvas Node is already scaled by a Transform.
+        // gc.save();
+        // gc.scale(zoomLevel, zoomLevel); // This would be a double zoom.
 
-        // Draw the map tiles
+        // Draw the map tiles (coordinates are in unzoomed map space)
         for (int y = 0; y < mapHeight; y++) {
             for (int x = 0; x < mapWidth; x++) {
                 Tile tile = gameMap.getTile(x, y);
                 if (tile != null) {
-                    tile.render(gc, tileSize);
+                    tile.render(gc, x, y, tileSize, true);
                 }
             }
         }
@@ -230,7 +226,7 @@ public class MapEditorCanvasView extends VBox {
         }
 
         // Restore transformation
-        gc.restore();
+        // gc.restore(); // Only restore if gc.save() and gc.scale() were used on gc.
     }
     
     /**

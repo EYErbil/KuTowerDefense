@@ -40,6 +40,8 @@ public class GameMap implements Serializable {
     private transient Point2D endPoint;
     private transient GamePath enemyPath;
 
+    public static final int TILE_SIZE = 64; // Made public and static
+
     /* ------------------------------------------------------------------
      *  C‑TOR
      * ------------------------------------------------------------------ */
@@ -62,6 +64,8 @@ public class GameMap implements Serializable {
 
     public int  getWidth()  { return width; }
     public int  getHeight() { return height; }
+
+    public int getTileSize() { return TILE_SIZE; }
 
     public Tile       getTile(int x,int y)        { return inBounds(x,y) ? tiles[x][y] : null; }
     public TileType   getTileType(int x,int y)    { Tile t = getTile(x,y); return t==null ? null : t.getType(); }
@@ -133,7 +137,7 @@ public class GameMap implements Serializable {
      * @return List of [x,y] coordinates for the path in tile space
      */
     private List<int[]> findPathBFS(Tile startTile, Tile endTile) {
-        final int TS = 32; // pixel size of tiles
+        final int TS = 64; // pixel size of tiles
         
         // Directions: right, down, left, up
         int[][] directions = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
@@ -233,21 +237,26 @@ public class GameMap implements Serializable {
      *  Tower placement rule used by gameplay layer
      * ------------------------------------------------------------------ */
     public boolean canPlaceTower(double px,double py,List<Tower> towers){
-        int tx = (int)(px/32), ty = (int)(py/32);
+        int tx = (int)(px/getTileSize()), ty = (int)(py/getTileSize());
         Tile t = getTile(tx,ty);
         if(t==null || !t.canPlaceTower()) return false;
-        return towers.stream().noneMatch(tv-> ((int)(tv.getCenterX()/32)==tx && (int)(tv.getCenterY()/32)==ty));
+        // Check if any existing tower's center falls into the target tile
+        // This logic assumes tower.getX() and .getY() are top-left of the tile.
+        return towers.stream().noneMatch(existingTower -> {
+            int existingTowerTileX = (int)(existingTower.getX() / getTileSize());
+            int existingTowerTileY = (int)(existingTower.getY() / getTileSize());
+            return existingTowerTileX == tx && existingTowerTileY == ty;
+        });
     }
 
     /* ------------------------------------------------------------------
      *  Minimal rendering (editor / preview)
      * ------------------------------------------------------------------ */
     public void render(GraphicsContext gc){
-        final int TS = 32;
         gc.setFill(Color.web("#282828"));
-        gc.fillRect(0,0,width*TS,height*TS);
+        gc.fillRect(0,0,width*getTileSize(),height*getTileSize());
         for(int y=0;y<height;y++) for(int x=0;x<width;x++)
-            tiles[x][y].render(gc,TS);
+            tiles[x][y].render(gc, x, y, getTileSize(), false);
         if(enemyPath!=null){
             var pts = enemyPath.getPoints();
             gc.setStroke(Color.YELLOW); gc.setLineWidth(2); gc.setGlobalAlpha(0.35);
@@ -281,5 +290,28 @@ public class GameMap implements Serializable {
         if(startXY!=null) startPoint = new Point2D(startXY[0], startXY[1]);
         if(endXY!=null) endPoint = new Point2D(endXY[0], endXY[1]);
         generatePath(); // rebuild enemyPath + tile markings
+    }
+
+    public void setTileAsOccupiedByTower(int tileX, int tileY, boolean isOccupied) {
+        if (tileX >= 0 && tileX < width && tileY >= 0 && tileY < height) {
+            Tile tile = getTile(tileX, tileY);
+            if (tile != null) {
+                if (isOccupied) {
+                    // Make sure it was a tower slot before changing it, to avoid issues if logic is flawed
+                    if (tile.getType() == TileType.TOWER_SLOT) {
+                        tile.setType(TileType.GRASS); // Occupy by changing to a non-placeable type
+                        System.out.println("Tile (" + tileX + "," + tileY + ") changed to GRASS (occupied).");
+                    } else {
+                        System.err.println("Attempted to occupy a non-TOWER_SLOT tile at (" + tileX + "," + tileY + ") Type: " + tile.getType());
+                    }
+                } else {
+                    // When selling, change it back to a tower slot
+                    // This assumes the tile was originally a TOWER_SLOT and became GRASS (or other)
+                    // A more robust system might store original tile type or use a specific OCCUPIED_TOWER_SLOT type
+                    tile.setType(TileType.TOWER_SLOT); // Free up by changing back to TOWER_SLOT
+                    System.out.println("Tile (" + tileX + "," + tileY + ") changed back to TOWER_SLOT (unoccupied).");
+                }
+            }
+        }
     }
 }

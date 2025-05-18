@@ -58,6 +58,17 @@ public class UIAssets {
             loadImage("KUTowerButtons", basePath + "kutowerbuttons4.png");
             loadImage("01", basePath + "01.png");
 
+            // Effect sprite sheets
+            loadImage("ExplosionEffect", "/Asset_pack/Effects/Explosions.png");
+            loadImage("FireEffect",      "/Asset_pack/Effects/Fire.png");
+            loadImage("GoldSpawnEffect", "/Asset_pack/Effects/G_Spawn.png");
+
+            // Item Images
+            loadImage("GoldBag",         "/Asset_pack/Items/gold_bag.png");
+
+            // Tower specific effects/icons
+            // loadImage("ThunderEffect",   "/Asset_pack/Towers/thunder_icon.png"); // Removed
+
             System.out.println("UI assets loaded successfully - " + imageCache.size() + " images");
         } catch (Exception e) {
             System.err.println("Error loading UI assets: " + e.getMessage());
@@ -122,6 +133,50 @@ public class UIAssets {
     }
 
     /**
+     * Extracts a specific frame from a cached sprite sheet.
+     *
+     * @param sheetName The key of the loaded sprite sheet in the cache.
+     * @param frameIndex The 0-based index of the frame to extract.
+     * @param frameWidth The width of a single frame in the sprite sheet.
+     * @param frameHeight The height of a single frame in the sprite sheet.
+     * @return An Image object of the specified frame, or null if an error occurs.
+     */
+    public static Image getSpriteFrame(String sheetName, int frameIndex, int frameWidth, int frameHeight) {
+        Image spriteSheet = imageCache.get(sheetName);
+        if (spriteSheet == null) {
+            System.err.println("Sprite sheet not found in cache: " + sheetName);
+            return null;
+        }
+
+        int sheetWidth = (int) spriteSheet.getWidth();
+        // int sheetHeight = (int) spriteSheet.getHeight(); // Assuming all frames are in one row for now
+
+        int framesPerRow = sheetWidth / frameWidth;
+        if (frameIndex < 0 || frameIndex >= framesPerRow) { // Basic check, assumes single row of frames
+            System.err.println("Frame index " + frameIndex + " is out of bounds for sheet " + sheetName + " with " + framesPerRow + " frames.");
+            return null;
+        }
+
+        try {
+            javafx.scene.image.PixelReader reader = spriteSheet.getPixelReader();
+            if (reader == null) {
+                System.err.println("PixelReader not available for sprite sheet: " + sheetName);
+                return null;
+            }
+            // Corrected: x coordinate of the frame
+            int x = frameIndex * frameWidth;
+            int y = 0; // Assuming frames are in a single horizontal row
+
+            javafx.scene.image.WritableImage frameImage = new javafx.scene.image.WritableImage(reader, x, y, frameWidth, frameHeight);
+            return frameImage;
+        } catch (Exception e) {
+            System.err.println("Error extracting frame " + frameIndex + " from sheet " + sheetName + ": " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
      * Apply a styled button appearance.
      * 
      * @param button the button to style
@@ -171,5 +226,62 @@ public class UIAssets {
             // Apply a basic style as fallback
             button.setStyle("-fx-base: " + (type.equals("blue") ? "#3c7fb1" : "#d14836") + ";");
         }
+    }
+
+    public static final double KUTOWERBUTTONS_ICON_WIDTH = 69.25;
+    public static final double KUTOWERBUTTONS_ICON_HEIGHT = 66.5;
+
+    /**
+     * Creates a button with an icon from the "KUTowerButtons" sprite sheet.
+     *
+     * @param tooltipText Text for the button's tooltip.
+     * @param iconCol Column of the icon in the sprite sheet (0-indexed).
+     * @param iconRow Row of the icon in the sprite sheet (0-indexed).
+     * @param iconDisplaySize The desired display size (width and height) for the icon on the button.
+     * @return A new Button configured with the specified icon and tooltip.
+     */
+    public static Button createIconButton(String tooltipText, int iconCol, int iconRow, double iconDisplaySize) {
+        Button button = new Button();
+        Image spriteSheet = getImage("KUTowerButtons");
+
+        if (spriteSheet != null) {
+            ImageView iconView = new ImageView(spriteSheet);
+            iconView.setViewport(new javafx.geometry.Rectangle2D(
+                iconCol * KUTOWERBUTTONS_ICON_WIDTH,
+                iconRow * KUTOWERBUTTONS_ICON_HEIGHT,
+                KUTOWERBUTTONS_ICON_WIDTH,
+                KUTOWERBUTTONS_ICON_HEIGHT
+            ));
+            iconView.setFitWidth(iconDisplaySize);
+            iconView.setFitHeight(iconDisplaySize);
+            iconView.setPreserveRatio(true);
+            iconView.setSmooth(true); // Or false if pixel art style is preferred
+
+            button.setGraphic(iconView);
+            button.getStyleClass().add("icon-button"); // For CSS styling
+             // Basic styling for icon buttons (can be overridden/enhanced in CSS)
+            // button.setStyle("-fx-background-color: transparent; -fx-padding: 3px;"); // REMOVED
+            // button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: #e0e0e0; -fx-padding: 3px; -fx-cursor: hand;")); // REMOVED
+            // button.setOnMouseExited(e -> button.setStyle("-fx-background-color: transparent; -fx-padding: 3px;")); // REMOVED
+
+            // CSS (.icon-button) should handle -fx-cursor: hand;
+            // Revert to custom cursor on exit if it was changed by something else (though less likely now)
+            button.setOnMouseExited(e -> {
+                if (button.getScene() != null && button.getScene().getCursor() != UIAssets.getCustomCursor()) {
+                     button.getScene().setCursor(UIAssets.getCustomCursor());
+                }
+            });
+
+        } else {
+            // Fallback if the sprite sheet isn't loaded
+            button.setText("?"); // Placeholder for missing icon
+            System.err.println("KUTowerButtons spritesheet not found for icon button.");
+        }
+
+        if (tooltipText != null && !tooltipText.isEmpty()) {
+            button.setTooltip(new javafx.scene.control.Tooltip(tooltipText));
+        }
+
+        return button;
     }
 }

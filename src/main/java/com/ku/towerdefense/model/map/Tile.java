@@ -51,6 +51,7 @@ public class Tile implements Serializable {
         TILE_COORDS.put(TileType.PATH_HORIZONTAL, new Point2D(1, 3));
         TILE_COORDS.put(TileType.PATH_HORIZONTAL_E_DE, new Point2D(2, 3));
         TILE_COORDS.put(TileType.TOWER_SLOT, new Point2D(3, 3));
+        TILE_COORDS.put(TileType.START_POINT, new Point2D(4, 0)); // Placeholder for START_POINT sprite - ADJUST IF NEEDED
         TILE_COORDS.put(TileType.TREE_BIG, new Point2D(0, 4));
         TILE_COORDS.put(TileType.TREE_MEDIUM, new Point2D(1, 4));
         TILE_COORDS.put(TileType.TREE_SMALL, new Point2D(2, 4));
@@ -181,34 +182,58 @@ public class Tile implements Serializable {
         return null;
     }
 
-    public void render(GraphicsContext gc, int renderTileSize) {
-        if (type == TileType.END_POINT) {
-            // Special case for END_POINT (Castle) - it should be a 2x2 tile structure
-            renderEndPoint(gc, renderTileSize);
-        } else if (type == TileType.START_POINT) {
-            // For START_POINT, render the tile with an indicator overlay
-            if (image != null && !image.isError()) {
-                // Standard rendering for the base tile
-                gc.drawImage(image, x * renderTileSize, y * renderTileSize,
-                        renderTileSize, renderTileSize);
-                
-                // No additional indicator here - we'll add those in MapEditorCanvasView
-                // for better visual separation of game data and editor UI
-            } else {
-                // Fallback for missing images
-                gc.setFill(Color.LIGHTGREEN);
-                gc.fillRect(x * renderTileSize, y * renderTileSize,
-                        renderTileSize, renderTileSize);
-            }
-        } else if (image != null && !image.isError()) {
-            // Standard rendering for normal tiles
-            gc.drawImage(image, x * renderTileSize, y * renderTileSize,
-                    renderTileSize, renderTileSize);
+    public void render(GraphicsContext gc, int x, int y, int tileSize, boolean isEditorMode) {
+        if (image != null) {
+            gc.drawImage(image, x * tileSize, y * tileSize, tileSize, tileSize);
         } else {
-            // Fallback for missing images
-            gc.setFill(Color.MAGENTA);
-            gc.fillRect(x * renderTileSize, y * renderTileSize,
-                    renderTileSize, renderTileSize);
+            // Fallback drawing if image is null (e.g. asset loading issue)
+            gc.setFill(Color.MAGENTA); // Bright color to indicate missing asset
+            gc.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+            gc.setStroke(Color.BLACK);
+            gc.strokeText("?", x * tileSize + tileSize / 2.0 - 5, y * tileSize + tileSize / 2.0 + 5);
+        }
+
+        if (isEditorMode) {
+            gc.setFont(javafx.scene.text.Font.font("Arial", javafx.scene.text.FontWeight.BOLD, tileSize * 0.5));
+            if (type == TileType.START_POINT) {
+                // Assuming START_POINT tile visual from tileset is sufficient.
+                // Just add a clear text label.
+                gc.setStroke(Color.WHITE);
+                gc.setFill(Color.rgb(0,0,180)); // Darker blue text fill for contrast on potentially red 'S' tile
+                gc.setLineWidth(1);
+                gc.strokeText("S", x * tileSize + tileSize * 0.30, y * tileSize + tileSize * 0.70);
+                gc.fillText("S", x * tileSize + tileSize * 0.30, y * tileSize + tileSize * 0.70);
+            } else if (type == TileType.END_POINT) {
+                // Assuming END_POINT tile visual from tileset is sufficient.
+                // Just add a clear text label on the base tile.
+                gc.setStroke(Color.WHITE);
+                gc.setFill(Color.rgb(180,0,0)); // Darker red text fill for contrast on potentially blue 'E' tile
+                gc.setLineWidth(1);
+                gc.strokeText("E", x * tileSize + tileSize * 0.30, y * tileSize + tileSize * 0.70);
+                gc.fillText("E", x * tileSize + tileSize * 0.30, y * tileSize + tileSize * 0.70);
+                
+                // For editor, also show the 2x2 footprint of the castle faintly if this is the base
+                // Note: This doesn't check map boundaries, so it might draw partially off-canvas
+                // if the END_POINT is at the very edge of the map. This is an editor-only visual aid.
+                gc.setGlobalAlpha(0.3); // Faint
+                gc.setStroke(Color.WHITE);
+                gc.setLineWidth(1);
+                // Top-right
+                gc.strokeRect((x + 1) * tileSize + 1, y * tileSize + 1, tileSize - 2, tileSize - 2);
+                // Bottom-left
+                gc.strokeRect(x * tileSize + 1, (y + 1) * tileSize + 1, tileSize - 2, tileSize - 2);
+                // Bottom-right
+                gc.strokeRect((x + 1) * tileSize + 1, (y + 1) * tileSize + 1, tileSize - 2, tileSize - 2);
+                gc.setGlobalAlpha(1.0);
+            }
+        }
+
+        // Health bar rendering (for enemies/towers, not map tiles generally)
+        // ... (existing health bar code) ...
+
+        // Actual 2x2 Castle rendering for END_POINT (only in non-editor mode)
+        if (type == TileType.END_POINT && !isEditorMode) {
+            renderEndPoint(gc, x, y, tileSize); 
         }
     }
 
@@ -216,7 +241,7 @@ public class Tile implements Serializable {
      * Special rendering for the castle (END_POINT)
      * Draws a proper 2x2 castle using the four castle tiles
      */
-    private void renderEndPoint(GraphicsContext gc, int renderTileSize) {
+    private void renderEndPoint(GraphicsContext gc, int tileX, int tileY, int renderTileSize) {
         loadImagesIfNeeded();
         
         // Use a larger castle that spans 2x2 tiles
@@ -226,21 +251,21 @@ public class Tile implements Serializable {
         Image grassImage = CACHE.get(TileType.GRASS);
         if (grassImage != null) {
             // Draw grass under all castle tiles
-            gc.drawImage(grassImage, x * renderTileSize, y * renderTileSize, 
+            gc.drawImage(grassImage, tileX * renderTileSize, tileY * renderTileSize, 
                     renderTileSize, renderTileSize);
-            gc.drawImage(grassImage, (x+1) * renderTileSize, y * renderTileSize, 
+            gc.drawImage(grassImage, (tileX+1) * renderTileSize, tileY * renderTileSize, 
                     renderTileSize, renderTileSize);
-            gc.drawImage(grassImage, x * renderTileSize, (y+1) * renderTileSize, 
+            gc.drawImage(grassImage, tileX * renderTileSize, (tileY+1) * renderTileSize, 
                     renderTileSize, renderTileSize);
-            gc.drawImage(grassImage, (x+1) * renderTileSize, (y+1) * renderTileSize, 
+            gc.drawImage(grassImage, (tileX+1) * renderTileSize, (tileY+1) * renderTileSize, 
                     renderTileSize, renderTileSize);
         }
         
         // Draw the 4 castle quarters
-        drawCastleTile(gc, TileType.CASTLE1, x, y, renderTileSize);
-        drawCastleTile(gc, TileType.CASTLE2, x+1, y, renderTileSize);
-        drawCastleTile(gc, TileType.CASTLE3, x, y+1, renderTileSize);
-        drawCastleTile(gc, TileType.CASTLE4, x+1, y+1, renderTileSize);
+        drawCastleTile(gc, TileType.CASTLE1, tileX, tileY, renderTileSize);
+        drawCastleTile(gc, TileType.CASTLE2, tileX+1, tileY, renderTileSize);
+        drawCastleTile(gc, TileType.CASTLE3, tileX, tileY+1, renderTileSize);
+        drawCastleTile(gc, TileType.CASTLE4, tileX+1, tileY+1, renderTileSize);
     }
     
     /**

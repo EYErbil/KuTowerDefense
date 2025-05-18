@@ -19,6 +19,7 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.scene.Scene;
+import javafx.scene.ImageCursor;
 
 import java.io.File;
 import java.io.IOException;
@@ -74,7 +75,7 @@ public class MapEditorScreen extends BorderPane {
     }
 
     private void initializeUI() {
-        setStyle("-fx-background-color: #333333;");
+        getStyleClass().add("map-editor-screen");
         setPadding(new Insets(10));
 
         primaryStage.setMinWidth(MIN_WINDOW_WIDTH);
@@ -143,24 +144,29 @@ public class MapEditorScreen extends BorderPane {
     private HBox createBottomToolbar() {
         HBox bottomToolbar = new HBox(10);
         bottomToolbar.setPadding(new Insets(10));
-        bottomToolbar.setStyle("-fx-background-color: #444444; -fx-border-color: #555555; -fx-border-width: 1 0 0 0;");
+        bottomToolbar.getStyleClass().add("editor-bottom-toolbar");
 
         Button saveButton = new Button("Save Map");
+        saveButton.getStyleClass().add("button");
         saveButton.setOnAction(e -> saveMap());
 
         Button loadButton = new Button("Load Map");
+        loadButton.getStyleClass().add("button");
         loadButton.setOnAction(e -> loadMap());
 
         Button validateButton = new Button("Validate Map");
+        validateButton.getStyleClass().add("button");
         validateButton.setOnAction(e -> validateMap());
 
         Button helpButton = new Button("Help");
+        helpButton.getStyleClass().add("button");
         helpButton.setOnAction(e -> showGameMechanicsHelp());
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         Button backButton = new Button("Back to Main Menu");
+        backButton.getStyleClass().add("button");
         backButton.setOnAction(e -> goBack());
 
         bottomToolbar.getChildren().addAll(saveButton, loadButton, validateButton, helpButton, spacer, backButton);
@@ -543,13 +549,15 @@ public class MapEditorScreen extends BorderPane {
      */
     private void goBack() {
         MainMenuScreen mainMenu = new MainMenuScreen(primaryStage);
-        Scene mainMenuScene = new Scene(mainMenu, 800, 600);
-        try {
-            String css = getClass().getResource("/css/style.css").toExternalForm();
-            mainMenuScene.getStylesheets().add(css);
-        } catch (NullPointerException e) {
-            System.err.println("Warning: Could not load stylesheet /css/style.css");
+        Scene mainMenuScene = new Scene(mainMenu, primaryStage.getWidth(), primaryStage.getHeight());
+        mainMenuScene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+        
+        // Set custom cursor if available
+        ImageCursor customCursor = UIAssets.getCustomCursor();
+        if (customCursor != null) {
+            mainMenuScene.setCursor(customCursor);
         }
+
         primaryStage.setScene(mainMenuScene);
     }
 

@@ -12,7 +12,19 @@ import java.io.Serializable;
  */
 public class MageTower extends Tower implements Serializable {
     private static final long serialVersionUID = 1L;
-    
+    public static final int BASE_COST = 75; // Added base cost
+    private static final int BASE_DAMAGE = GameSettings.getInstance().getMageTowerDamage();
+    private static final int BASE_RANGE = GameSettings.getInstance().getMageTowerRange();
+    private static final long BASE_FIRE_RATE = GameSettings.getInstance().getMageTowerFireRate();
+    private static final String BASE_IMAGE_FILENAME = "Tower_spell128.png";
+    private static final String UPGRADED_IMAGE_FILENAME = "mage_up.png";
+
+    private static final double PROJECTILE_WIDTH = 12;
+    private static final double PROJECTILE_HEIGHT = 12;
+    private static final double PROJECTILE_SPEED = 300;
+    private static final String L1_PROJECTILE_IMAGE_FILE = "magic_bolt.png"; // Placeholder
+    private static final String L2_PROJECTILE_IMAGE_FILE = "magic_bolt_level2.png"; // Placeholder
+
     /**
      * Create a new mage tower at the specified position.
      *
@@ -20,16 +32,7 @@ public class MageTower extends Tower implements Serializable {
      * @param y y coordinate
      */
     public MageTower(double x, double y) {
-        super(x, y, 64, 64, 
-              GameSettings.getInstance().getMageTowerDamage(),
-              GameSettings.getInstance().getMageTowerRange(),
-              GameSettings.getInstance().getMageTowerFireRate(),
-              GameSettings.getInstance().getMageTowerCost(),
-              DamageType.MAGIC);
-        
-        // Set image file from assets - using classpath reference instead of absolute path
-        String imagePath = "/Asset_pack/Towers/Tower_spell128.png";
-        setImageFile(imagePath);
+        super(x, y, 64, 64, BASE_DAMAGE, BASE_RANGE, BASE_FIRE_RATE, BASE_COST, DamageType.MAGIC);
     }
     
     /**
@@ -40,16 +43,43 @@ public class MageTower extends Tower implements Serializable {
      */
     @Override
     protected Projectile createProjectile(Enemy target) {
-        double centerX = x + width / 2;
-        double centerY = y + height / 2;
+        double projectileX = getCenterX() - PROJECTILE_WIDTH / 2;
+        double projectileY = getCenterY() - PROJECTILE_HEIGHT / 2;
         
-        Projectile spell = new Projectile(
-            centerX, centerY, 20, 20,
-            target, damage, DamageType.MAGIC, 400);
-        
-        // Set spell appearance
-        spell.setColor(javafx.scene.paint.Color.PURPLE);
-        
-        return spell;
+        String currentProjectileImage = L1_PROJECTILE_IMAGE_FILE;
+        if (this.level == 2) {
+            currentProjectileImage = L2_PROJECTILE_IMAGE_FILE;
+        }
+
+        Projectile projectile = new Projectile(projectileX, projectileY, PROJECTILE_WIDTH, PROJECTILE_HEIGHT, target, this.damage, DamageType.MAGIC, PROJECTILE_SPEED, this);
+        projectile.setImageFile(currentProjectileImage);
+        projectile.setImpactEffect(Projectile.ImpactEffect.FIRE);
+        return projectile;
+    }
+
+    @Override
+    public String getName() {
+        return "Mage Tower";
+    }
+
+    @Override
+    public int getBaseCost() {
+        return BASE_COST;
+    }
+
+    @Override
+    protected String getBaseImageName() {
+        return "Asset_pack/Towers/" + BASE_IMAGE_FILENAME;
+    }
+
+    @Override
+    protected String getUpgradedImageName() {
+        return "Asset_pack/Towers/" + UPGRADED_IMAGE_FILENAME;
+    }
+
+    @Override
+    public Tower cloneTower() {
+        MageTower clone = new MageTower(this.x, this.y);
+        return clone;
     }
 } 

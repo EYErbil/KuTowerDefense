@@ -36,29 +36,31 @@ public class MapEditorTopToolbar extends HBox {
     public MapEditorTopToolbar(GameMap initialMap) {
         super(10); // Spacing for HBox
         this.gameMap = initialMap;
+        getStyleClass().add("editor-top-toolbar"); // Added style class
 
         setPadding(new Insets(10, 15, 15, 15));
         setAlignment(Pos.CENTER_LEFT);
 
-        // Background (Copied from MapEditorScreen)
-        try {
-            Image ribbonImage = new Image(getClass().getResourceAsStream("/Asset_pack/UI/Ribbon_Blue_3Slides.png"));
-            BackgroundImage bgImage = new BackgroundImage(
-                    ribbonImage,
-                    BackgroundRepeat.REPEAT, BackgroundRepeat.NO_REPEAT,
-                    BackgroundPosition.DEFAULT,
-                    new BackgroundSize(BackgroundSize.AUTO, BackgroundSize.AUTO, true, true, false, true));
-            setBackground(new Background(bgImage));
-        } catch (Exception e) {
-            System.err.println("Failed to load ribbon background for top toolbar: " + e.getMessage());
-            setStyle("-fx-background-color: linear-gradient(to bottom, #3498db, #2980b9); -fx-background-radius: 5px;");
-        }
+        // Background styling will be handled by CSS via the "editor-top-toolbar" class
+        // try {
+        //     Image ribbonImage = new Image(getClass().getResourceAsStream("/Asset_pack/UI/Ribbon_Blue_3Slides.png"));
+        //     BackgroundImage bgImage = new BackgroundImage(
+        //             ribbonImage,
+        //             BackgroundRepeat.REPEAT, BackgroundRepeat.NO_REPEAT,
+        //             BackgroundPosition.DEFAULT,
+        //             new BackgroundSize(BackgroundSize.AUTO, BackgroundSize.AUTO, true, true, false, true));
+        //     setBackground(new Background(bgImage));
+        // } catch (Exception e) {
+        //     System.err.println("Failed to load ribbon background for top toolbar: " + e.getMessage());
+        //     setStyle("-fx-background-color: linear-gradient(to bottom, #3498db, #2980b9); -fx-background-radius: 5px;");
+        // }
 
         // --- Map Name ---
         VBox nameBox = new VBox(5);
         nameBox.setAlignment(Pos.CENTER_LEFT);
         Label mapNameLabel = new Label("Map Name:");
-        mapNameLabel.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
+        // mapNameLabel.setStyle("-fx-text-fill: white; -fx-font-weight: bold;"); // Removed inline style
+        mapNameLabel.getStyleClass().add("toolbar-label"); // Added style class
         mapNameField = new TextField(gameMap.getName());
         mapNameField.textProperty().addListener((obs, old, newName) -> gameMap.setName(newName));
         mapNameField.setPrefWidth(200);
@@ -70,9 +72,11 @@ public class MapEditorTopToolbar extends HBox {
         HBox dimensionLabels = new HBox(10);
         dimensionLabels.setAlignment(Pos.CENTER_LEFT);
         Label widthLabel = new Label("Width:");
-        widthLabel.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
+        // widthLabel.setStyle("-fx-text-fill: white; -fx-font-weight: bold;"); // Removed inline style
+        widthLabel.getStyleClass().add("toolbar-label"); // Added style class
         Label heightLabel = new Label("Height:");
-        heightLabel.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
+        // heightLabel.setStyle("-fx-text-fill: white; -fx-font-weight: bold;"); // Removed inline style
+        heightLabel.getStyleClass().add("toolbar-label"); // Added style class
         dimensionLabels.getChildren().addAll(widthLabel, heightLabel);
 
         HBox dimensionFields = new HBox(10);
@@ -89,7 +93,7 @@ public class MapEditorTopToolbar extends HBox {
         resizeBox.setAlignment(Pos.CENTER);
         resizeBox.setPadding(new Insets(0, 0, 0, 10));
         Button resizeButton = new Button("Resize Map");
-        resizeButton.getStyleClass().add("action-button");
+        resizeButton.getStyleClass().add("action-button"); // This class exists in style.css
         resizeButton.setOnAction(e -> {
             if (onResizeHandler != null) {
                 try {
@@ -111,6 +115,7 @@ public class MapEditorTopToolbar extends HBox {
 
         // --- Set Start Button ---
         Button setStartButton = new Button("Set Start");
+        setStartButton.getStyleClass().addAll("button", "secondary-button"); // Added style classes
         setStartButton.setTooltip(new Tooltip("Click on the map edge to set the enemy spawn point."));
         setStartButton.setOnAction(e -> {
             if (onSetStartHandler != null) {
