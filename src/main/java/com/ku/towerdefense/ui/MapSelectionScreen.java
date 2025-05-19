@@ -80,7 +80,8 @@ public class MapSelectionScreen extends BorderPane {
         String userHome = System.getProperty("user.home");
         File mapsDir = new File(userHome, "KUTowerDefenseMaps");
         if (!mapsDir.exists() || !mapsDir.isDirectory()) {
-            System.out.println("Maps directory not found at " + mapsDir.getAbsolutePath() + ", no saved maps will be loaded");
+            System.out.println(
+                    "Maps directory not found at " + mapsDir.getAbsolutePath() + ", no saved maps will be loaded");
             return;
         }
 
@@ -119,12 +120,13 @@ public class MapSelectionScreen extends BorderPane {
         }
         // Add a corner and a vertical segment leading to adjacency with the castle
         map.setTileType(17, 7, TileType.PATH_CIRCLE_NE); // Corner from (16,7) to (17,6)
-        map.setTileType(17, 6, TileType.PATH_VERTICAL);  // Path segment at (17,6)
+        map.setTileType(17, 6, TileType.PATH_VERTICAL); // Path segment at (17,6)
 
-        // Define Start and End points (must be set *after* base path tiles if they occupy same spot)
+        // Define Start and End points (must be set *after* base path tiles if they
+        // occupy same spot)
         map.setTileType(0, 7, TileType.START_POINT); // Start of the path at (0,7)
-        map.setTileType(18, 6, TileType.END_POINT);  // Top-left of 2x2 castle is at (18,6).
-                                                     // Path now leads to (17,6), which is adjacent to (18,6).
+        map.setTileType(18, 6, TileType.END_POINT); // Top-left of 2x2 castle is at (18,6).
+                                                    // Path now leads to (17,6), which is adjacent to (18,6).
 
         // Add some tower slots
         map.setTileType(5, 5, TileType.TOWER_SLOT);
@@ -150,21 +152,27 @@ public class MapSelectionScreen extends BorderPane {
         GameMap map = new GameMap("Forest Trail", 20, 15);
 
         // Path segments
-        for (int x = 0; x < 5; x++) map.setTileType(x, 3, TileType.PATH_HORIZONTAL); // (0,3) to (4,3)
-        for (int y = 4; y < 7; y++) map.setTileType(5, y, TileType.PATH_VERTICAL);   // (5,4) to (5,6)
-        for (int x = 6; x < 10; x++) map.setTileType(x, 7, TileType.PATH_HORIZONTAL); // (6,7) to (9,7)
-        for (int y = 8; y < 10; y++) map.setTileType(10, y, TileType.PATH_VERTICAL); // (10,8) to (10,9)
-        for (int x = 11; x <= 17; x++) map.setTileType(x, 10, TileType.PATH_HORIZONTAL); // (11,10) to (17,10)
+        for (int x = 0; x < 5; x++)
+            map.setTileType(x, 3, TileType.PATH_HORIZONTAL); // (0,3) to (4,3)
+        for (int y = 4; y < 7; y++)
+            map.setTileType(5, y, TileType.PATH_VERTICAL); // (5,4) to (5,6)
+        for (int x = 6; x < 10; x++)
+            map.setTileType(x, 7, TileType.PATH_HORIZONTAL); // (6,7) to (9,7)
+        for (int y = 8; y < 10; y++)
+            map.setTileType(10, y, TileType.PATH_VERTICAL); // (10,8) to (10,9)
+        for (int x = 11; x <= 17; x++)
+            map.setTileType(x, 10, TileType.PATH_HORIZONTAL); // (11,10) to (17,10)
 
         // Connect the corners
-        map.setTileType(5, 3, TileType.PATH_CIRCLE_SE);  // Connects (4,3)H to (5,4)V
-        map.setTileType(5, 7, TileType.PATH_CIRCLE_NE);  // Connects (5,6)V to (6,7)H
+        map.setTileType(5, 3, TileType.PATH_CIRCLE_SE); // Connects (4,3)H to (5,4)V
+        map.setTileType(5, 7, TileType.PATH_CIRCLE_NE); // Connects (5,6)V to (6,7)H
         map.setTileType(10, 7, TileType.PATH_CIRCLE_SW); // Connects (9,7)H to (10,8)V
         map.setTileType(10, 10, TileType.PATH_CIRCLE_NW); // Connects (10,9)V to (11,10)H
-        
+
         // Define Start and End points
-        map.setTileType(0, 3, TileType.START_POINT);   // Start of the path
-        map.setTileType(18, 10, TileType.END_POINT); // END_POINT at (18,10). Path now leads to (17,10), which is adjacent.
+        map.setTileType(0, 3, TileType.START_POINT); // Start of the path
+        map.setTileType(18, 10, TileType.END_POINT); // END_POINT at (18,10). Path now leads to (17,10), which is
+                                                     // adjacent.
 
         // Add some tower slots in strategic positions
         map.setTileType(3, 2, TileType.TOWER_SLOT);
@@ -196,11 +204,12 @@ public class MapSelectionScreen extends BorderPane {
             map.setTileType(x, 7, TileType.PATH_HORIZONTAL);
         }
         map.setTileType(16, 7, TileType.PATH_CIRCLE_NE); // Corner from (15,7) to (16,6)
-        map.setTileType(16, 6, TileType.PATH_VERTICAL);  // Path segment at (16,6)
+        map.setTileType(16, 6, TileType.PATH_VERTICAL); // Path segment at (16,6)
 
         // Define Start and End points
         map.setTileType(0, 7, TileType.START_POINT); // Start at (0,7)
-        map.setTileType(17, 6, TileType.END_POINT); // Castle top-left at (17,6). Path now leads to (16,6), which is adjacent.
+        map.setTileType(17, 6, TileType.END_POINT); // Castle top-left at (17,6). Path now leads to (16,6), which is
+                                                    // adjacent.
 
         // Add tower slots in a defensive formation
         for (int i = 0; i < 3; i++) {
@@ -242,9 +251,11 @@ public class MapSelectionScreen extends BorderPane {
         mapNameLabel.getStyleClass().add("map-name");
 
         // Map preview canvas
-        mapPreviewCanvas = new Canvas(400, 300);
+        mapPreviewCanvas = new Canvas(800, 600);
         StackPane previewContainer = new StackPane(mapPreviewCanvas);
         previewContainer.getStyleClass().add("map-preview-container");
+        previewContainer
+                .setStyle("-fx-padding: 10; -fx-background-color: rgba(0, 0, 0, 0.3); -fx-background-radius: 10;");
 
         updateMapPreview(); // Draw the initial map
 
@@ -346,9 +357,11 @@ public class MapSelectionScreen extends BorderPane {
 
         // Get the current map
         GameMap map = availableMaps.get(currentMapIndex);
-        if (map == null) return;
+        if (map == null)
+            return;
 
-        // Calculate the scale factor to fit the map (based on source tile size) onto the canvas
+        // Calculate the scale factor to fit the map (based on source tile size) onto
+        // the canvas
         double sourceWorldWidth = map.getWidth() * Tile.SOURCE_TILE_SIZE;
         double sourceWorldHeight = map.getHeight() * Tile.SOURCE_TILE_SIZE;
 
@@ -376,17 +389,20 @@ public class MapSelectionScreen extends BorderPane {
         // Draw the map tiles using Tile.render()
         for (int y = 0; y < map.getHeight(); y++) {
             for (int x = 0; x < map.getWidth(); x++) {
-                com.ku.towerdefense.model.map.Tile tile = map.getTile(x, y); // Use fully qualified name or ensure import
+                com.ku.towerdefense.model.map.Tile tile = map.getTile(x, y); // Use fully qualified name or ensure
+                                                                             // import
                 if (tile != null) {
-                    // Tile.render expects tile coordinates (x,y) and the size to render each tile at.
+                    // Tile.render expects tile coordinates (x,y) and the size to render each tile
+                    // at.
                     // Since our gc is already scaled to fit the whole map,
                     // the effective "tileSize" for rendering within this scaled context
                     // is the original SOURCE_TILE_SIZE.
-                    tile.render(gc, x, y, Tile.SOURCE_TILE_SIZE, false); 
+                    tile.render(gc, x, y, Tile.SOURCE_TILE_SIZE, false);
                 } else {
                     // Fallback for null tiles (e.g. if map data is incomplete)
-                    gc.setFill(Color.BLACK); 
-                    gc.fillRect(x * Tile.SOURCE_TILE_SIZE, y * Tile.SOURCE_TILE_SIZE, Tile.SOURCE_TILE_SIZE, Tile.SOURCE_TILE_SIZE);
+                    gc.setFill(Color.BLACK);
+                    gc.fillRect(x * Tile.SOURCE_TILE_SIZE, y * Tile.SOURCE_TILE_SIZE, Tile.SOURCE_TILE_SIZE,
+                            Tile.SOURCE_TILE_SIZE);
                 }
             }
         }
@@ -451,7 +467,7 @@ public class MapSelectionScreen extends BorderPane {
         // Use current stage dimensions
         Scene gameScene = new Scene(gameScreen, primaryStage.getWidth(), primaryStage.getHeight());
         gameScene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
-        
+
         // Set custom cursor if available
         ImageCursor customCursor = UIAssets.getCustomCursor();
         if (customCursor != null) {
@@ -472,7 +488,7 @@ public class MapSelectionScreen extends BorderPane {
         // Use current stage dimensions
         Scene mainMenuScene = new Scene(mainMenu, primaryStage.getWidth(), primaryStage.getHeight());
         mainMenuScene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
-        
+
         // Set custom cursor if available
         ImageCursor customCursor = UIAssets.getCustomCursor(); // Re-fetch or ensure it's available
         if (customCursor != null) {
