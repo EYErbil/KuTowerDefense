@@ -21,6 +21,7 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.layout.Priority;
 
 import java.util.Arrays;
 import java.util.List;
@@ -33,8 +34,7 @@ public class MapEditorTilePalette extends VBox {
 
     // Define which tile types appear in the editor palette
     private static final List<TileType> PALETTE_TILE_TYPES = Arrays.asList(
-            // Base Terrain
-            TileType.GRASS,
+            // Base Terrain - REMOVED TileType.GRASS
 
             // Path Tiles - All new path types
             TileType.PATH_HORIZONTAL,
@@ -65,7 +65,7 @@ public class MapEditorTilePalette extends VBox {
 
     // Groups for category headers in the palette
     private static final Map<String, List<TileType>> TILE_CATEGORIES = Map.of(
-            "Base Terrain", List.of(TileType.GRASS),
+            // "Base Terrain", List.of(TileType.GRASS), // REMOVED
             "Path Tiles", List.of(
                     TileType.PATH_HORIZONTAL, TileType.PATH_VERTICAL,
                     TileType.PATH_CIRCLE_NW, TileType.PATH_CIRCLE_N, TileType.PATH_CIRCLE_NE,
@@ -73,16 +73,17 @@ public class MapEditorTilePalette extends VBox {
                     TileType.PATH_CIRCLE_SW, TileType.PATH_CIRCLE_W,
                     TileType.PATH_VERTICAL_N_DE, TileType.PATH_VERTICAL_S_DE,
                     TileType.PATH_HORIZONTAL_W_DE, TileType.PATH_HORIZONTAL_E_DE),
-            "Special Points", List.of(TileType.START_POINT, TileType.END_POINT),
-            "Game Elements",    List.of(TileType.TOWER_SLOT),
-            "Structures",       List.of(TileType.CASTLE1),
-            "Trees",            List.of(TileType.TREE_BIG,TileType.TREE_MEDIUM,TileType.TREE_SMALL),
-            "Buildings & Props",List.of(TileType.HOUSE,TileType.WELL,TileType.LOG_PILE),
-            "Rocks",            List.of(TileType.ROCK_MEDIUM,TileType.ROCK_SMALL),
-            "Towers (Visual)",  List.of(TileType.TOWER_ARTILLERY,TileType.TOWER_MAGE,TileType.ARCHER_TOWER,TileType.TOWER_BARACK));
+            "Special Points", List.of(TileType.START_POINT, TileType.END_POINT, TileType.CASTLE1),
+            "Props", List.of(
+                    TileType.HOUSE, TileType.WELL, TileType.LOG_PILE,
+                    TileType.TREE_BIG, TileType.TREE_MEDIUM, TileType.TREE_SMALL,
+                    TileType.ROCK_MEDIUM, TileType.ROCK_SMALL),
+            "Towers", List.of(
+                    TileType.TOWER_SLOT,
+                    TileType.TOWER_ARTILLERY, TileType.TOWER_MAGE, TileType.ARCHER_TOWER, TileType.TOWER_BARACK));
 
     private final ToggleGroup tileToggleGroup;
-    private final ObjectProperty<TileType> selectedTileTypeProperty = new SimpleObjectProperty<>(TileType.GRASS);
+    private final ObjectProperty<TileType> selectedTileTypeProperty = new SimpleObjectProperty<>(null);
 
     public MapEditorTilePalette() {
         super(5); // Spacing for VBox
@@ -94,6 +95,8 @@ public class MapEditorTilePalette extends VBox {
         setPadding(new Insets(0, 10, 0, 0));
         setAlignment(Pos.TOP_CENTER);
         setMinWidth(200);
+        setPrefWidth(200);
+        setMaxHeight(Double.MAX_VALUE); // Allow this VBox (TilePalette) to grow vertically
 
         // Add the title
         Label toolsLabel = new Label("Tile Palette");
@@ -110,8 +113,9 @@ public class MapEditorTilePalette extends VBox {
         // Create a ScrollPane to make the palette scrollable
         ScrollPane scrollPane = new ScrollPane(toolbarContainer);
         scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
         scrollPane.setStyle("-fx-background-color: transparent;");
-        scrollPane.setPrefHeight(500); // Set a reasonable height
+        // scrollPane.setPrefHeight(500); // Remove fixed preferred height
 
         System.out.println("--- Creating Tile Palette Buttons ---");
 
@@ -135,7 +139,9 @@ public class MapEditorTilePalette extends VBox {
             tilePane.setPadding(new Insets(5));
             tilePane.setHgap(5);
             tilePane.setVgap(5);
-            tilePane.setPrefColumns(3);
+            tilePane.setPrefColumns(4);
+            tilePane.setMaxWidth(javafx.scene.layout.Region.USE_PREF_SIZE); // Prevent TilePane from growing beyond its
+                                                                            // preferred width (based on 4 columns)
 
             for (TileType type : category.getValue()) {
                 ToggleButton tileButton = createTileButton(type, staticTileset);
@@ -156,6 +162,7 @@ public class MapEditorTilePalette extends VBox {
 
         // Add the scrollpane to this VBox
         getChildren().add(scrollPane);
+        VBox.setVgrow(scrollPane, Priority.ALWAYS); // Make the scrollPane grow vertically within this VBox
 
         System.out.println("--- Finished Creating Tile Palette Buttons ---");
     }
@@ -215,55 +222,55 @@ public class MapEditorTilePalette extends VBox {
                 int btnSize = 40;
                 Canvas tempCanvas = new Canvas(btnSize, btnSize);
                 GraphicsContext g = tempCanvas.getGraphicsContext2D();
-                
+
                 // Use path image for START_POINT, CASTLE image for END_POINT
                 if (type == TileType.START_POINT) {
                     // Start point uses a path image with indicator
                     viewport = Tile.getSourceViewportForType(TileType.PATH_HORIZONTAL);
-                    
+
                     if (staticTileset != null && viewport != null) {
                         // Draw path image first
                         g.drawImage(staticTileset,
-                            viewport.getMinX(), viewport.getMinY(), viewport.getWidth(), viewport.getHeight(),
-                            0, 0, btnSize, btnSize);
-                        
+                                viewport.getMinX(), viewport.getMinY(), viewport.getWidth(), viewport.getHeight(),
+                                0, 0, btnSize, btnSize);
+
                         // Add green direction indicator
                         g.setStroke(Color.GREEN);
                         g.setLineWidth(2);
                         g.strokeRect(2, 2, btnSize - 4, btnSize - 4);
-                        
+
                         // Draw small arrow
                         g.setStroke(Color.GREEN);
                         g.setLineWidth(1.5);
-                        double centerX = btnSize/2;
-                        double centerY = btnSize/2;
-                        g.strokeLine(centerX-8, centerY, centerX+8, centerY);
-                        g.strokeLine(centerX+8, centerY, centerX+4, centerY-4);
-                        g.strokeLine(centerX+8, centerY, centerX+4, centerY+4);
+                        double centerX = btnSize / 2;
+                        double centerY = btnSize / 2;
+                        g.strokeLine(centerX - 8, centerY, centerX + 8, centerY);
+                        g.strokeLine(centerX + 8, centerY, centerX + 4, centerY - 4);
+                        g.strokeLine(centerX + 8, centerY, centerX + 4, centerY + 4);
                     } else {
                         // Fallback if image loading fails
                         g.setFill(Color.LIGHTGREEN);
                         g.fillRect(0, 0, btnSize, btnSize);
                         g.setFill(Color.DARKGREEN);
-                        g.fillText("START", 5, btnSize/2 + 5);
+                        g.fillText("START", 5, btnSize / 2 + 5);
                     }
                 } else { // END_POINT
                     // End point uses castle image with indicator
                     viewport = Tile.getSourceViewportForType(TileType.CASTLE1);
-                    
+
                     if (staticTileset != null && viewport != null) {
                         // Draw castle image first
                         g.drawImage(staticTileset,
-                            viewport.getMinX(), viewport.getMinY(), viewport.getWidth(), viewport.getHeight(),
-                            0, 0, btnSize, btnSize);
-                        
+                                viewport.getMinX(), viewport.getMinY(), viewport.getWidth(), viewport.getHeight(),
+                                0, 0, btnSize, btnSize);
+
                         // Add red diamond indicator
                         g.setStroke(Color.RED);
                         g.setLineWidth(2);
-                        double midX = btnSize/2;
-                        double midY = btnSize/2;
-                        double size = btnSize/6;
-                        
+                        double midX = btnSize / 2;
+                        double midY = btnSize / 2;
+                        double size = btnSize / 6;
+
                         g.beginPath();
                         g.moveTo(midX, midY - size);
                         g.lineTo(midX + size, midY);
@@ -276,10 +283,10 @@ public class MapEditorTilePalette extends VBox {
                         g.setFill(Color.LIGHTPINK);
                         g.fillRect(0, 0, btnSize, btnSize);
                         g.setFill(Color.DARKRED);
-                        g.fillText("END", 10, btnSize/2 + 5);
+                        g.fillText("END", 10, btnSize / 2 + 5);
                     }
                 }
-                
+
                 // Create the image from the canvas
                 SnapshotParameters params = new SnapshotParameters();
                 params.setFill(Color.TRANSPARENT);
@@ -288,23 +295,23 @@ public class MapEditorTilePalette extends VBox {
             } catch (Exception e) {
                 // Fallback to the old approach if there's an exception
                 System.err.println("Error creating special tile button: " + e.getMessage());
-                
+
                 int btnSize = 40;
                 Canvas tempCanvas = new Canvas(btnSize, btnSize);
                 GraphicsContext g = tempCanvas.getGraphicsContext2D();
-                
+
                 if (type == TileType.START_POINT) {
                     g.setFill(Color.LIGHTGREEN);
                     g.fillRect(0, 0, btnSize, btnSize);
                     g.setFill(Color.DARKGREEN);
-                    g.fillText("START", 5, btnSize/2 + 5);
+                    g.fillText("START", 5, btnSize / 2 + 5);
                 } else {
                     g.setFill(Color.LIGHTPINK);
                     g.fillRect(0, 0, btnSize, btnSize);
                     g.setFill(Color.DARKRED);
-                    g.fillText("END", 10, btnSize/2 + 5);
+                    g.fillText("END", 10, btnSize / 2 + 5);
                 }
-                
+
                 SnapshotParameters params = new SnapshotParameters();
                 params.setFill(Color.TRANSPARENT);
                 imageToShow = tempCanvas.snapshot(params, null);

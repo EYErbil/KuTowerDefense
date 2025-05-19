@@ -137,7 +137,8 @@ public class MapEditorScreen extends BorderPane {
                 - getPadding().getBottom();
 
         if (canvasView != null) {
-            canvasView.updateScrollPaneSize(availableWidth, availableHeight);
+            // canvasView.updateScrollPaneSize(availableWidth, availableHeight); // REMOVED
+            // - CanvasView now manages its own size
         }
     }
 
@@ -251,22 +252,23 @@ public class MapEditorScreen extends BorderPane {
                         break;
                     }
                 }
-                if (hasStart) break;
+                if (hasStart)
+                    break;
             }
         }
 
         if (!hasStart) {
-            showAlert("Validation Error", 
-                "No valid start point found. Please place a START_POINT tile on the edge of the map.\n\n" +
-                "The START_POINT tile can be found in the 'Special Tiles' section of the palette and " +
-                "should be placed where enemies will spawn.");
+            showAlert("Validation Error",
+                    "No valid start point found. Please place a START_POINT tile on the edge of the map.\n\n" +
+                            "The START_POINT tile can be found in the 'Special Tiles' section of the palette and " +
+                            "should be placed where enemies will spawn.");
             return false;
         }
         if (!hasEnd) {
-            showAlert("Validation Error", 
-                "No End Point (Castle) found. Please place an END_POINT tile on the map.\n\n" +
-                "The END_POINT tile can be found in the 'Special Tiles' section of the palette and " +
-                "will automatically place a 2x2 castle structure where enemies will try to reach.");
+            showAlert("Validation Error",
+                    "No End Point (Castle) found. Please place an END_POINT tile on the map.\n\n" +
+                            "The END_POINT tile can be found in the 'Special Tiles' section of the palette and " +
+                            "will automatically place a 2x2 castle structure where enemies will try to reach.");
             return false;
         }
         if (startPoint == null || endPointAdjacent == null) {
@@ -295,10 +297,11 @@ public class MapEditorScreen extends BorderPane {
      */
     private boolean isValidStartTile(int x, int y) {
         TileType type = currentMap.getTileType(x, y);
-        
+
         // Must be on the edge of the map
         boolean isOnEdge = x == 0 || x == currentMap.getWidth() - 1 || y == 0 || y == currentMap.getHeight() - 1;
-        if (!isOnEdge) return false;
+        if (!isOnEdge)
+            return false;
 
         // Check if it's a valid path tile
         switch (type) {
@@ -337,7 +340,8 @@ public class MapEditorScreen extends BorderPane {
     }
 
     /**
-     * Checks if the 2x2 castle structure is correctly placed starting at the END_POINT.
+     * Checks if the 2x2 castle structure is correctly placed starting at the
+     * END_POINT.
      * Assumes (x, y) is TileType.END_POINT.
      */
     private boolean isCastleComplete(int baseX, int baseY) {
@@ -368,12 +372,12 @@ public class MapEditorScreen extends BorderPane {
     private Point findAdjacentWalkable(int baseX, int baseY) {
         // Check all four sides of the 2x2 castle structure
         int[][] directions = {
-            {-1, 0}, {-1, 1},  // Left side
-            {0, -1}, {1, -1},  // Top side
-            {2, 0}, {2, 1},    // Right side
-            {0, 2}, {1, 2}     // Bottom side
+                { -1, 0 }, { -1, 1 }, // Left side
+                { 0, -1 }, { 1, -1 }, // Top side
+                { 2, 0 }, { 2, 1 }, // Right side
+                { 0, 2 }, { 1, 2 } // Bottom side
         };
-        
+
         for (int[] offset : directions) {
             int nx = baseX + offset[0];
             int ny = baseY + offset[1];
@@ -512,7 +516,7 @@ public class MapEditorScreen extends BorderPane {
             try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(selectedFile))) {
                 GameMap loadedMap = (GameMap) ois.readObject();
                 this.currentMap = loadedMap;
-                
+
                 // Ensure all tiles reinitialize after loading
                 for (int x = 0; x < currentMap.getWidth(); x++) {
                     for (int y = 0; y < currentMap.getHeight(); y++) {
@@ -522,7 +526,7 @@ public class MapEditorScreen extends BorderPane {
                         }
                     }
                 }
-                
+
                 // Ensure path is regenerated
                 currentMap.generatePath();
 
@@ -551,7 +555,7 @@ public class MapEditorScreen extends BorderPane {
         MainMenuScreen mainMenu = new MainMenuScreen(primaryStage);
         Scene mainMenuScene = new Scene(mainMenu, primaryStage.getWidth(), primaryStage.getHeight());
         mainMenuScene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
-        
+
         // Set custom cursor if available
         ImageCursor customCursor = UIAssets.getCustomCursor();
         if (customCursor != null) {

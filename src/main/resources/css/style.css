@@ -106,19 +106,12 @@
 }
 
 .editor-top-toolbar {
-    /* Renamed from .editor-toolbar and added background image */
-    -fx-background-image: url("../Asset_pack/UI/Ribbon_Blue_3Slides.png");
-    /* Changed to relative path */
-    -fx-background-repeat: repeat-x;
-    /* Repeat horizontally, common for ribbons */
-    -fx-background-position: center center;
-    -fx-background-size: auto 100%;
-    /* Height matches toolbar, width auto or stretches */
-    /* Fallback background if image fails to load */
-    -fx-background-color: linear-gradient(to bottom, #3498db, #2980b9);
+    -fx-background-color: #444444;
+    /* Standard dark background */
     -fx-padding: 10px 15px 15px 15px;
-    /* Matches Java code */
+    /* Kept existing padding */
     /* Spacing is set in HBox constructor, -fx-spacing here would be redundant unless constructor spacing is removed */
+    /* Removed background image and related properties */
 }
 
 .toolbar-label {
