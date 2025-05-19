@@ -32,7 +32,8 @@
     -fx-font-weight: bold;
     -fx-fill: white;
     -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.8), 5, 0, 0, 3);
-} */ /* This generic .menu-title seems overridden or unused, consider removing. Main menu uses .main-menu-layout .menu-title */
+} */
+/* This generic .menu-title seems overridden or unused, consider removing. Main menu uses .main-menu-layout .menu-title */
 
 /* Game screen styles */
 .game-info-text {
@@ -42,7 +43,8 @@
 }
 
 .sidebar-title {
-    -fx-font-size: 24px; /* Updated from 20px */
+    -fx-font-size: 24px;
+    /* Updated from 20px */
     -fx-font-weight: bold;
     -fx-fill: white;
     -fx-margin-bottom: 10px;
@@ -91,7 +93,8 @@
 
 /* Map editor styles */
 .section-title {
-    -fx-font-size: 18px; /* Updated from 16px */
+    -fx-font-size: 18px;
+    /* Updated from 16px */
     -fx-font-weight: bold;
     -fx-text-fill: white;
 }
@@ -102,30 +105,40 @@
     */
 }
 
-.editor-top-toolbar { /* Renamed from .editor-toolbar and added background image */
-    -fx-background-image: url("../Asset_pack/UI/Ribbon_Blue_3Slides.png"); /* Changed to relative path */
-    -fx-background-repeat: repeat-x; /* Repeat horizontally, common for ribbons */
+.editor-top-toolbar {
+    /* Renamed from .editor-toolbar and added background image */
+    -fx-background-image: url("../Asset_pack/UI/Ribbon_Blue_3Slides.png");
+    /* Changed to relative path */
+    -fx-background-repeat: repeat-x;
+    /* Repeat horizontally, common for ribbons */
     -fx-background-position: center center;
-    -fx-background-size: auto 100%; /* Height matches toolbar, width auto or stretches */
+    -fx-background-size: auto 100%;
+    /* Height matches toolbar, width auto or stretches */
     /* Fallback background if image fails to load */
     -fx-background-color: linear-gradient(to bottom, #3498db, #2980b9);
-    -fx-padding: 10px 15px 15px 15px; /* Matches Java code */
+    -fx-padding: 10px 15px 15px 15px;
+    /* Matches Java code */
     /* Spacing is set in HBox constructor, -fx-spacing here would be redundant unless constructor spacing is removed */
 }
 
 .toolbar-label {
-    -fx-font-size: 16px; /* Explicitly set size */
+    -fx-font-size: 16px;
+    /* Explicitly set size */
     -fx-text-fill: white;
     -fx-font-weight: bold;
 }
 
 .editor-bottom-toolbar {
-    -fx-background-color: #444444; /* Similar to previous inline style */
+    -fx-background-color: #444444;
+    /* Similar to previous inline style */
     -fx-border-color: #555555;
-    -fx-border-width: 1px 0 0 0; /* Top border */
+    -fx-border-width: 1px 0 0 0;
+    /* Top border */
     -fx-padding: 10px;
-    -fx-spacing: 10px; /* If HBox spacing is desired via CSS */
-    -fx-alignment: center-left; /* Example alignment */
+    -fx-spacing: 10px;
+    /* If HBox spacing is desired via CSS */
+    -fx-alignment: center-left;
+    /* Example alignment */
 }
 
 .selected-tile {
@@ -136,57 +149,117 @@
 }
 
 .map-name {
-    -fx-font-size: 24px; /* Updated from 20px */
+    -fx-font-size: 24px;
+    /* Updated from 20px */
     -fx-font-weight: bold;
     -fx-text-fill: white;
 }
 
 /* Settings screen styles */
 .screen-title {
-    -fx-font-size: 36px; /* Updated from 28px */
+    -fx-font-size: 48px;
     -fx-font-weight: bold;
-    -fx-fill: #ffd700; /* Updated from white, to use gold for major screen titles */
+    -fx-fill: white;
     -fx-margin-bottom: 20px;
 }
 
-.options-screen { /* Style for the OptionsScreen root pane */
+.options-screen {
     -fx-background-image: url("/Asset_pack/Background/WithoutTitle.png");
-    -fx-background-color: transparent; /* Ensure no solid color interferes */
+    -fx-background-color: transparent;
+    /* Ensure no solid color interferes */
     -fx-background-repeat: no-repeat;
     -fx-background-position: center center;
-    -fx-background-size: 100% 100%; /* Make the image cover the entire area */
+    -fx-background-size: 100% 100%;
+    /* Make the image cover the entire area */
+}
+
+.options-scroll-pane {
+    -fx-background: transparent;
+    -fx-background-color: transparent;
+}
+
+.options-scroll-pane>.viewport {
+    -fx-background: transparent;
+    /* Make viewport transparent too */
+}
+
+.options-container-flowpane {
+    -fx-padding: 10px;
+    /* Padding around the content of the flowpane */
+    /* -fx-background-color: rgba(255,0,0,0.1); /* For debugging layout */
+    /* -fx-max-width: 800px; */
+    /* Example: Constrain max width of board area if needed */
+}
+
+.options-group-board {
+    /* Attempting a stylized wood look with CSS gradients */
+    -fx-background-color: linear-gradient(to bottom right, #8B4513, #A0522D);
+    -fx-background-radius: 15px;
+    -fx-border-color: linear-gradient(to bottom right, #5C2E0A, #6E3C14);
+    -fx-border-width: 5px;
+    -fx-border-radius: 12px;
+    -fx-padding: 15px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 10, 0, 3, 3);
+    -fx-min-width: 220px;
+    /* Reduced min width */
+    -fx-pref-width: 260px;
+    /* Reduced preferred width */
+}
+
+.options-group-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-fill: white;
+    -fx-alignment: center-left;
+    -fx-padding-bottom: 10px;
+    -fx-border-width: 0 0 2px 0;
+    -fx-border-color: white;
 }
 
 .options-label {
-    -fx-font-size: 14px; /* Example, adjust as needed */
-    -fx-text-fill: #f0f0f0; /* Lighter text for options */
+    -fx-font-size: 15px;
+    -fx-text-fill: white;
     -fx-font-weight: normal;
 }
 
-.options-section {
-    -fx-background-color: rgba(50, 50, 50, 0.9);
-    -fx-background-radius: 10;
-    -fx-padding: 15;
-    -fx-spacing: 10;
+.options-value-field {
+    -fx-font-size: 15px;
+    -fx-background-color: rgba(0, 0, 0, 0.3);
+    -fx-text-fill: white;
+    -fx-border-color: rgba(255, 255, 255, 0.3);
+    -fx-border-radius: 3px;
+    -fx-prompt-text-fill: #a0a0a0;
+    -fx-pref-width: 70px;
 }
 
-.options-title {
-    -fx-font-size: 24px; /* Updated from 18px */
-    -fx-font-weight: bold;
-    -fx-text-fill: #ffd700;
+.options-slider .track {
+    -fx-background-color: #666666;
+    -fx-background-radius: 3px;
 }
 
-.slider {
-    -fx-show-tick-labels: true;
-    -fx-show-tick-marks: true;
+.options-slider .thumb {
+    -fx-background-color: #FFD700;
+    -fx-padding: 7px;
 }
 
-.slider .track {
-    -fx-background-color: #777777;
+.options-slider .axis .tick-label {
+    -fx-fill: white;
+    -fx-font-size: 10px;
 }
 
-.slider .thumb {
-    -fx-background-color: #4CAF50;
+.options-button {
+    -fx-font-size: 16px;
+    /* Consistent font size for options screen buttons */
+    -fx-padding: 10px 20px;
+}
+
+/* Ensure general button styles from earlier don't override too much for specific action/secondary */
+.action-button.options-button {
+    /* Specific overrides if needed, e.g., for color if the generic one is too strong */
+}
+
+.secondary-button.options-button {
+    /* Specific overrides */
 }
 
 /* Tooltip styles */
@@ -269,9 +342,9 @@
 }
 
 .menu-button:pressed {
-    -fx-background-image: url("/Asset_pack/UI/Button_Blue_Pressed.png");
-    -fx-background-color: transparent;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.6), 5, 0, 0, 1);
+    -fx-background-image: url("/Asset_pack/UI/Button_Hover_3Slides.png");
+    -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.3), 10, 0, 0, 0);
+    -fx-padding: 16 50 34 50;
     -fx-scale-x: 0.98;
     -fx-scale-y: 0.98;
 }
@@ -283,14 +356,19 @@
     -fx-background-radius: 5;
 }
 
-.game-screen { /* Style for the GameScreen root pane */
+.game-screen {
+    /* Style for the GameScreen root pane */
     /* Typically, game screen itself might be a solid color, with elements like top-bar having images */
-    /* -fx-background-image: url("/Asset_pack/Background/GameBackground.png"); */ /* Example if a game screen bg is desired */
-    -fx-background-color: #1e1e1e; /* Dark background for the game area */
+    /* -fx-background-image: url("/Asset_pack/Background/GameBackground.png"); */
+    /* Example if a game screen bg is desired */
+    -fx-background-color: #1e1e1e;
+    /* Dark background for the game area */
 }
 
-.game-canvas-container { /* For letterboxing the canvas */
-    -fx-background-color: #222222; /* Original letterbox color */
+.game-canvas-container {
+    /* For letterboxing the canvas */
+    -fx-background-color: #222222;
+    /* Original letterbox color */
 }
 
 .game-top-bar {
@@ -298,8 +376,10 @@
     -fx-background-repeat: repeat-x;
     -fx-background-position: center center;
     -fx-background-size: auto 100%;
-    -fx-background-color: linear-gradient(to bottom, #2c3e50, #34495e); /* Fallback */
-    -fx-padding: 10px 15px 10px 15px; /* Adjusted padding slightly */
+    -fx-background-color: linear-gradient(to bottom, #2c3e50, #34495e);
+    /* Fallback */
+    -fx-padding: 10px 15px 10px 15px;
+    /* Adjusted padding slightly */
     -fx-alignment: center-left;
 }
 
@@ -309,7 +389,8 @@
     -fx-background-repeat: repeat-x;
     -fx-background-position: center center;
     -fx-background-size: auto 100%;
-    -fx-background-color: linear-gradient(to bottom, #4a4a4a, #3c3c3c); /* Fallback */
+    -fx-background-color: linear-gradient(to bottom, #4a4a4a, #3c3c3c);
+    /* Fallback */
     -fx-padding: 15px;
     -fx-spacing: 10px;
 }
@@ -391,7 +472,8 @@
     -fx-font-size: 13px;
 }
 
-.map-selection-screen { /* Style for the MapSelectionScreen root pane */
+.map-selection-screen {
+    /* Style for the MapSelectionScreen root pane */
     -fx-background-image: url("/Asset_pack/Background/WithoutTitle.png");
     -fx-background-color: transparent;
     -fx-background-repeat: no-repeat;
@@ -400,39 +482,140 @@
 }
 
 .info-label {
-    -fx-background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
-    -fx-padding: 5px; /* Add some padding */
-    -fx-background-radius: 5px; /* Rounded corners for the background */
-    -fx-text-fill: white; /* Ensure text is white */
+    -fx-background-color: rgba(0, 0, 0, 0.5);
+    /* Semi-transparent black background */
+    -fx-padding: 5px;
+    /* Add some padding */
+    -fx-background-radius: 5px;
+    /* Rounded corners for the background */
+    -fx-text-fill: white;
+    /* Ensure text is white */
 }
 
 .map-preview-container {
-    -fx-border-color: #556B2F; /* Dark Olive Green */
+    -fx-border-color: #556B2F;
+    /* Dark Olive Green */
     -fx-border-width: 2px;
-    -fx-background-color: #2F4F4F; /* Dark Slate Gray - placeholder for map preview */
+    -fx-background-color: #2F4F4F;
+    /* Dark Slate Gray - placeholder for map preview */
 }
 
 /* Icon Button style for popups */
 .icon-button {
     -fx-background-color: transparent;
-    -fx-padding: 5px; /* CSS will now control padding */
-    -fx-border-radius: 50%; /* Make it circular */
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 5, 0, 0, 1);
-    -fx-transition: all 0.2s ease-in-out;
+    -fx-padding: 0px;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-cursor: hand;
 }
 
-.icon-button ImageView { /* Target the ImageView within the button for smooth scaling */
+.icon-button ImageView {
     -fx-smooth: true;
 }
 
 .icon-button:hover {
-    -fx-background-color: rgba(255,255,255,0.2); /* Subtle white highlight */
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 8, 0, 0, 2);
+    -fx-background-color: transparent;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 8, 0, 0, 2);
     -fx-scale-x: 1.1;
     -fx-scale-y: 1.1;
 }
 
 .icon-button:pressed {
-    -fx-background-color: rgba(150, 150, 150, 0.5); /* Darker highlight when pressed */
-    -fx-border-color: #aaaaaa;
+    -fx-background-color: transparent;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.7), 8, 0, 0, 0);
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+}
+
+/* Style for the Start Game button in MapSelectionScreen */
+.start-game-button {
+    -fx-background-image: url("/Asset_pack/UI/Button_Blue_3Slides.png");
+    -fx-background-color: transparent;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center;
+    -fx-background-size: stretch;
+    -fx-font-size: 28px;
+    /* Increased font size */
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+    /* Adjusted padding: T R B L, B slightly larger for vertical centering */
+    -fx-padding: 22px 45px 38px 45px;
+    -fx-min-height: 90px;
+    /* Increased min height */
+    -fx-pref-width: 340px;
+    /* Increased pref width */
+    -fx-cursor: hand;
+    -fx-background-radius: 0;
+    /* Remove default radius if any */
+    -fx-border-width: 0;
+    /* Remove default border if any */
+    -fx-effect: null;
+    /* Remove default effects if any */
+    -fx-alignment: center;
+    /* Center text */
+}
+
+.start-game-button:hover {
+    -fx-background-image: url("/Asset_pack/UI/Button_Hover_3Slides.png");
+    -fx-background-color: transparent;
+    /* Ensure background is transparent */
+    /* Optional: add subtle effect for hover */
+    -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.2), 5, 0, 0, 0);
+}
+
+.start-game-button:pressed {
+    -fx-background-image: url("/Asset_pack/UI/Button_Hover_3Slides.png");
+    /* Using hover for pressed */
+    -fx-background-color: transparent;
+    -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.3), 10, 0, 0, 0);
+    /* Adjust padding slightly for pressed effect, maintaining proportions */
+    -fx-padding: 23px 45px 37px 45px;
+    -fx-scale-x: 0.98;
+    -fx-scale-y: 0.98;
+}
+
+/* Style for the Back button in MapSelectionScreen */
+.map-select-back-button {
+    -fx-background-image: url("/Asset_pack/UI/Button_Red_3Slides.png");
+    -fx-background-color: transparent;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center;
+    -fx-background-size: stretch;
+    -fx-font-size: 20px;
+    /* Adjusted for "Back" */
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+    /* Padding: Top, Right, Bottom, Left. Bottom > Top for vertical centering */
+    -fx-padding: 10px 30px 22px 30px;
+    -fx-min-height: 60px;
+    /* Adjusted for smaller text/button */
+    -fx-pref-width: 180px;
+    /* Adjusted for "Back" */
+    -fx-cursor: hand;
+    -fx-background-radius: 0;
+    -fx-border-width: 0;
+    -fx-effect: null;
+    -fx-alignment: center;
+    -fx-margin: 10px;
+    /* Add some margin if it's too close to edges */
+}
+
+.map-select-back-button:hover {
+    -fx-background-image: url("/Asset_pack/UI/Button_Hover_3Slides.png");
+    -fx-background-color: transparent;
+    /* Ensure background is transparent */
+    -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.2), 5, 0, 0, 0);
+}
+
+.map-select-back-button:pressed {
+    -fx-background-image: url("/Asset_pack/UI/Button_Hover_3Slides.png");
+    /* Using hover for pressed */
+    -fx-background-color: transparent;
+    -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.3), 10, 0, 0, 0);
+    /* Adjust padding slightly for pressed effect */
+    -fx-padding: 11px 30px 21px 30px;
+    -fx-scale-x: 0.98;
+    -fx-scale-y: 0.98;
 }

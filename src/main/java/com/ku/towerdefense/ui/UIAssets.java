@@ -5,6 +5,7 @@ import java.util.Map;
 
 import javafx.scene.ImageCursor;
 import javafx.scene.control.Button;
+import javafx.scene.control.ContentDisplay;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
@@ -60,14 +61,14 @@ public class UIAssets {
 
             // Effect sprite sheets
             loadImage("ExplosionEffect", "/Asset_pack/Effects/Explosions.png");
-            loadImage("FireEffect",      "/Asset_pack/Effects/Fire.png");
+            loadImage("FireEffect", "/Asset_pack/Effects/Fire.png");
             loadImage("GoldSpawnEffect", "/Asset_pack/Effects/G_Spawn.png");
 
             // Item Images
-            loadImage("GoldBag",         "/Asset_pack/Items/gold_bag.png");
+            loadImage("GoldBag", "/Asset_pack/Items/gold_bag.png");
 
             // Tower specific effects/icons
-            // loadImage("ThunderEffect",   "/Asset_pack/Towers/thunder_icon.png"); // Removed
+            // loadImage("ThunderEffect", "/Asset_pack/Towers/thunder_icon.png"); // Removed
 
             System.out.println("UI assets loaded successfully - " + imageCache.size() + " images");
         } catch (Exception e) {
@@ -135,9 +136,9 @@ public class UIAssets {
     /**
      * Extracts a specific frame from a cached sprite sheet.
      *
-     * @param sheetName The key of the loaded sprite sheet in the cache.
-     * @param frameIndex The 0-based index of the frame to extract.
-     * @param frameWidth The width of a single frame in the sprite sheet.
+     * @param sheetName   The key of the loaded sprite sheet in the cache.
+     * @param frameIndex  The 0-based index of the frame to extract.
+     * @param frameWidth  The width of a single frame in the sprite sheet.
      * @param frameHeight The height of a single frame in the sprite sheet.
      * @return An Image object of the specified frame, or null if an error occurs.
      */
@@ -149,11 +150,13 @@ public class UIAssets {
         }
 
         int sheetWidth = (int) spriteSheet.getWidth();
-        // int sheetHeight = (int) spriteSheet.getHeight(); // Assuming all frames are in one row for now
+        // int sheetHeight = (int) spriteSheet.getHeight(); // Assuming all frames are
+        // in one row for now
 
         int framesPerRow = sheetWidth / frameWidth;
         if (frameIndex < 0 || frameIndex >= framesPerRow) { // Basic check, assumes single row of frames
-            System.err.println("Frame index " + frameIndex + " is out of bounds for sheet " + sheetName + " with " + framesPerRow + " frames.");
+            System.err.println("Frame index " + frameIndex + " is out of bounds for sheet " + sheetName + " with "
+                    + framesPerRow + " frames.");
             return null;
         }
 
@@ -167,10 +170,12 @@ public class UIAssets {
             int x = frameIndex * frameWidth;
             int y = 0; // Assuming frames are in a single horizontal row
 
-            javafx.scene.image.WritableImage frameImage = new javafx.scene.image.WritableImage(reader, x, y, frameWidth, frameHeight);
+            javafx.scene.image.WritableImage frameImage = new javafx.scene.image.WritableImage(reader, x, y, frameWidth,
+                    frameHeight);
             return frameImage;
         } catch (Exception e) {
-            System.err.println("Error extracting frame " + frameIndex + " from sheet " + sheetName + ": " + e.getMessage());
+            System.err.println(
+                    "Error extracting frame " + frameIndex + " from sheet " + sheetName + ": " + e.getMessage());
             e.printStackTrace();
             return null;
         }
@@ -183,47 +188,74 @@ public class UIAssets {
      * @param type   "blue" or "red"
      */
     public static void styleButton(Button button, String type) {
+        styleButton(button, type, false); // Calls the new method with isThreeSlides = false
+    }
+
+    /**
+     * Apply a styled button appearance, supporting standard and 3-slides versions.
+     * 
+     * @param button        the button to style
+     * @param type          "blue" or "red"
+     * @param isThreeSlides true to use 3-slides assets, false for standard assets
+     */
+    public static void styleButton(Button button, String type, boolean isThreeSlides) {
         try {
-            String normalKey = "Button_" + type.substring(0, 1).toUpperCase() + type.substring(1);
-            String pressedKey = normalKey + "_Pressed";
+            String capitalizedType = type.substring(0, 1).toUpperCase() + type.substring(1);
+            final Image normalImageFinal;
+            Image pressedImageInitial = null;
+            final Image hoverImageFinal;
+            String baseKey = "Button_" + capitalizedType;
 
-            Image normalImage = imageCache.get(normalKey);
-            Image pressedImage = imageCache.get(pressedKey);
-            Image hoverImage = imageCache.get("Button_Hover");
+            if (isThreeSlides) {
+                normalImageFinal = imageCache.get(baseKey + "_3Slides");
+                hoverImageFinal = imageCache.get("Button_Hover_3Slides");
+                pressedImageInitial = imageCache.get(baseKey + "_Pressed_3Slides");
+                if (pressedImageInitial == null) {
+                    pressedImageInitial = hoverImageFinal;
+                }
+                if (pressedImageInitial == null) {
+                    pressedImageInitial = normalImageFinal;
+                }
+            } else {
+                normalImageFinal = imageCache.get(baseKey);
+                pressedImageInitial = imageCache.get(baseKey + "_Pressed");
+                hoverImageFinal = imageCache.get("Button_Hover");
+            }
 
-            if (normalImage != null && pressedImage != null && hoverImage != null) {
-                // Create ImageView with fixed dimensions
-                ImageView iv = new ImageView(normalImage);
-                iv.setFitWidth(normalImage.getWidth());
-                iv.setFitHeight(normalImage.getHeight());
+            final Image finalNormalImage = normalImageFinal;
+            final Image finalHoverImage = hoverImageFinal;
+            final Image finalPressedImage = (pressedImageInitial != null) ? pressedImageInitial : finalNormalImage;
+
+            if (finalNormalImage != null && finalHoverImage != null) {
+                ImageView iv = new ImageView(finalNormalImage);
+                iv.setFitWidth(finalNormalImage.getWidth());
+                iv.setFitHeight(finalNormalImage.getHeight());
                 button.setGraphic(iv);
-                button.setStyle("-fx-background-color: transparent; -fx-background-image: none;");
+                button.setContentDisplay(ContentDisplay.CENTER);
+                button.setStyle("-fx-background-color: transparent; -fx-background-image: none; -fx-padding: 0;");
 
-                // Handle states - reuse the same ImageView to preserve dimensions
-                button.setOnMousePressed(e -> ((ImageView) button.getGraphic()).setImage(pressedImage));
-                button.setOnMouseReleased(e -> ((ImageView) button.getGraphic()).setImage(normalImage));
+                button.setOnMousePressed(e -> ((ImageView) button.getGraphic()).setImage(finalPressedImage));
+                button.setOnMouseReleased(e -> ((ImageView) button.getGraphic()).setImage(finalNormalImage));
                 button.setOnMouseEntered(e -> {
-                    button.setStyle("-fx-cursor: hand; -fx-background-color: transparent; -fx-background-image: none;");
+                    button.setStyle(
+                            "-fx-cursor: hand; -fx-background-color: transparent; -fx-background-image: none; -fx-padding: 0;");
                     if (!button.isPressed()) {
-                        ((ImageView) button.getGraphic()).setImage(hoverImage);
+                        ((ImageView) button.getGraphic()).setImage(finalHoverImage);
                     }
                 });
                 button.setOnMouseExited(e -> {
-                    button.setStyle("-fx-background-color: transparent; -fx-background-image: none;");
+                    button.setStyle("-fx-background-color: transparent; -fx-background-image: none; -fx-padding: 0;");
                     if (!button.isPressed()) {
-                        ((ImageView) button.getGraphic()).setImage(normalImage);
+                        ((ImageView) button.getGraphic()).setImage(finalNormalImage);
                     }
                 });
-                System.out.println("Styled button as " + type);
             } else {
-                System.err.println("Missing button images for style: " + type);
-                // Apply a basic style as fallback
+                System.err.println("Missing button images for style: " + type + (isThreeSlides ? " (3Slides)" : ""));
                 button.setStyle("-fx-base: " + (type.equals("blue") ? "#3c7fb1" : "#d14836") + ";");
             }
         } catch (Exception e) {
             System.err.println("Failed to style button: " + e.getMessage());
             e.printStackTrace();
-            // Apply a basic style as fallback
             button.setStyle("-fx-base: " + (type.equals("blue") ? "#3c7fb1" : "#d14836") + ";");
         }
     }
@@ -234,10 +266,11 @@ public class UIAssets {
     /**
      * Creates a button with an icon from the "KUTowerButtons" sprite sheet.
      *
-     * @param tooltipText Text for the button's tooltip.
-     * @param iconCol Column of the icon in the sprite sheet (0-indexed).
-     * @param iconRow Row of the icon in the sprite sheet (0-indexed).
-     * @param iconDisplaySize The desired display size (width and height) for the icon on the button.
+     * @param tooltipText     Text for the button's tooltip.
+     * @param iconCol         Column of the icon in the sprite sheet (0-indexed).
+     * @param iconRow         Row of the icon in the sprite sheet (0-indexed).
+     * @param iconDisplaySize The desired display size (width and height) for the
+     *                        icon on the button.
      * @return A new Button configured with the specified icon and tooltip.
      */
     public static Button createIconButton(String tooltipText, int iconCol, int iconRow, double iconDisplaySize) {
@@ -247,11 +280,10 @@ public class UIAssets {
         if (spriteSheet != null) {
             ImageView iconView = new ImageView(spriteSheet);
             iconView.setViewport(new javafx.geometry.Rectangle2D(
-                iconCol * KUTOWERBUTTONS_ICON_WIDTH,
-                iconRow * KUTOWERBUTTONS_ICON_HEIGHT,
-                KUTOWERBUTTONS_ICON_WIDTH,
-                KUTOWERBUTTONS_ICON_HEIGHT
-            ));
+                    iconCol * KUTOWERBUTTONS_ICON_WIDTH,
+                    iconRow * KUTOWERBUTTONS_ICON_HEIGHT,
+                    KUTOWERBUTTONS_ICON_WIDTH,
+                    KUTOWERBUTTONS_ICON_HEIGHT));
             iconView.setFitWidth(iconDisplaySize);
             iconView.setFitHeight(iconDisplaySize);
             iconView.setPreserveRatio(true);
@@ -259,16 +291,20 @@ public class UIAssets {
 
             button.setGraphic(iconView);
             button.getStyleClass().add("icon-button"); // For CSS styling
-             // Basic styling for icon buttons (can be overridden/enhanced in CSS)
-            // button.setStyle("-fx-background-color: transparent; -fx-padding: 3px;"); // REMOVED
-            // button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: #e0e0e0; -fx-padding: 3px; -fx-cursor: hand;")); // REMOVED
-            // button.setOnMouseExited(e -> button.setStyle("-fx-background-color: transparent; -fx-padding: 3px;")); // REMOVED
+            // Basic styling for icon buttons (can be overridden/enhanced in CSS)
+            // button.setStyle("-fx-background-color: transparent; -fx-padding: 3px;"); //
+            // REMOVED
+            // button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: #e0e0e0;
+            // -fx-padding: 3px; -fx-cursor: hand;")); // REMOVED
+            // button.setOnMouseExited(e -> button.setStyle("-fx-background-color:
+            // transparent; -fx-padding: 3px;")); // REMOVED
 
             // CSS (.icon-button) should handle -fx-cursor: hand;
-            // Revert to custom cursor on exit if it was changed by something else (though less likely now)
+            // Revert to custom cursor on exit if it was changed by something else (though
+            // less likely now)
             button.setOnMouseExited(e -> {
                 if (button.getScene() != null && button.getScene().getCursor() != UIAssets.getCustomCursor()) {
-                     button.getScene().setCursor(UIAssets.getCustomCursor());
+                    button.getScene().setCursor(UIAssets.getCustomCursor());
                 }
             });
 

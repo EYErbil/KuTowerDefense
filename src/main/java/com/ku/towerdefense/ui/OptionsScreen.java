@@ -2,20 +2,22 @@ package com.ku.towerdefense.ui;
 
 import com.ku.towerdefense.util.GameSettings;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.Region; // For USE_PREF_SIZE
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.scene.ImageCursor;
+import javafx.scene.transform.Scale; // Added for scaling
 
 /**
  * Options screen for configuring game parameters.
@@ -23,6 +25,9 @@ import javafx.scene.ImageCursor;
 public class OptionsScreen extends BorderPane {
     private final Stage primaryStage;
     private final GameSettings settings;
+    private static final double CONTENT_SCALE = 0.85; // Scale factor for the options boards area
+    private static final double PREF_WRAP_HEIGHT = 700; // Approx unscaled height for 2 rows of boards
+    private static final int ICON_BUTTON_SIZE = 80; // Size for bottom icon buttons, increased from 64
 
     /**
      * Constructor for the options screen.
@@ -33,254 +38,202 @@ public class OptionsScreen extends BorderPane {
         this.primaryStage = primaryStage;
         this.settings = GameSettings.getInstance();
         initializeUI();
-        applyStyles();
-    }
-
-    /**
-     * Apply custom styles to the options screen.
-     */
-    private void applyStyles() {
-        // Add custom styles to the options screen
-        getStyleClass().add("options-screen");
-        setStyle("-fx-background-color: rgba(0, 0, 0, 0.8); -fx-padding: 20;");
-
-        // Apply styles to all elements
-        getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
     }
 
     /**
      * Initialize the user interface components.
      */
     private void initializeUI() {
-        setPadding(new Insets(20));
+        getStyleClass().add("options-screen");
 
-        // Create title
+        // --- Top Section (Title) ---
         Text titleText = new Text("Game Options");
         titleText.getStyleClass().add("screen-title");
-        titleText.setStyle("-fx-font-size: 32px; -fx-fill: white; -fx-font-weight: bold;");
-
-        // Create options grid
-        GridPane optionsGrid = createOptionsGrid();
-
-        // Wrap in scroll pane for many options
-        ScrollPane scrollPane = new ScrollPane(optionsGrid);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-
-        // Bottom buttons
-        HBox buttonBar = createButtonBar();
-
-        // Set up layout
-        VBox topSection = new VBox(20, titleText);
+        VBox topSection = new VBox(titleText);
         topSection.setAlignment(Pos.CENTER);
-
+        topSection.setMaxWidth(Double.MAX_VALUE);
+        topSection.setPadding(new Insets(20, 0, 0, 0)); // Added 20px top padding
         setTop(topSection);
-        setCenter(scrollPane);
-        setBottom(buttonBar);
+        BorderPane.setAlignment(topSection, Pos.CENTER);
+
+        // --- Center Section (FlowPane with Boards & Buttons below) ---
+        FlowPane optionsContainer = createOptionsContainer();
+        // optionsContainer.setMaxHeight(Region.USE_PREF_SIZE); // Remove,
+        // prefWrapLength will guide height
+
+        optionsContainer.setScaleX(CONTENT_SCALE);
+        optionsContainer.setScaleY(CONTENT_SCALE);
+
+        HBox buttonBar = createButtonBar(); // Buttons will be centered by the parent VBox
+
+        VBox centerContentVBox = new VBox(20 * CONTENT_SCALE); // Scale spacing too
+        centerContentVBox.setPadding(new Insets(20 * CONTENT_SCALE)); // Scale padding
+        centerContentVBox.setAlignment(Pos.CENTER); // Center FlowPane and ButtonBar horizontally
+        centerContentVBox.getChildren().addAll(optionsContainer, buttonBar);
+
+        setCenter(centerContentVBox);
     }
 
     /**
-     * Create the grid of option controls.
+     * Create the FlowPane container for option group boards.
      *
-     * @return the grid pane with options
+     * @return the FlowPane with option boards
      */
-    private GridPane createOptionsGrid() {
-        GridPane grid = new GridPane();
-        grid.setHgap(20);
-        grid.setVgap(20);
-        grid.setPadding(new Insets(20));
-        grid.setStyle("-fx-background-color: rgba(0, 0, 0, 0.5); -fx-background-radius: 10;");
+    private FlowPane createOptionsContainer() {
+        FlowPane flowPane = new FlowPane(Orientation.VERTICAL);
+        flowPane.setHgap(20); // Original Hgap, will be scaled visually
+        flowPane.setVgap(20); // Original Vgap, will be scaled visually
+        flowPane.setAlignment(Pos.TOP_CENTER); // Center columns of boards if they don't fill width
+        flowPane.getStyleClass().add("options-container-flowpane");
+        flowPane.setPrefWrapLength(PREF_WRAP_HEIGHT); // Set preferred height for wrapping columns
+        // flowPane.setPrefWrapLength(600); // Example: hint for wrapping height if
+        // needed
 
-        // Section: Wave Settings
-        addSectionHeader(grid, "Wave Settings", 0);
+        // --- Wave Settings Board ---
+        VBox waveSettingsBoard = createOptionGroupBoard("Wave Settings");
+        addNumberOption(waveSettingsBoard, "Total Waves:", settings.getTotalWaves(), 1, 30,
+                v -> settings.setTotalWaves(v));
+        addNumberOption(waveSettingsBoard, "Groups per Wave:", settings.getGroupsPerWave(), 1, 10,
+                v -> settings.setGroupsPerWave(v));
+        addNumberOption(waveSettingsBoard, "Enemies per Group:", settings.getEnemiesPerGroup(), 1, 20,
+                v -> settings.setEnemiesPerGroup(v));
+        addNumberOption(waveSettingsBoard, "Wave Delay (ms):", settings.getWaveDelay(), 1000, 20000,
+                v -> settings.setWaveDelay(v));
+        addNumberOption(waveSettingsBoard, "Group Delay (ms):", settings.getGroupDelay(), 500, 10000,
+                v -> settings.setGroupDelay(v));
+        addNumberOption(waveSettingsBoard, "Enemy Delay (ms):", settings.getEnemyDelay(), 100, 2000,
+                v -> settings.setEnemyDelay(v));
+        flowPane.getChildren().add(waveSettingsBoard);
 
-        int row = 1;
-        // Total number of waves
-        addNumberOption(grid, "Total Waves:", settings.getTotalWaves(), 1, 30,
-                value -> settings.setTotalWaves((int) value), row++);
+        // --- Enemy Composition Board ---
+        VBox enemyCompBoard = createOptionGroupBoard("Enemy Composition");
+        addNumberOption(enemyCompBoard, "Goblin Percentage:", settings.getGoblinPercentage(), 0, 100,
+                v -> settings.setGoblinPercentage(v));
+        flowPane.getChildren().add(enemyCompBoard);
 
-        // Groups per wave
-        addNumberOption(grid, "Groups per Wave:", settings.getGroupsPerWave(), 1, 10,
-                value -> settings.setGroupsPerWave((int) value), row++);
+        // --- Economy Board ---
+        VBox economyBoard = createOptionGroupBoard("Economy");
+        addNumberOption(economyBoard, "Starting Gold:", settings.getStartingGold(), 50, 500,
+                v -> settings.setStartingGold(v));
+        addNumberOption(economyBoard, "Gold per Goblin:", settings.getGoldPerGoblin(), 5, 50,
+                v -> settings.setGoldPerGoblin(v));
+        addNumberOption(economyBoard, "Gold per Knight:", settings.getGoldPerKnight(), 10, 100,
+                v -> settings.setGoldPerKnight(v));
+        flowPane.getChildren().add(economyBoard);
 
-        // Enemies per group
-        addNumberOption(grid, "Enemies per Group:", settings.getEnemiesPerGroup(), 1, 20,
-                value -> settings.setEnemiesPerGroup((int) value), row++);
+        // --- Player Stats Board ---
+        VBox playerStatsBoard = createOptionGroupBoard("Player Stats");
+        addNumberOption(playerStatsBoard, "Starting Lives:", settings.getStartingLives(), 1, 50,
+                v -> settings.setStartingLives(v));
+        flowPane.getChildren().add(playerStatsBoard);
 
-        // Wave delay
-        addNumberOption(grid, "Wave Delay (ms):", settings.getWaveDelay(), 1000, 20000,
-                value -> settings.setWaveDelay((int) value), row++);
+        // --- Enemy Stats Board ---
+        VBox enemyStatsBoard = createOptionGroupBoard("Enemy Stats");
+        addNumberOption(enemyStatsBoard, "Goblin Health:", settings.getGoblinHealth(), 10, 300,
+                v -> settings.setGoblinHealth(v));
+        addNumberOption(enemyStatsBoard, "Knight Health:", settings.getKnightHealth(), 20, 500,
+                v -> settings.setKnightHealth(v));
+        addNumberOption(enemyStatsBoard, "Goblin Speed:", settings.getGoblinSpeed(), 1, 10,
+                v -> settings.setGoblinSpeed(v));
+        addNumberOption(enemyStatsBoard, "Knight Speed:", settings.getKnightSpeed(), 1, 10,
+                v -> settings.setKnightSpeed(v));
+        flowPane.getChildren().add(enemyStatsBoard);
 
-        // Group delay
-        addNumberOption(grid, "Group Delay (ms):", settings.getGroupDelay(), 500, 10000,
-                value -> settings.setGroupDelay((int) value), row++);
+        // --- Tower Costs Board ---
+        VBox towerCostsBoard = createOptionGroupBoard("Tower Costs");
+        addNumberOption(towerCostsBoard, "Archer Tower Cost:", settings.getArcherTowerCost(), 10, 200,
+                v -> settings.setArcherTowerCost(v));
+        addNumberOption(towerCostsBoard, "Artillery Tower Cost:", settings.getArtilleryTowerCost(), 20, 300,
+                v -> settings.setArtilleryTowerCost(v));
+        addNumberOption(towerCostsBoard, "Mage Tower Cost:", settings.getMageTowerCost(), 15, 250,
+                v -> settings.setMageTowerCost(v));
+        flowPane.getChildren().add(towerCostsBoard);
 
-        // Enemy delay
-        addNumberOption(grid, "Enemy Delay (ms):", settings.getEnemyDelay(), 100, 2000,
-                value -> settings.setEnemyDelay((int) value), row++);
+        // --- Tower Damage Board ---
+        VBox towerDamageBoard = createOptionGroupBoard("Tower Damage");
+        addNumberOption(towerDamageBoard, "Archer Tower Damage:", settings.getArcherTowerDamage(), 5, 100,
+                v -> settings.setArcherTowerDamage(v));
+        addNumberOption(towerDamageBoard, "Artillery Tower Damage:", settings.getArtilleryTowerDamage(), 10, 150,
+                v -> settings.setArtilleryTowerDamage(v));
+        addNumberOption(towerDamageBoard, "Mage Tower Damage:", settings.getMageTowerDamage(), 8, 120,
+                v -> settings.setMageTowerDamage(v));
+        flowPane.getChildren().add(towerDamageBoard);
 
-        // Section: Enemy Composition
-        addSectionHeader(grid, "Enemy Composition", row++);
+        // --- Tower Range Board ---
+        VBox towerRangeBoard = createOptionGroupBoard("Tower Range");
+        addNumberOption(towerRangeBoard, "Archer Tower Range:", settings.getArcherTowerRange(), 50, 300,
+                v -> settings.setArcherTowerRange(v));
+        addNumberOption(towerRangeBoard, "Artillery Tower Range:", settings.getArtilleryTowerRange(), 40, 250,
+                v -> settings.setArtilleryTowerRange(v));
+        addNumberOption(towerRangeBoard, "Mage Tower Range:", settings.getMageTowerRange(), 45, 280,
+                v -> settings.setMageTowerRange(v));
+        addNumberOption(towerRangeBoard, "Artillery Tower AOE Range:", settings.getArtilleryAOERange(), 10, 100,
+                v -> settings.setArtilleryAOERange(v));
+        flowPane.getChildren().add(towerRangeBoard);
 
-        // Goblin percentage
-        addNumberOption(grid, "Goblin Percentage:", settings.getGoblinPercentage(), 0, 100,
-                value -> settings.setGoblinPercentage((int) value), row++);
+        // --- Tower Fire Rate Board ---
+        VBox towerFireRateBoard = createOptionGroupBoard("Tower Fire Rate");
+        addNumberOption(towerFireRateBoard, "Archer Tower Fire Rate (ms):", settings.getArcherTowerFireRate(), 500,
+                3000, v -> settings.setArcherTowerFireRate(v));
+        addNumberOption(towerFireRateBoard, "Artillery Tower Fire Rate (ms):", settings.getArtilleryTowerFireRate(),
+                1000, 5000, v -> settings.setArtilleryTowerFireRate(v));
+        addNumberOption(towerFireRateBoard, "Mage Tower Fire Rate (ms):", settings.getMageTowerFireRate(), 800, 4000,
+                v -> settings.setMageTowerFireRate(v));
+        flowPane.getChildren().add(towerFireRateBoard);
 
-        // Section: Economy
-        addSectionHeader(grid, "Economy", row++);
-
-        // Starting gold
-        addNumberOption(grid, "Starting Gold:", settings.getStartingGold(), 50, 500,
-                value -> settings.setStartingGold((int) value), row++);
-
-        // Gold per goblin
-        addNumberOption(grid, "Gold per Goblin:", settings.getGoldPerGoblin(), 5, 50,
-                value -> settings.setGoldPerGoblin((int) value), row++);
-
-        // Gold per knight
-        addNumberOption(grid, "Gold per Knight:", settings.getGoldPerKnight(), 10, 100,
-                value -> settings.setGoldPerKnight((int) value), row++);
-
-        // Section: Player Stats
-        addSectionHeader(grid, "Player Stats", row++);
-
-        // Starting hit points
-        addNumberOption(grid, "Starting Lives:", settings.getStartingLives(), 1, 50,
-                value -> settings.setStartingLives((int) value), row++);
-
-        // Section: Enemy Stats
-        addSectionHeader(grid, "Enemy Stats", row++);
-
-        // Goblin hit points
-        addNumberOption(grid, "Goblin Health:", settings.getGoblinHealth(), 10, 300,
-                value -> settings.setGoblinHealth((int) value), row++);
-
-        // Knight hit points
-        addNumberOption(grid, "Knight Health:", settings.getKnightHealth(), 20, 500,
-                value -> settings.setKnightHealth((int) value), row++);
-
-        // Goblin speed
-        addNumberOption(grid, "Goblin Speed:", settings.getGoblinSpeed(), 1, 10,
-                value -> settings.setGoblinSpeed((int) value), row++);
-
-        // Knight speed
-        addNumberOption(grid, "Knight Speed:", settings.getKnightSpeed(), 1, 10,
-                value -> settings.setKnightSpeed((int) value), row++);
-
-        // Section: Tower Stats
-        addSectionHeader(grid, "Tower Stats", row++);
-
-        // Archer tower cost
-        addNumberOption(grid, "Archer Tower Cost:", settings.getArcherTowerCost(), 10, 200,
-                value -> settings.setArcherTowerCost((int) value), row++);
-
-        // Artillery tower cost
-        addNumberOption(grid, "Artillery Tower Cost:", settings.getArtilleryTowerCost(), 20, 300,
-                value -> settings.setArtilleryTowerCost((int) value), row++);
-
-        // Mage tower cost
-        addNumberOption(grid, "Mage Tower Cost:", settings.getMageTowerCost(), 15, 250,
-                value -> settings.setMageTowerCost((int) value), row++);
-
-        // Archer tower damage
-        addNumberOption(grid, "Archer Tower Damage:", settings.getArcherTowerDamage(), 5, 100,
-                value -> settings.setArcherTowerDamage((int) value), row++);
-
-        // Artillery tower damage
-        addNumberOption(grid, "Artillery Tower Damage:", settings.getArtilleryTowerDamage(), 10, 150,
-                value -> settings.setArtilleryTowerDamage((int) value), row++);
-
-        // Mage tower damage
-        addNumberOption(grid, "Mage Tower Damage:", settings.getMageTowerDamage(), 8, 120,
-                value -> settings.setMageTowerDamage((int) value), row++);
-
-        // Archer tower range
-        addNumberOption(grid, "Archer Tower Range:", settings.getArcherTowerRange(), 50, 300,
-                value -> settings.setArcherTowerRange((int) value), row++);
-
-        // Artillery tower range
-        addNumberOption(grid, "Artillery Tower Range:", settings.getArtilleryTowerRange(), 40, 250,
-                value -> settings.setArtilleryTowerRange((int) value), row++);
-
-        // Mage tower range
-        addNumberOption(grid, "Mage Tower Range:", settings.getMageTowerRange(), 45, 280,
-                value -> settings.setMageTowerRange((int) value), row++);
-
-        // Artillery tower AOE range
-        addNumberOption(grid, "Artillery Tower AOE Range:", settings.getArtilleryAOERange(), 10, 100,
-                value -> settings.setArtilleryAOERange((int) value), row++);
-
-        // Archer tower rate of fire
-        addNumberOption(grid, "Archer Tower Fire Rate (ms):", settings.getArcherTowerFireRate(), 500, 3000,
-                value -> settings.setArcherTowerFireRate((int) value), row++);
-
-        // Artillery tower rate of fire
-        addNumberOption(grid, "Artillery Tower Fire Rate (ms):", settings.getArtilleryTowerFireRate(), 1000, 5000,
-                value -> settings.setArtilleryTowerFireRate((int) value), row++);
-
-        // Mage tower rate of fire
-        addNumberOption(grid, "Mage Tower Fire Rate (ms):", settings.getMageTowerFireRate(), 800, 4000,
-                value -> settings.setMageTowerFireRate((int) value), row++);
-
-        return grid;
+        return flowPane;
     }
 
     /**
-     * Add a section header to the grid.
-     *
-     * @param grid  the grid to add to
-     * @param title the section title
-     * @param row   the row to add at
+     * Creates a VBox styled as an option group board with a title.
+     * 
+     * @param title The title of the option group.
+     * @return A VBox configured as an option board.
      */
-    private void addSectionHeader(GridPane grid, String title, int row) {
+    private VBox createOptionGroupBoard(String title) {
+        VBox board = new VBox(15); // Original spacing, will be scaled visually
+        board.getStyleClass().add("options-group-board");
+
         Text headerText = new Text(title);
-        headerText.getStyleClass().add("options-section");
-        headerText.setStyle("-fx-font-size: 24px; -fx-fill: white; -fx-font-weight: bold; -fx-padding: 10 0;");
-        grid.add(headerText, 0, row, 2, 1);
+        headerText.getStyleClass().add("options-group-title");
+
+        VBox.setMargin(headerText, new Insets(0, 0, 10, 0)); // Original margin
+        board.getChildren().add(headerText);
+        return board;
     }
 
     /**
-     * Add a number option with slider to the grid.
+     * Add a number option with slider to the parent VBox (option board).
      *
-     * @param grid         the grid to add to
-     * @param label        the option label
+     * @param parentBoard  the VBox board to add to
+     * @param labelText    the option label
      * @param initialValue the initial value
      * @param min          the minimum value
      * @param max          the maximum value
      * @param setter       the setter method to call when value changes
-     * @param row          the row to add at
      */
-    private void addNumberOption(GridPane grid, String label, int initialValue, int min, int max,
-            SliderChangeListener setter, int row) {
-        // Label
-        Label optionLabel = new Label(label);
+    private void addNumberOption(VBox parentBoard, String labelText, int initialValue, int min, int max,
+            SliderChangeListener setter) {
+        Label optionLabel = new Label(labelText);
         optionLabel.getStyleClass().add("options-label");
-        optionLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: white;");
-        grid.add(optionLabel, 0, row);
 
-        // Current value display
         TextField valueField = new TextField(String.valueOf(initialValue));
-        valueField.setPrefWidth(80);
-        valueField
-                .setStyle("-fx-font-size: 16px; -fx-background-color: rgba(255, 255, 255, 0.2); -fx-text-fill: white;");
+        valueField.setPrefWidth(60); // Original, will scale
+        valueField.getStyleClass().add("options-value-field");
 
-        // Slider
         Slider slider = new Slider(min, max, initialValue);
-        slider.setPrefWidth(300);
         slider.setShowTickMarks(true);
         slider.setShowTickLabels(true);
-        slider.setMajorTickUnit((max - min) / 5);
+        slider.setMajorTickUnit(Math.max(1, (max - min) / 4.0)); // Original
         slider.setBlockIncrement(1);
-        slider.setStyle("-fx-font-size: 14px;");
+        slider.getStyleClass().add("options-slider");
 
-        // Update value field when slider changes
         slider.valueProperty().addListener((obs, oldValue, newValue) -> {
             int rounded = (int) Math.round(newValue.doubleValue());
             valueField.setText(String.valueOf(rounded));
             setter.setValue(rounded);
         });
 
-        // Update slider when value field changes
         valueField.setOnAction(e -> {
             try {
                 int value = Integer.parseInt(valueField.getText());
@@ -288,75 +241,66 @@ public class OptionsScreen extends BorderPane {
                     slider.setValue(value);
                     setter.setValue(value);
                 } else {
-                    // Reset to valid range if out of bounds
                     valueField.setText(String.valueOf((int) slider.getValue()));
                 }
             } catch (NumberFormatException ex) {
-                // Reset if not a valid number
                 valueField.setText(String.valueOf((int) slider.getValue()));
             }
         });
 
-        // Arrange in a horizontal box
-        HBox controlBox = new HBox(20, slider, valueField);
+        HBox controlBox = new HBox(10, slider, valueField); // Original spacing
         controlBox.setAlignment(Pos.CENTER_LEFT);
-        grid.add(controlBox, 1, row);
+
+        VBox optionLayout = new VBox(5, optionLabel, controlBox); // Original spacing
+        optionLayout.setPadding(new Insets(0, 0, 10, 0)); // Original padding
+        parentBoard.getChildren().add(optionLayout);
     }
 
-    /**
-     * Create the bottom button bar.
-     *
-     * @return the button bar container
-     */
     private HBox createButtonBar() {
-        Button saveButton = new Button("Save Settings");
-        saveButton.getStyleClass().add("action-button");
-        saveButton.setStyle("-fx-font-size: 16px; -fx-padding: 10 20;");
-        saveButton.setOnAction(e -> saveSettings());
-
-        Button defaultsButton = new Button("Reset to Defaults");
-        defaultsButton.getStyleClass().add("secondary-button");
-        defaultsButton.setStyle("-fx-font-size: 16px; -fx-padding: 10 20;");
-        defaultsButton.setOnAction(e -> resetToDefaults());
-
-        Button backButton = new Button("Back to Menu");
-        backButton.getStyleClass().add("secondary-button");
-        backButton.setStyle("-fx-font-size: 16px; -fx-padding: 10 20;");
+        // Tooltip text, icon column, icon row, icon display size
+        Button backButton = UIAssets.createIconButton("Back to Menu", 3, 0, ICON_BUTTON_SIZE);
+        // backButton.getStyleClass().addAll("secondary-button"); // Let UIAssets handle
+        // styling
         backButton.setOnAction(e -> goBack());
 
-        HBox buttonBar = new HBox(20, backButton, defaultsButton, saveButton);
-        buttonBar.setPadding(new Insets(20, 0, 0, 0));
-        buttonBar.setAlignment(Pos.CENTER_RIGHT);
+        Button defaultsButton = UIAssets.createIconButton("Reset to Defaults", 1, 0, ICON_BUTTON_SIZE);
+        // defaultsButton.getStyleClass().addAll("secondary-button");
+        defaultsButton.setOnAction(e -> resetToDefaults());
 
+        Button saveButton = UIAssets.createIconButton("Save Settings", 2, 0, ICON_BUTTON_SIZE);
+        // saveButton.getStyleClass().addAll("action-button");
+        saveButton.setOnAction(e -> saveSettings());
+
+        HBox buttonBar = new HBox(15 * CONTENT_SCALE, backButton, defaultsButton, saveButton);
+        buttonBar.setAlignment(Pos.CENTER);
         return buttonBar;
     }
 
-    /**
-     * Save the current settings.
-     */
     private void saveSettings() {
         settings.saveSettings();
         goBack();
     }
 
-    /**
-     * Reset all settings to default values.
-     */
     private void resetToDefaults() {
         settings.resetToDefaults();
-        // Refresh the screen to show defaults
-        primaryStage.setScene(new Scene(new OptionsScreen(primaryStage), 800, 600));
+        // Reload the options screen to reflect default values
+        OptionsScreen newOptionsScreen = new OptionsScreen(primaryStage);
+        Scene newScene = new Scene(newOptionsScreen, primaryStage.getScene().getWidth(),
+                primaryStage.getScene().getHeight());
+        newScene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+
+        ImageCursor customCursor = UIAssets.getCustomCursor();
+        if (customCursor != null) {
+            newScene.setCursor(customCursor);
+        }
+        primaryStage.setScene(newScene);
     }
 
-    /**
-     * Go back to the main menu.
-     */
     private void goBack() {
         MainMenuScreen mainMenu = new MainMenuScreen(primaryStage);
         Scene mainMenuScene = new Scene(mainMenu, primaryStage.getWidth(), primaryStage.getHeight());
         mainMenuScene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
 
-        // Set custom cursor if available
         ImageCursor customCursor = UIAssets.getCustomCursor();
         if (customCursor != null) {
             mainMenuScene.setCursor(customCursor);
@@ -365,9 +309,7 @@ public class OptionsScreen extends BorderPane {
         primaryStage.setScene(mainMenuScene);
     }
 
-    /**
-     * Interface for slider change listeners.
-     */
+    @FunctionalInterface
     private interface SliderChangeListener {
         void setValue(int value);
     }
