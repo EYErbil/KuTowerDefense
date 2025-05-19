@@ -43,7 +43,6 @@ import java.util.List;
  * The main game screen where the tower defense gameplay takes place.
  */
 
-
 public class GameScreen extends BorderPane {
     private final Stage primaryStage;
     private final GameController gameController;
@@ -57,14 +56,15 @@ public class GameScreen extends BorderPane {
     private final Affine worldTransform = new Affine();
     private Node activePopup = null;
     private static final double POPUP_ICON_SIZE = 36.0;
-    // private static final double POPUP_SPACING = 5.0; // Not currently used, can be removed or kept for future
+    // private static final double POPUP_SPACING = 5.0; // Not currently used, can
+    // be removed or kept for future
 
     // Game world and UI constants
     private static final double TILE_SIZE = 64.0;
     private static final double HALF_TILE_SIZE = TILE_SIZE / 2.0;
     private static final double BUILD_POPUP_RADIUS = 60.0;
     private static final double UPGRADE_SELL_POPUP_RADIUS = 60.0;
-    
+
     // Zoom and Pan state
     private double currentZoomLevel = 1.5;
     private double minZoom = 0.2; // Adjusted for potentially large maps, was 0.25
@@ -76,28 +76,34 @@ public class GameScreen extends BorderPane {
     private double lastMouseYForPan;
     private boolean dragOccurred = false; // New flag
     private double currentEffectiveScale = 1.0; // Added for drag handler to use renderer's scale
-    
+
     private Label goldLabel;
     private Label livesLabel;
     private Label waveLabel;
     private ImageView goldIcon;
     private ImageView livesIcon;
     private ImageView waveIcon;
-    
+
     private Button pauseResumeButton;
     private Button gameSpeedButton;
-    
+
     // Define TowerBuildOption as a private static nested class
     private static class TowerBuildOption {
         String name;
         int cost;
         int iconCol, iconRow;
         java.util.function.Supplier<Tower> constructor;
-        TowerBuildOption(String name, int cost, int iconCol, int iconRow, java.util.function.Supplier<Tower> constructor) {
-            this.name = name; this.cost = cost; this.iconCol = iconCol; this.iconRow = iconRow; this.constructor = constructor;
+
+        TowerBuildOption(String name, int cost, int iconCol, int iconRow,
+                java.util.function.Supplier<Tower> constructor) {
+            this.name = name;
+            this.cost = cost;
+            this.iconCol = iconCol;
+            this.iconRow = iconRow;
+            this.constructor = constructor;
         }
     }
-    
+
     // Custom AnimationTimer class with additional methods
     private class GameRenderTimer extends AnimationTimer {
         private long lastTime = -1;
@@ -106,7 +112,7 @@ public class GameScreen extends BorderPane {
         private double mouseX = 0;
         private double mouseY = 0;
         private boolean mouseInCanvas = false;
-        
+
         @Override
         public void handle(long now) {
             GraphicsContext gc = gameCanvas.getGraphicsContext2D();
@@ -118,7 +124,8 @@ public class GameScreen extends BorderPane {
             double worldHeight = gameController.getGameMap().getHeight() * TILE_SIZE;
 
             // --- Calculate Scaling and Centering ---
-            // This baseScale ensures the whole map is visible when zoom is 1.0 and no panning (or panned to center)
+            // This baseScale ensures the whole map is visible when zoom is 1.0 and no
+            // panning (or panned to center)
             double baseScaleX = canvasWidth / worldWidth;
             double baseScaleY = canvasHeight / worldHeight;
             double baseScale = Math.min(baseScaleX, baseScaleY); // Maintain aspect ratio for the 'default' view
@@ -132,10 +139,10 @@ public class GameScreen extends BorderPane {
             worldTransform.appendTranslation(canvasWidth / 2.0, canvasHeight / 2.0);
             // 2. Apply zoom
             worldTransform.appendScale(effectiveScale, effectiveScale);
-            // 3. Apply pan (panX and panY are world coordinates that should be at the center)
+            // 3. Apply pan (panX and panY are world coordinates that should be at the
+            // center)
             worldTransform.appendTranslation(-panX, -panY);
             // --- End Scaling and Centering ---
-
 
             // --- Rendering ---
             gc.save(); // Save default transform state
@@ -158,15 +165,16 @@ public class GameScreen extends BorderPane {
 
                 if (worldMouse != null) {
                     // Convert world coordinates to grid coordinates
-                    int tileX = (int)(worldMouse.getX() / TILE_SIZE);
-                    int tileY = (int)(worldMouse.getY() / TILE_SIZE);
+                    int tileX = (int) (worldMouse.getX() / TILE_SIZE);
+                    int tileY = (int) (worldMouse.getY() / TILE_SIZE);
 
                     // Get center of the tile in world coordinates
                     double centerX = tileX * TILE_SIZE + HALF_TILE_SIZE;
                     double centerY = tileY * TILE_SIZE + HALF_TILE_SIZE;
 
                     // Check if we can place here (uses world coordinates)
-                    boolean canPlace = gameController.getGameMap().canPlaceTower(centerX, centerY, gameController.getTowers());
+                    boolean canPlace = gameController.getGameMap().canPlaceTower(centerX, centerY,
+                            gameController.getTowers());
 
                     // Draw preview circle in world coordinates
                     gc.setGlobalAlpha(0.5);
@@ -178,12 +186,15 @@ public class GameScreen extends BorderPane {
                     gc.setStroke(javafx.scene.paint.Color.WHITE);
                     gc.setGlobalAlpha(0.2);
                     double range = 0;
-                    if (selectedTower instanceof ArcherTower) range = ((ArcherTower)selectedTower).getRange();
-                    else if (selectedTower instanceof ArtilleryTower) range = ((ArtilleryTower)selectedTower).getRange();
-                    else if (selectedTower instanceof MageTower) range = ((MageTower)selectedTower).getRange();
+                    if (selectedTower instanceof ArcherTower)
+                        range = ((ArcherTower) selectedTower).getRange();
+                    else if (selectedTower instanceof ArtilleryTower)
+                        range = ((ArtilleryTower) selectedTower).getRange();
+                    else if (selectedTower instanceof MageTower)
+                        range = ((MageTower) selectedTower).getRange();
 
                     if (range > 0) {
-                       gc.strokeOval(centerX - range, centerY - range, range * 2, range * 2);
+                        gc.strokeOval(centerX - range, centerY - range, range * 2, range * 2);
                     }
                     gc.setGlobalAlpha(1.0);
                 }
@@ -193,12 +204,13 @@ public class GameScreen extends BorderPane {
 
             // --- Update game logic ---
             if (!isPaused) {
-                if (lastTime < 0) lastTime = now;
+                if (lastTime < 0)
+                    lastTime = now;
                 double deltaTime = (now - lastTime) / 1_000_000_000.0;
                 lastTime = now;
                 gameController.update(deltaTime);
             } else {
-                 lastTime = -1; // Reset delta time calculation when paused
+                lastTime = -1; // Reset delta time calculation when paused
             }
 
             // --- UI Overlays (drawn directly on canvas, not scaled) ---
@@ -219,7 +231,8 @@ public class GameScreen extends BorderPane {
             gc.setFill(javafx.scene.paint.Color.WHITE);
             gc.fillText("Towers: " + gameController.getTowers().size(), 10, 20); // Keep for debug
             gc.fillText("Enemies: " + gameController.getEnemies().size(), 10, 40); // Keep for debug
-            // gc.fillText("Wave: " + gameController.getCurrentWave(), 10, 60); // MOVED TO TOP BAR
+            // gc.fillText("Wave: " + gameController.getCurrentWave(), 10, 60); // MOVED TO
+            // TOP BAR
 
             // Asset loading issue message
             if (!gameController.getTowers().isEmpty() && gameController.getTowers().get(0).getImage() == null) {
@@ -228,14 +241,14 @@ public class GameScreen extends BorderPane {
                 gc.fillText("Using fallback rendering instead", 10, 100);
             }
         }
-        
+
         // Method to set mouse position
         public void setMousePosition(double x, double y, boolean inCanvas) {
             this.mouseX = x;
             this.mouseY = y;
             this.mouseInCanvas = inCanvas;
         }
-        
+
         // Method to set status message
         public void setStatusMessage(String message) {
             this.statusMessage = message;
@@ -246,7 +259,7 @@ public class GameScreen extends BorderPane {
     /**
      * Constructor for the game screen.
      *
-     * @param primaryStage the primary stage of the application
+     * @param primaryStage   the primary stage of the application
      * @param gameController the game controller
      */
     public GameScreen(Stage primaryStage, GameController gameController) {
@@ -260,32 +273,36 @@ public class GameScreen extends BorderPane {
         initializeUI();
         startRenderLoop();
     }
-    
+
     /**
      * Initialize the user interface components.
      */
     private void initializeUI() {
         getStyleClass().add("game-screen");
-        
+
         HBox topBar = createTopBar();
         gameCanvas = new Canvas(); // Canvas takes available space
 
-        // Configure uiOverlayPane to sit on top of the canvas and not intercept mouse events
+        // Configure uiOverlayPane to sit on top of the canvas and not intercept mouse
+        // events
         // unless a UI element (like a popup) is present and interactive.
-        uiOverlayPane.setPickOnBounds(false); 
+        uiOverlayPane.setPickOnBounds(false);
         uiOverlayPane.prefWidthProperty().bind(gameCanvas.widthProperty());
         uiOverlayPane.prefHeightProperty().bind(gameCanvas.heightProperty());
 
-        // Listen for clicks on the uiOverlayPane to close popups if the click is not on a popup itself
+        // Listen for clicks on the uiOverlayPane to close popups if the click is not on
+        // a popup itself
         uiOverlayPane.setOnMouseClicked(event -> {
             if (activePopup != null && !event.isConsumed()) {
                 // Check if the click was outside the bounds of the activePopup
-                // This is a simple check; more robust might be needed if popups are complex shapes
+                // This is a simple check; more robust might be needed if popups are complex
+                // shapes
                 boolean clickOutsidePopup = true;
                 if (activePopup.getBoundsInParent().contains(event.getX(), event.getY())) {
                     clickOutsidePopup = false;
                 }
-                // Also, if the event target is the uiOverlayPane itself, it means no specific UI element was clicked
+                // Also, if the event target is the uiOverlayPane itself, it means no specific
+                // UI element was clicked
                 if (event.getTarget() == uiOverlayPane && clickOutsidePopup) {
                     clearActivePopup();
                 }
@@ -297,29 +314,35 @@ public class GameScreen extends BorderPane {
 
         setTop(topBar);
         setCenter(canvasRootPane); // Use the StackPane here
-        // REMOVE SIDEBAR - setRight(createSidebar()); 
+        // REMOVE SIDEBAR - setRight(createSidebar());
 
         // Resize canvas when the GameScreen (BorderPane) size changes.
-        // Bind canvas size to the StackPane's size, which is in the center of BorderPane.
+        // Bind canvas size to the StackPane's size, which is in the center of
+        // BorderPane.
         gameCanvas.widthProperty().bind(canvasRootPane.widthProperty());
         gameCanvas.heightProperty().bind(canvasRootPane.heightProperty());
 
         // Mouse event handling on gameCanvas (remains the same from previous state)
         gameCanvas.setOnMouseMoved(e -> renderTimer.setMousePosition(e.getX(), e.getY(), true));
         gameCanvas.setOnMouseExited(e -> renderTimer.setMousePosition(e.getX(), e.getY(), false));
-        gameCanvas.setOnScroll(event -> { /* ... existing zoom logic ... */ });
-        gameCanvas.setOnMousePressed(event -> { /* ... existing pan logic ... */ });
-        gameCanvas.setOnMouseDragged(event -> { /* ... existing pan logic ... */ });
-        gameCanvas.setOnMouseReleased(event -> { /* ... existing pan logic ... */ });
+        gameCanvas.setOnScroll(event -> {
+            /* ... existing zoom logic ... */ });
+        gameCanvas.setOnMousePressed(event -> {
+            /* ... existing pan logic ... */ });
+        gameCanvas.setOnMouseDragged(event -> {
+            /* ... existing pan logic ... */ });
+        gameCanvas.setOnMouseReleased(event -> {
+            /* ... existing pan logic ... */ });
 
         gameCanvas.setOnMouseClicked(e -> {
-            if (dragOccurred) { 
-                dragOccurred = false; 
+            if (dragOccurred) {
+                dragOccurred = false;
                 e.consume();
                 System.out.println("[GameScreen] Click ignored due to drag.");
                 return;
             }
-            System.out.println("[GameScreen] Canvas clicked. Screen Coords: (" + e.getX() + "," + e.getY() + ") Button: " + e.getButton());
+            System.out.println("[GameScreen] Canvas clicked. Screen Coords: (" + e.getX() + "," + e.getY()
+                    + ") Button: " + e.getButton());
 
             javafx.geometry.Point2D worldCoord = transformMouseCoords(e.getX(), e.getY());
             if (worldCoord == null) {
@@ -331,12 +354,14 @@ public class GameScreen extends BorderPane {
             double worldY = worldCoord.getY();
             int tileX = (int) (worldX / TILE_SIZE);
             int tileY = (int) (worldY / TILE_SIZE);
-            System.out.println("[GameScreen] World Coords: (" + worldX + "," + worldY + ") -> Tile: (" + tileX + "," + tileY + ")");
+            System.out.println("[GameScreen] World Coords: (" + worldX + "," + worldY + ") -> Tile: (" + tileX + ","
+                    + tileY + ")");
 
-            Point2D tileCenterWorld = new Point2D(tileX * TILE_SIZE + HALF_TILE_SIZE, tileY * TILE_SIZE + HALF_TILE_SIZE);
+            Point2D tileCenterWorld = new Point2D(tileX * TILE_SIZE + HALF_TILE_SIZE,
+                    tileY * TILE_SIZE + HALF_TILE_SIZE);
             Point2D tileCenterScreen = worldTransform.transform(tileCenterWorld);
 
-            boolean actionTaken = false; 
+            boolean actionTaken = false;
 
             // --- Check for Gold Bag Click FIRST ---
             if (e.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
@@ -346,8 +371,8 @@ public class GameScreen extends BorderPane {
                     DroppedGold bag = bags.get(i);
                     // Check if click (worldX, worldY) is within bag's bounds
                     if (worldX >= bag.getX() && worldX <= (bag.getX() + bag.getWidth()) &&
-                        worldY >= bag.getY() && worldY <= (bag.getY() + bag.getHeight())) {
-                        
+                            worldY >= bag.getY() && worldY <= (bag.getY() + bag.getHeight())) {
+
                         gameController.collectGoldBag(bag); // Controller handles adding gold and removing bag
                         renderTimer.setStatusMessage("Collected " + bag.getGoldAmount() + " Gold!");
                         actionTaken = true;
@@ -365,14 +390,18 @@ public class GameScreen extends BorderPane {
 
             // --- Tower/Tile Click Logic (existing) ---
             if (e.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
-                System.out.println("[GameScreen] Primary click. Attempting to find tower at world: (" + worldX + "," + worldY + ")");
+                System.out.println("[GameScreen] Primary click. Attempting to find tower at world: (" + worldX + ","
+                        + worldY + ")");
                 Tower existingTower = gameController.getTowerAt(worldX, worldY);
-                System.out.println("[GameScreen] gameController.getTowerAt returned: " + (existingTower != null ? existingTower.getName() : "null"));
+                System.out.println("[GameScreen] gameController.getTowerAt returned: "
+                        + (existingTower != null ? existingTower.getName() : "null"));
 
                 if (existingTower != null) {
-                    System.out.println("[GameScreen] Existing tower found: " + existingTower.getName() + ". Showing upgrade/sell popup.");
+                    System.out.println("[GameScreen] Existing tower found: " + existingTower.getName()
+                            + ". Showing upgrade/sell popup.");
                     clearActivePopup();
-                    createUpgradeSellPopup(tileCenterScreen.getX(), tileCenterScreen.getY(), existingTower, tileX, tileY);
+                    createUpgradeSellPopup(tileCenterScreen.getX(), tileCenterScreen.getY(), existingTower, tileX,
+                            tileY);
                     actionTaken = true;
                 } else {
                     System.out.println("[GameScreen] No existing tower found by getTowerAt. Checking tile type.");
@@ -390,18 +419,19 @@ public class GameScreen extends BorderPane {
                         }
                     } else {
                         System.out.println("[GameScreen] Clicked tile is null. Clearing active popup.");
-                        clearActivePopup(); 
+                        clearActivePopup();
                     }
                 }
             } else if (e.getButton() == javafx.scene.input.MouseButton.SECONDARY) {
-                 System.out.println("[GameScreen] Secondary click. Clearing active popup.");
-                 clearActivePopup();
-            } 
+                System.out.println("[GameScreen] Secondary click. Clearing active popup.");
+                clearActivePopup();
+            }
 
-            // No explicit consume here, let existing logic decide or consume at the end if needed
+            // No explicit consume here, let existing logic decide or consume at the end if
+            // needed
             // if (actionTakenOnTowerOrTile) { e.consume(); }
         });
-        
+
         // Initialize and start the top bar update timer
         topBarUpdateTimer = new AnimationTimer() {
             @Override
@@ -411,7 +441,7 @@ public class GameScreen extends BorderPane {
         };
         topBarUpdateTimer.start();
     }
-    
+
     /**
      * Create the top bar with game information.
      *
@@ -420,7 +450,7 @@ public class GameScreen extends BorderPane {
     private HBox createTopBar() {
         HBox topBar = new HBox(15); // Increased spacing a bit
         topBar.setPadding(new Insets(10, 15, 10, 15));
-    topBar.setAlignment(Pos.CENTER_LEFT);
+        topBar.setAlignment(Pos.CENTER_LEFT);
         topBar.getStyleClass().add("game-top-bar");
 
         Image hudIconsSheet = UIAssets.getImage("Coin_Health_Wave");
@@ -435,14 +465,15 @@ public class GameScreen extends BorderPane {
         goldIcon.setFitHeight(displayIconSize);
         goldIcon.setPreserveRatio(true); // Added to maintain aspect ratio
         goldIcon.setSmooth(true);
-        goldLabel = new Label(); 
+        goldLabel = new Label();
         goldLabel.getStyleClass().add("game-info-text");
         HBox goldDisplay = new HBox(8, goldIcon, goldLabel); // Adjusted spacing
         goldDisplay.setAlignment(Pos.CENTER_LEFT);
 
         // Lives Display
         livesIcon = new ImageView(hudIconsSheet);
-        livesIcon.setViewport(new javafx.geometry.Rectangle2D(0, iconSheetEntryHeight, iconSheetEntryWidth, iconSheetEntryHeight));
+        livesIcon.setViewport(
+                new javafx.geometry.Rectangle2D(0, iconSheetEntryHeight, iconSheetEntryWidth, iconSheetEntryHeight));
         livesIcon.setFitWidth(displayIconSize);
         livesIcon.setFitHeight(displayIconSize);
         livesIcon.setPreserveRatio(true); // Added
@@ -451,10 +482,11 @@ public class GameScreen extends BorderPane {
         livesLabel.getStyleClass().add("game-info-text");
         HBox livesDisplay = new HBox(8, livesIcon, livesLabel); // Adjusted spacing
         livesDisplay.setAlignment(Pos.CENTER_LEFT);
-        
+
         // Wave Display
         waveIcon = new ImageView(hudIconsSheet);
-        waveIcon.setViewport(new javafx.geometry.Rectangle2D(0, iconSheetEntryHeight * 2, iconSheetEntryWidth, iconSheetEntryHeight));
+        waveIcon.setViewport(new javafx.geometry.Rectangle2D(0, iconSheetEntryHeight * 2, iconSheetEntryWidth,
+                iconSheetEntryHeight));
         waveIcon.setFitWidth(displayIconSize);
         waveIcon.setFitHeight(displayIconSize);
         waveIcon.setPreserveRatio(true); // Added
@@ -484,7 +516,8 @@ public class GameScreen extends BorderPane {
         gameSpeedButton.getStyleClass().addAll("button", "secondary-button");
         gameSpeedButton.setOnAction(e -> toggleGameSpeed());
 
-        topBar.getChildren().addAll(goldDisplay, livesDisplay, waveDisplay, spacer, pauseResumeButton, menuButton, gameSpeedButton);
+        topBar.getChildren().addAll(goldDisplay, livesDisplay, waveDisplay, spacer, pauseResumeButton, menuButton,
+                gameSpeedButton);
         return topBar;
     }
 
@@ -508,27 +541,28 @@ public class GameScreen extends BorderPane {
             gameSpeedButton.setText(gameController.isSpeedAccelerated() ? "Speed (2x)" : "Speed (1x)");
         }
     }
-    
+
     /**
      * Start the render loop for the game canvas.
      */
     private void startRenderLoop() {
         renderTimer = new GameRenderTimer();
         renderTimer.start();
-        
+
         // Add mouse moved listener to track position
         // gameCanvas.setOnMouseMoved(e -> { // REMOVED - Already set in initializeUI
-        //     renderTimer.setMousePosition(e.getX(), e.getY(), true);
+        // renderTimer.setMousePosition(e.getX(), e.getY(), true);
         // });
-        
+
         // Track when mouse exits canvas
         // gameCanvas.setOnMouseExited(e -> { // REMOVED - Already set in initializeUI
-        //     renderTimer.setMousePosition(0, 0, false);
+        // renderTimer.setMousePosition(0, 0, false);
         // });
     }
 
     /**
      * Transforms mouse coordinates from Canvas space to World space.
+     * 
      * @param canvasX Mouse X relative to canvas.
      * @param canvasY Mouse Y relative to canvas.
      * @return Point2D in world coordinates, or null if transform is invalid.
@@ -553,13 +587,14 @@ public class GameScreen extends BorderPane {
 
             FadeTransition ft = new FadeTransition(Duration.millis(150), popupNodeBeingCleared);
             // ft.setFromValue(1.0); // Assuming opacity is 1.0 when clearing
-            ft.setFromValue(popupNodeBeingCleared.getOpacity()); // Fade from current opacity, good if it could be non-1.0
+            ft.setFromValue(popupNodeBeingCleared.getOpacity()); // Fade from current opacity, good if it could be
+                                                                 // non-1.0
             ft.setToValue(0.0);
             ft.setOnFinished(event -> {
                 uiOverlayPane.getChildren().remove(popupNodeBeingCleared);
                 // Optional: Reset mouseTransparent if the node were to be reused,
                 // but it's being removed from the scene graph, so not strictly necessary.
-                // popupNodeBeingCleared.setMouseTransparent(false); 
+                // popupNodeBeingCleared.setMouseTransparent(false);
             });
             ft.play();
         }
@@ -568,14 +603,16 @@ public class GameScreen extends BorderPane {
     private void createBuildTowerPopup(double centerXScreen, double centerYScreen, int tileX, int tileY) {
         clearActivePopup();
         Pane popupPane = new Pane();
-        popupPane.setPickOnBounds(false); 
+        popupPane.setPickOnBounds(false);
 
         List<TowerBuildOption> options = new ArrayList<>();
-        // Ensure ArcherTower, MageTower, ArtilleryTower have public static int BASE_COST;
-        options.add(new TowerBuildOption("Archer Tower", ArcherTower.BASE_COST, 0, 2, () -> new ArcherTower(0,0) ));
-        options.add(new TowerBuildOption("Mage Tower", MageTower.BASE_COST, 2, 2, () -> new MageTower(0,0) ));
-        options.add(new TowerBuildOption("Artillery Tower", ArtilleryTower.BASE_COST, 3, 2, () -> new ArtilleryTower(0,0) ));
-        options.add(new TowerBuildOption("Close", 0, 3,0, null));
+        // Ensure ArcherTower, MageTower, ArtilleryTower have public static int
+        // BASE_COST;
+        options.add(new TowerBuildOption("Archer Tower", ArcherTower.BASE_COST, 0, 2, () -> new ArcherTower(0, 0)));
+        options.add(new TowerBuildOption("Mage Tower", MageTower.BASE_COST, 2, 2, () -> new MageTower(0, 0)));
+        options.add(new TowerBuildOption("Artillery Tower", ArtilleryTower.BASE_COST, 3, 2,
+                () -> new ArtilleryTower(0, 0)));
+        options.add(new TowerBuildOption("Close", 0, 3, 0, null));
 
         int numOptions = options.size();
         double angleStep = 360.0 / numOptions;
@@ -583,10 +620,13 @@ public class GameScreen extends BorderPane {
         for (int i = 0; i < numOptions; i++) {
             TowerBuildOption opt = options.get(i);
             double angle = (i * angleStep) - 90; // Start at top (-90 degrees)
-            double buttonX = centerXScreen + BUILD_POPUP_RADIUS * Math.cos(Math.toRadians(angle)) - POPUP_ICON_SIZE / 2.0;
-            double buttonY = centerYScreen + BUILD_POPUP_RADIUS * Math.sin(Math.toRadians(angle)) - POPUP_ICON_SIZE / 2.0;
+            double buttonX = centerXScreen + BUILD_POPUP_RADIUS * Math.cos(Math.toRadians(angle))
+                    - POPUP_ICON_SIZE / 2.0;
+            double buttonY = centerYScreen + BUILD_POPUP_RADIUS * Math.sin(Math.toRadians(angle))
+                    - POPUP_ICON_SIZE / 2.0;
 
-            Button button = UIAssets.createIconButton(opt.name + (opt.cost > 0 ? " (Cost: " + opt.cost + ")" : ""), opt.iconCol, opt.iconRow, POPUP_ICON_SIZE);
+            Button button = UIAssets.createIconButton(opt.name + (opt.cost > 0 ? " (Cost: " + opt.cost + ")" : ""),
+                    opt.iconCol, opt.iconRow, POPUP_ICON_SIZE);
             button.setLayoutX(buttonX);
             button.setLayoutY(buttonY);
 
@@ -605,19 +645,24 @@ public class GameScreen extends BorderPane {
             }
             popupPane.getChildren().add(button);
         }
-        
+
         activePopup = popupPane;
         uiOverlayPane.getChildren().add(activePopup);
         // Apply animation
         FadeTransition ft = new FadeTransition(Duration.millis(200), activePopup);
-        ft.setFromValue(0.0); ft.setToValue(1.0);
+        ft.setFromValue(0.0);
+        ft.setToValue(1.0);
         ScaleTransition st = new ScaleTransition(Duration.millis(200), activePopup);
-        st.setFromX(0.7); st.setFromY(0.7); st.setToX(1.0); st.setToY(1.0);
+        st.setFromX(0.7);
+        st.setFromY(0.7);
+        st.setToX(1.0);
+        st.setToY(1.0);
         ParallelTransition pt = new ParallelTransition(ft, st);
         pt.play();
     }
 
-    private void createUpgradeSellPopup(double centerXScreen, double centerYScreen, Tower existingTower, int tileX, int tileY) {
+    private void createUpgradeSellPopup(double centerXScreen, double centerYScreen, Tower existingTower, int tileX,
+            int tileY) {
         clearActivePopup();
         Pane popupPane = new Pane();
         popupPane.setPickOnBounds(false);
@@ -638,7 +683,7 @@ public class GameScreen extends BorderPane {
             }
 
             Button upgradeButton = UIAssets.createIconButton(upgradeText, 1, 2, POPUP_ICON_SIZE); // Upgrade icon (1,2)
-            
+
             if (canAfford) {
                 upgradeButton.setOnAction(e -> {
                     boolean upgraded = gameController.upgradeTower(existingTower, tileX, tileY);
@@ -652,12 +697,14 @@ public class GameScreen extends BorderPane {
                 // Optionally add a specific style class for better visual indication
                 // e.g., upgradeButton.getStyleClass().add("disabled-upgrade-button");
                 // Tooltip could also indicate why it's disabled
-                upgradeButton.setTooltip(new javafx.scene.control.Tooltip("Not enough gold! Needs: " + upgradeCost + "G"));
+                upgradeButton
+                        .setTooltip(new javafx.scene.control.Tooltip("Not enough gold! Needs: " + upgradeCost + "G"));
             }
             buttons.add(upgradeButton);
         }
         // Sell Button
-        Button sellButton = UIAssets.createIconButton("Sell (+" + existingTower.getSellRefund() + "G)", 1, 0, POPUP_ICON_SIZE); // Sell icon (1,0)
+        Button sellButton = UIAssets.createIconButton("Sell (+" + existingTower.getSellRefund() + "G)", 1, 0,
+                POPUP_ICON_SIZE); // Sell icon (1,0)
         sellButton.setOnAction(e -> {
             gameController.sellTower(tileX, tileY);
             clearActivePopup();
@@ -674,29 +721,35 @@ public class GameScreen extends BorderPane {
         buttons.add(closeButton);
 
         int numButtons = buttons.size();
-        double angleStep = numButtons > 1 ? ( (numButtons == 2) ? 60 : 360.0 / numButtons ) : 0; // Adjust for few buttons
-        if (numButtons == 2) angleStart = -120; // Adjust start angle for 2 buttons to be bottom-ish
-        if (numButtons == 3 && buttons.get(0).getTooltip().getText().startsWith("Upgrade")) angleStart = -90; // Standard for 3
-        else if (numButtons == 2 && buttons.get(0).getTooltip().getText().startsWith("Sell")) angleStart = -60; // Only sell and close, put them side by side nicely
-
+        double angleStep = numButtons > 1 ? ((numButtons == 2) ? 60 : 360.0 / numButtons) : 0; // Adjust for few buttons
+        if (numButtons == 2)
+            angleStart = -120; // Adjust start angle for 2 buttons to be bottom-ish
+        if (numButtons == 3 && buttons.get(0).getTooltip().getText().startsWith("Upgrade"))
+            angleStart = -90; // Standard for 3
+        else if (numButtons == 2 && buttons.get(0).getTooltip().getText().startsWith("Sell"))
+            angleStart = -60; // Only sell and close, put them side by side nicely
 
         for (int i = 0; i < numButtons; i++) {
             Button button = buttons.get(i);
-            double angle = angleStart + (i * angleStep) ;
+            double angle = angleStart + (i * angleStep);
             double buttonX = centerXScreen + radius * Math.cos(Math.toRadians(angle)) - POPUP_ICON_SIZE / 2.0;
             double buttonY = centerYScreen + radius * Math.sin(Math.toRadians(angle)) - POPUP_ICON_SIZE / 2.0;
             button.setLayoutX(buttonX);
             button.setLayoutY(buttonY);
             popupPane.getChildren().add(button);
         }
-        
+
         activePopup = popupPane;
         uiOverlayPane.getChildren().add(activePopup);
         // Apply animation
         FadeTransition ft = new FadeTransition(Duration.millis(150), activePopup);
-        ft.setFromValue(0.0); ft.setToValue(1.0);
+        ft.setFromValue(0.0);
+        ft.setToValue(1.0);
         ScaleTransition st = new ScaleTransition(Duration.millis(150), activePopup);
-        st.setFromX(0.7); st.setFromY(0.7); st.setToX(1.0); st.setToY(1.0);
+        st.setFromX(0.7);
+        st.setFromY(0.7);
+        st.setToX(1.0);
+        st.setToY(1.0);
         st.setInterpolator(javafx.animation.Interpolator.EASE_OUT);
         ParallelTransition pt = new ParallelTransition(ft, st);
         pt.play();
@@ -737,7 +790,11 @@ public class GameScreen extends BorderPane {
         settingsPopup.setPadding(new Insets(20));
         settingsPopup.setAlignment(Pos.CENTER);
         settingsPopup.getStyleClass().add("options-section"); // Reuse style for consistent look
-        settingsPopup.setStyle("-fx-background-color: rgba(30, 30, 30, 0.95); -fx-border-color: #555; -fx-border-width: 2;"); // More distinct popup style
+        settingsPopup
+                .setStyle("-fx-background-color: rgba(30, 30, 30, 0.95); -fx-border-color: #555; -fx-border-width: 2;"); // More
+                                                                                                                         // distinct
+                                                                                                                         // popup
+                                                                                                                         // style
 
         Label title = new Label("Game Menu");
         title.getStyleClass().add("options-title"); // Reuse style
@@ -766,7 +823,7 @@ public class GameScreen extends BorderPane {
             clearActivePopup();
             e.consume();
         });
-        
+
         Button resumeButton = new Button("Resume Game");
         resumeButton.getStyleClass().addAll("button", "secondary-button");
         resumeButton.setPrefWidth(200);
@@ -781,12 +838,19 @@ public class GameScreen extends BorderPane {
         mainMenuButton.setOnAction(e -> {
             stop(); // Stop game screen timers and controller game loop
             MainMenuScreen mainMenu = new MainMenuScreen(primaryStage);
-            Scene scene = new Scene(mainMenu, getScene().getWidth(), getScene().getHeight());
+
+            double targetWidth = primaryStage.getScene() != null ? primaryStage.getScene().getWidth()
+                    : primaryStage.getWidth();
+            double targetHeight = primaryStage.getScene() != null ? primaryStage.getScene().getHeight()
+                    : primaryStage.getHeight();
+            Scene scene = new Scene(mainMenu, targetWidth, targetHeight);
             scene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
             ImageCursor customCursor = UIAssets.getCustomCursor();
-            if (customCursor != null) scene.setCursor(customCursor);
+            if (customCursor != null)
+                scene.setCursor(customCursor);
             primaryStage.setScene(scene);
-            // No need to clear popup here as the screen is changing
+            primaryStage.setFullScreen(true); // Always set/maintain fullscreen
+
             e.consume();
         });
 
@@ -797,15 +861,19 @@ public class GameScreen extends BorderPane {
             settingsPopup.setLayoutX((uiOverlayPane.getWidth() - newVal.getWidth()) / 2);
             settingsPopup.setLayoutY((uiOverlayPane.getHeight() - newVal.getHeight()) / 2);
         });
-        
+
         activePopup = settingsPopup;
         uiOverlayPane.getChildren().add(activePopup);
 
         // Apply animation
         FadeTransition ft = new FadeTransition(Duration.millis(200), activePopup);
-        ft.setFromValue(0.0); ft.setToValue(1.0);
+        ft.setFromValue(0.0);
+        ft.setToValue(1.0);
         ScaleTransition st = new ScaleTransition(Duration.millis(200), activePopup);
-        st.setFromX(0.7); st.setFromY(0.7); st.setToX(1.0); st.setToY(1.0);
+        st.setFromX(0.7);
+        st.setFromY(0.7);
+        st.setToX(1.0);
+        st.setToY(1.0);
         st.setInterpolator(javafx.animation.Interpolator.EASE_OUT);
         ParallelTransition pt = new ParallelTransition(ft, st);
         pt.play();

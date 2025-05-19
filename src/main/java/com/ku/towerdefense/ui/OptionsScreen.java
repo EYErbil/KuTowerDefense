@@ -283,10 +283,13 @@ public class OptionsScreen extends BorderPane {
 
     private void resetToDefaults() {
         settings.resetToDefaults();
-        // Reload the options screen to reflect default values
         OptionsScreen newOptionsScreen = new OptionsScreen(primaryStage);
-        Scene newScene = new Scene(newOptionsScreen, primaryStage.getScene().getWidth(),
-                primaryStage.getScene().getHeight());
+
+        double targetWidth = primaryStage.getScene() != null ? primaryStage.getScene().getWidth()
+                : primaryStage.getWidth();
+        double targetHeight = primaryStage.getScene() != null ? primaryStage.getScene().getHeight()
+                : primaryStage.getHeight();
+        Scene newScene = new Scene(newOptionsScreen, targetWidth, targetHeight);
         newScene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
 
         ImageCursor customCursor = UIAssets.getCustomCursor();
@@ -294,19 +297,24 @@ public class OptionsScreen extends BorderPane {
             newScene.setCursor(customCursor);
         }
         primaryStage.setScene(newScene);
+        primaryStage.setFullScreen(true); // Always set/maintain fullscreen
     }
 
     private void goBack() {
         MainMenuScreen mainMenu = new MainMenuScreen(primaryStage);
-        Scene mainMenuScene = new Scene(mainMenu, primaryStage.getWidth(), primaryStage.getHeight());
+        double targetWidth = primaryStage.getScene() != null ? primaryStage.getScene().getWidth()
+                : primaryStage.getWidth();
+        double targetHeight = primaryStage.getScene() != null ? primaryStage.getScene().getHeight()
+                : primaryStage.getHeight();
+        Scene mainMenuScene = new Scene(mainMenu, targetWidth, targetHeight);
         mainMenuScene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
 
         ImageCursor customCursor = UIAssets.getCustomCursor();
         if (customCursor != null) {
             mainMenuScene.setCursor(customCursor);
         }
-
         primaryStage.setScene(mainMenuScene);
+        primaryStage.setFullScreen(true); // Always set/maintain fullscreen
     }
 
     @FunctionalInterface

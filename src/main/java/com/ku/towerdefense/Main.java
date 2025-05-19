@@ -16,24 +16,26 @@ public class Main extends Application {
     public void start(Stage primaryStage) {
         // Initialize UI assets
         UIAssets.initialize();
-        
+
         // Set up the primary stage
         primaryStage.setTitle("KU Tower Defense");
-        
+
         // Create and show main menu
         MainMenuScreen mainMenu = new MainMenuScreen(primaryStage);
         Scene scene = new Scene(mainMenu, 800, 600);
-        
+
         // Add CSS if needed
         scene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
-        
+
         // Set custom cursor if available
         ImageCursor customCursor = UIAssets.getCustomCursor();
         if (customCursor != null) {
             scene.setCursor(customCursor);
         }
-        
+
         primaryStage.setScene(scene);
+        primaryStage.setFullScreen(true);
+        primaryStage.setFullScreenExitHint("");
         primaryStage.show();
     }
 
@@ -45,4 +47,4 @@ public class Main extends Application {
     public static void main(String[] args) {
         launch(args);
     }
-} 
+}
