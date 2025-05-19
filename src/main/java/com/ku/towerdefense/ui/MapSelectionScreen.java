@@ -11,6 +11,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
@@ -240,8 +241,24 @@ public class MapSelectionScreen extends BorderPane {
         title.getStyleClass().add("screen-title");
 
         // Map count
-        Label mapCountLabel = new Label("Maps: " + currentMapIndex + 1 + " / " + availableMaps.size());
+        Label mapCountLabel = new Label("Maps: " + (currentMapIndex + 1) + " / " + availableMaps.size());
         mapCountLabel.getStyleClass().add("info-label");
+
+        VBox titleAndCountBox = new VBox(5, title, mapCountLabel); // Reduced spacing for tighter group
+        titleAndCountBox.setAlignment(Pos.CENTER);
+
+        // Back Button (to be styled via CSS)
+        Button backButton = new Button("Back");
+        backButton.getStyleClass().addAll("secondary-button", "map-select-back-button"); // Added new style class
+        backButton.setOnAction(e -> goBack());
+
+        // Top area layout with StackPane for precise positioning
+        StackPane topAreaPane = new StackPane();
+        topAreaPane.getChildren().addAll(titleAndCountBox, backButton);
+        StackPane.setAlignment(backButton, Pos.CENTER_LEFT); // Align back button to top-left (or center-left if padding
+                                                             // allows)
+        StackPane.setAlignment(titleAndCountBox, Pos.CENTER); // Center title/count
+        topAreaPane.setPadding(new Insets(0, 0, 20, 0)); // Add some bottom padding to separate from content below
 
         // Map preview and info
         VBox mapInfoContainer = new VBox(20);
@@ -259,55 +276,51 @@ public class MapSelectionScreen extends BorderPane {
 
         updateMapPreview(); // Draw the initial map
 
-        // Map navigation buttons
-        Button prevMapButton = new Button("← Previous");
-        prevMapButton.getStyleClass().addAll("button", "secondary-button");
-        prevMapButton.setOnAction(e -> {
+        // New Icon Buttons for Map navigation
+        Button prevIconButton = UIAssets.createIconButton("Previous Map", 0, 1, 80); // Increased size to 80
+        if (prevIconButton.getGraphic() instanceof ImageView) {
+            ((ImageView) prevIconButton.getGraphic()).setScaleX(-1); // Flip horizontally
+        }
+        prevIconButton.setOnAction(e -> {
             showPreviousMap(mapNameLabel, mapCountLabel);
             updateMapPreview();
             updateMapDescription();
         });
 
-        Button nextMapButton = new Button("Next →");
-        nextMapButton.getStyleClass().addAll("button", "secondary-button");
-        nextMapButton.setOnAction(e -> {
+        Button nextIconButton = UIAssets.createIconButton("Next Map", 0, 1, 80); // Increased size to 80
+        nextIconButton.setOnAction(e -> {
             showNextMap(mapNameLabel, mapCountLabel);
             updateMapPreview();
             updateMapDescription();
         });
 
-        HBox mapNavigation = new HBox(20, prevMapButton, nextMapButton);
-        mapNavigation.setAlignment(Pos.CENTER);
+        HBox previewNavigationLayout = new HBox(20, prevIconButton, previewContainer, nextIconButton);
+        previewNavigationLayout.setAlignment(Pos.CENTER);
 
         // Map description
         mapDescLabel = new Label();
         updateMapDescription();
         mapDescLabel.setWrapText(true);
-        mapDescLabel.setPrefWidth(400);
+        mapDescLabel.setPrefWidth(400); // Keep description width reasonable
         mapDescLabel.getStyleClass().add("info-label");
+        mapDescLabel.setAlignment(Pos.CENTER); // Center align text in label
 
-        mapInfoContainer.getChildren().addAll(mapNameLabel, previewContainer, mapDescLabel, mapNavigation);
+        mapInfoContainer.getChildren().addAll(mapNameLabel, previewNavigationLayout, mapDescLabel);
 
         // Action buttons
         Button startGameButton = new Button("Start Game");
-        startGameButton.getStyleClass().add("action-button");
+        startGameButton.getStyleClass().addAll("action-button", "start-game-button");
         startGameButton.setOnAction(e -> startGame());
 
-        Button backButton = new Button("Back");
-        backButton.getStyleClass().add("secondary-button");
-        backButton.setOnAction(e -> goBack());
-
-        HBox buttonContainer = new HBox(20, backButton, startGameButton);
-        buttonContainer.setAlignment(Pos.CENTER);
-        buttonContainer.setPadding(new Insets(20, 0, 0, 0));
+        // Update bottom button container for only Start Game button
+        HBox bottomButtonContainer = new HBox(startGameButton); // Only start game button now
+        bottomButtonContainer.setAlignment(Pos.CENTER); // Center the single button
+        bottomButtonContainer.setPadding(new Insets(20, 0, 0, 0));
 
         // Layout
-        VBox topContainer = new VBox(20, title, mapCountLabel);
-        topContainer.setAlignment(Pos.CENTER);
-
-        setTop(topContainer);
+        setTop(topAreaPane); // Set the new top area
         setCenter(mapInfoContainer);
-        setBottom(buttonContainer);
+        setBottom(bottomButtonContainer); // Set the updated bottom container
     }
 
     /**
