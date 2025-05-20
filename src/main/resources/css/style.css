@@ -603,12 +603,247 @@
 }
 
 .map-select-back-button:pressed {
-    -fx-background-image: url("/Asset_pack/UI/Button_Hover_3Slides.png");
-    /* Using hover for pressed */
+    -fx-background-insets: 1 0 0 1, 2 1 1 2, 3 2 2 3, 4 3 3 4;
+    -fx-padding: 13px 24px 11px 26px;
+    /* Adjust padding on press */
+}
+
+/* Load Map Dialog Styles */
+.load-map-dialog {
+    -fx-background-color: #2B2B2B;
+    /* Dark background for the entire dialog */
+    -fx-padding: 15px;
+    -fx-border-color: #4A4A4A;
+    -fx-border-width: 2px;
+    -fx-border-radius: 8px;
+}
+
+.load-map-dialog .label {
+    -fx-text-fill: #E0E0E0;
+    /* Light grey text for labels */
+    -fx-font-size: 14px;
+}
+
+.load-map-dialog .dialog-label {
+    /* More specific for dialog labels if needed */
+    -fx-font-weight: bold;
+    -fx-text-fill: #F0F0F0;
+    /* Slightly brighter for emphasis */
+}
+
+.load-map-dialog .load-map-instruction {
+    -fx-font-size: 16px;
+    -fx-padding-bottom: 5px;
+}
+
+.map-file-list {
+    -fx-background-color: #353535;
+    -fx-border-color: #4A4A4A;
+    -fx-border-width: 1px;
+    -fx-font-size: 13px;
+}
+
+.map-file-list .list-cell {
+    -fx-text-fill: #D0D0D0;
+    -fx-padding: 6px 10px;
     -fx-background-color: transparent;
-    -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.3), 10, 0, 0, 0);
-    /* Adjust padding slightly for pressed effect */
-    -fx-padding: 11px 30px 21px 30px;
-    -fx-scale-x: 0.98;
-    -fx-scale-y: 0.98;
+    /* Base cell background */
+}
+
+.map-file-list .list-cell:filled:selected,
+.map-file-list .list-cell:filled:selected:focused {
+    -fx-background-color: #007ACC;
+    /* Accent color for selection (e.g., a blue) */
+    -fx-text-fill: white;
+}
+
+.map-file-list .list-cell:filled:hover {
+    -fx-background-color: #454545;
+    /* Subtle hover for list items */
+    -fx-text-fill: #EAEAEA;
+}
+
+.map-file-list .placeholder .label {
+    -fx-text-fill: #A0A0A0;
+    /* Text color for placeholder (e.g., "No maps found") */
+}
+
+.map-preview-area {
+    -fx-background-color: #3C3C3C;
+    -fx-padding: 10px;
+    -fx-border-color: #505050;
+    -fx-border-width: 1px;
+    -fx-border-radius: 5px;
+    -fx-alignment: center;
+}
+
+.map-preview-area .label {
+    -fx-text-fill: #C0C0C0;
+}
+
+.load-map-dialog .load-map-preview-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.load-map-dialog .load-map-preview-placeholder {
+    -fx-text-fill: #909090;
+    -fx-font-style: italic;
+}
+
+
+.load-dialog-content-box {
+    /* -fx-background-color: #2F2F2F; /* Slightly different shade if needed */
+    /* -fx-spacing: 15px; /* Already set in code */
+}
+
+.dialog-button-bar {
+    -fx-alignment: center-right;
+    /* Align buttons to the right */
+    -fx-padding-top: 15px;
+}
+
+.dialog-button-bar .button {
+    -fx-font-size: 14px;
+    -fx-padding: 8px 18px;
+    -fx-background-color: #5A5A5A;
+    -fx-text-fill: white;
+    -fx-border-color: #707070;
+    -fx-border-width: 1px;
+    -fx-border-radius: 4px;
+}
+
+.dialog-button-bar .button:hover {
+    -fx-background-color: #6A6A6A;
+}
+
+.dialog-button-bar .button:pressed {
+    -fx-background-color: #4F4F4F;
+}
+
+/* Specific button styling using IDs for dialog context */
+#load-map-button {
+    -fx-background-color: #4CAF50;
+    /* Green for load */
+    -fx-border-color: #388E3C;
+}
+
+#load-map-button:hover {
+    -fx-background-color: #5CB85C;
+}
+
+#load-map-button:pressed {
+    -fx-background-color: #45A045;
+}
+
+#delete-map-button {
+    -fx-background-color: #D9534F;
+    /* Red for delete */
+    -fx-border-color: #C9302C;
+}
+
+#delete-map-button:hover {
+    -fx-background-color: #E0635F;
+}
+
+#delete-map-button:pressed {
+    -fx-background-color: #C12E2A;
+}
+
+#cancel-map-button {
+    /* Default gray button styling is fine, or customize if needed */
+    -fx-background-color: #777777;
+    -fx-border-color: #666666;
+}
+
+#cancel-map-button:hover {
+    -fx-background-color: #888888;
+}
+
+#cancel-map-button:pressed {
+    -fx-background-color: #606060;
+}
+
+/* Dialog Pane general styling (for alerts, text input from the editor) */
+.dialog-pane {
+    -fx-background-color: #2B2B2B;
+    -fx-border-color: #4A4A4A;
+    -fx-border-width: 1px;
+    -fx-font-size: 13px;
+}
+
+.dialog-pane .label {
+    -fx-text-fill: #E0E0E0;
+}
+
+.dialog-pane .header-panel {
+    -fx-background-color: #383838;
+    -fx-padding: 10px;
+}
+
+.dialog-pane .header-panel .label {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #F0F0F0;
+}
+
+.dialog-pane .content {
+    -fx-padding: 15px;
+    -fx-background-color: #303030;
+    /* Slightly different from main dialog bg */
+}
+
+.dialog-pane .button-bar .button {
+    -fx-background-color: #5A5A5A;
+    -fx-text-fill: white;
+    -fx-border-color: #707070;
+    -fx-font-size: 13px;
+    -fx-padding: 6px 15px;
+}
+
+.dialog-pane .button-bar .button:hover {
+    -fx-background-color: #6A6A6A;
+}
+
+.dialog-pane .button-bar .button:focused {
+    /* Typically the default button */
+    -fx-background-color: #007ACC;
+    -fx-border-color: #005C9C;
+}
+
+/* Specific styling for different alert types */
+.dialog-pane.error-dialog {
+    -fx-border-color: #D9534F;
+    /* Red border for error */
+}
+
+.dialog-pane.error-dialog .header-panel {
+    -fx-background-color: #D9534F;
+    /* Red header for error */
+}
+
+.dialog-pane.error-dialog .header-panel .label {
+    -fx-text-fill: white;
+}
+
+.dialog-pane.confirmation-dialog {
+    -fx-border-color: #5BC0DE;
+    /* Blue/info border for confirmation */
+}
+
+.dialog-pane.confirmation-dialog .header-panel {
+    -fx-background-color: #5BC0DE;
+    /* Blue/info header */
+}
+
+.dialog-pane.confirmation-dialog .header-panel .label {
+    -fx-text-fill: white;
+}
+
+/* Make TextInputDialog fields consistent */
+.dialog-pane .text-input {
+    -fx-background-color: #404040;
+    -fx-text-fill: #E0E0E0;
+    -fx-border-color: #5A5A5A;
+    -fx-prompt-text-fill: #909090;
 }

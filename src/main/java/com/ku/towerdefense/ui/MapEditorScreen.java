@@ -6,6 +6,7 @@ import com.ku.towerdefense.model.map.Tile;
 import com.ku.towerdefense.model.map.TileType;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
+import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
@@ -15,11 +16,15 @@ import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
-import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.scene.Scene;
 import javafx.scene.ImageCursor;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,8 +38,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.awt.Point;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.Priority;
 import java.io.*;
+
+import javafx.scene.control.ListView;
+import javafx.scene.control.SelectionMode;
+import javafx.stage.Modality;
+import java.util.Arrays;
+import java.util.Comparator;
 
 /**
  * Screen for creating and editing game maps.
@@ -50,6 +60,8 @@ public class MapEditorScreen extends BorderPane {
     // Default and minimum window dimensions
     private static final double MIN_WINDOW_WIDTH = 800;
     private static final double MIN_WINDOW_HEIGHT = 600;
+    private static final double PREVIEW_CANVAS_WIDTH = 200;
+    private static final double PREVIEW_CANVAS_HEIGHT = 150;
 
     public MapEditorScreen(Stage primaryStage) {
         this.primaryStage = primaryStage;
@@ -244,291 +256,447 @@ public class MapEditorScreen extends BorderPane {
 
         if (!hasStart) {
             // Check for valid path tiles that could serve as start points
-            for (int y = 0; y < currentMap.getHeight(); y++) {
-                for (int x = 0; x < currentMap.getWidth(); x++) {
-                    if (isValidStartTile(x, y)) {
+            for (int y_coord = 0; y_coord < currentMap.getHeight(); y_coord++) {
+                for (int x_coord = 0; x_coord < currentMap.getWidth(); x_coord++) {
+                    if (isValidStartTile(x_coord, y_coord)) {
                         hasStart = true;
-                        startPoint = new Point(x, y);
+                        startPoint = new Point(x_coord, y_coord);
+                        currentMap.setTileType(x_coord, y_coord, TileType.START_POINT);
+                        System.out.println("Implicit start point found and set at: (" + x_coord + "," + y_coord + ")");
                         break;
                     }
                 }
                 if (hasStart)
                     break;
             }
+            if (!hasStart) {
+                showAlert("Validation Error", "No Start Point or valid edge Path tile found on the map.");
+                return false;
+            }
         }
 
-        if (!hasStart) {
-            showAlert("Validation Error",
-                    "No valid start point found. Please place a START_POINT tile on the edge of the map.\n\n" +
-                            "The START_POINT tile can be found in the 'Special Tiles' section of the palette and " +
-                            "should be placed where enemies will spawn.");
-            return false;
-        }
         if (!hasEnd) {
-            showAlert("Validation Error",
-                    "No End Point (Castle) found. Please place an END_POINT tile on the map.\n\n" +
-                            "The END_POINT tile can be found in the 'Special Tiles' section of the palette and " +
-                            "will automatically place a 2x2 castle structure where enemies will try to reach.");
+            showAlert("Validation Error", "No End Point (Castle) found on the map.");
             return false;
         }
-        if (startPoint == null || endPointAdjacent == null) {
-            showAlert("Validation Error", "Internal error: Start or End adjacent point not determined.");
+
+        if (startPoint == null) {
+            showAlert("Validation Error", "Start point is null despite being detected. Please re-set start point.");
+            return false;
+        }
+        if (endPointAdjacent == null) {
+            showAlert("Validation Error",
+                    "End point (adjacent walkable) is null. Please ensure castle has valid path connection.");
             return false;
         }
 
         if (!isPathConnected(startPoint, endPointAdjacent)) {
-            showAlert("Validation Error", "No valid path found from Start Point to the End Point (Castle).");
+            showAlert("Validation Error", "No valid path found from Start Point to End Point.");
             return false;
         }
 
-        showAlert("Validation Success", "Map validation successful!");
+        showAlert("Validation Success", "Map is valid!");
         return true;
     }
 
-    /**
-     * Checks if a tile at (x,y) is a valid start point.
-     * A valid start point is either:
-     * 1. A START_POINT tile
-     * 2. A path tile at the edge of the map that is not a dead end
-     * Valid configurations:
-     * - Vertical path tiles at the top or bottom edge
-     * - Horizontal path tiles at the left or right edge
-     * - Circular path tiles in the corners
-     */
     private boolean isValidStartTile(int x, int y) {
-        TileType type = currentMap.getTileType(x, y);
-
-        // Must be on the edge of the map
-        boolean isOnEdge = x == 0 || x == currentMap.getWidth() - 1 || y == 0 || y == currentMap.getHeight() - 1;
-        if (!isOnEdge)
+        Tile tile = currentMap.getTile(x, y);
+        if (tile == null || !tile.isWalkable()) {
             return false;
-
-        // Check if it's a valid path tile
-        switch (type) {
-            case PATH_HORIZONTAL:
-                // Valid if on left or right edge
-                return x == 0 || x == currentMap.getWidth() - 1;
-            case PATH_VERTICAL:
-                // Valid if on top or bottom edge
-                return y == 0 || y == currentMap.getHeight() - 1;
-            case PATH_CIRCLE_N:
-            case PATH_CIRCLE_S:
-                // Treated as horizontal - valid if on left or right edge
-                return x == 0 || x == currentMap.getWidth() - 1;
-            case PATH_CIRCLE_W:
-            case PATH_CIRCLE_E:
-                // Treated as vertical - valid if on top or bottom edge
-                return y == 0 || y == currentMap.getHeight() - 1;
-            case PATH_CIRCLE_NW:
-                // Valid if on right edge or bottom edge
-                return x == currentMap.getWidth() - 1 || y == currentMap.getHeight() - 1;
-            case PATH_CIRCLE_NE:
-                // Valid if on left edge or bottom edge
-                return x == 0 || y == currentMap.getHeight() - 1;
-            case PATH_CIRCLE_SW:
-                // Valid if on right edge or top edge
-                return x == currentMap.getWidth() - 1 || y == 0;
-            case PATH_CIRCLE_SE:
-                // Valid if on left edge or top edge
-                return x == 0 || y == 0;
-            case START_POINT:
-                // Always valid if it's a START_POINT tile
-                return true;
-            default:
-                return false;
         }
+        return x == 0 || y == 0 || x == currentMap.getWidth() - 1 || y == currentMap.getHeight() - 1;
     }
 
-    /**
-     * Checks if the 2x2 castle structure is correctly placed starting at the
-     * END_POINT.
-     * Assumes (x, y) is TileType.END_POINT.
-     */
     private boolean isCastleComplete(int baseX, int baseY) {
         if (baseX + 1 >= currentMap.getWidth() || baseY + 1 >= currentMap.getHeight()) {
-            System.err.println("Castle bounds check failed: Base(" + baseX + "," + baseY + "), Map("
-                    + currentMap.getWidth() + "," + currentMap.getHeight() + ")");
             return false;
         }
 
-        // Check if the castle structure is complete
-        boolean structureOk = currentMap.getTileType(baseX, baseY) == TileType.END_POINT &&
-                currentMap.getTileType(baseX + 1, baseY) == TileType.CASTLE2 &&
-                currentMap.getTileType(baseX, baseY + 1) == TileType.CASTLE3 &&
-                currentMap.getTileType(baseX + 1, baseY + 1) == TileType.CASTLE4;
-
-        if (!structureOk) {
-            System.err.println("Castle structure check failed at (" + baseX + "," + baseY + ")");
-            return false;
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                Tile tile = currentMap.getTile(baseX + i, baseY + j);
+                if (tile == null || tile.getType() != TileType.END_POINT) {
+                    if (!(baseX + i == baseX && baseY + j == baseY && tile != null
+                            && tile.getType() == TileType.END_POINT)) {
+                    }
+                }
+            }
         }
-
         return true;
     }
 
-    /**
-     * Finds a walkable tile adjacent to the castle (END_POINT) at (baseX, baseY).
-     * Returns the Point of the adjacent walkable tile, or null if none found.
-     */
     private Point findAdjacentWalkable(int baseX, int baseY) {
-        // Check all four sides of the 2x2 castle structure
-        int[][] directions = {
-                { -1, 0 }, { -1, 1 }, // Left side
-                { 0, -1 }, { 1, -1 }, // Top side
-                { 2, 0 }, { 2, 1 }, // Right side
-                { 0, 2 }, { 1, 2 } // Bottom side
+        Point[] potentialEntries = {
+                new Point(baseX - 1, baseY), new Point(baseX - 1, baseY + 1),
+                new Point(baseX + 2, baseY), new Point(baseX + 2, baseY + 1),
+                new Point(baseX, baseY - 1), new Point(baseX + 1, baseY - 1),
+                new Point(baseX, baseY + 2), new Point(baseX + 1, baseY + 2)
         };
 
-        for (int[] offset : directions) {
-            int nx = baseX + offset[0];
-            int ny = baseY + offset[1];
-            if (nx >= 0 && nx < currentMap.getWidth() && ny >= 0 && ny < currentMap.getHeight()) {
-                Tile neighbor = currentMap.getTile(nx, ny);
-                if (neighbor != null && neighbor.isWalkable()) {
-                    return new Point(nx, ny);
-                }
+        for (Point p : potentialEntries) {
+            Tile tile = currentMap.getTile(p.x, p.y);
+            if (currentMap.inBounds(p.x, p.y) && tile != null && tile.isWalkable()) {
+                return p;
             }
         }
         return null;
     }
 
-    /**
-     * Checks if a path exists from the start point to the end point using BFS.
-     * 
-     * @param start       The starting Point (usually START_POINT).
-     * @param endAdjacent The target Point adjacent to the castle base (must be
-     *                    walkable).
-     * @return true if a path exists, false otherwise.
-     */
     private boolean isPathConnected(Point start, Point endAdjacent) {
         if (start == null || endAdjacent == null)
             return false;
-        Tile endAdjacentTile = currentMap.getTile(endAdjacent.x, endAdjacent.y);
-        if (endAdjacentTile == null || !endAdjacentTile.isWalkable()) {
-            System.err.println("isPathConnected Error: Target adjacent point (" + endAdjacent.x + "," + endAdjacent.y
-                    + ") is not walkable.");
-            return false;
+        currentMap.generatePath();
+        return currentMap.getEnemyPath() != null;
+    }
+
+    private Optional<File> showLoadMapDialog() {
+        if (mapsDirectory == null || !mapsDirectory.exists() || !mapsDirectory.isDirectory()) {
+            showAlert("Load Error", "Maps directory not found or is not a directory: "
+                    + (mapsDirectory != null ? mapsDirectory.getAbsolutePath() : "Path not set"));
+            return Optional.empty();
         }
 
-        boolean[][] visited = new boolean[currentMap.getWidth()][currentMap.getHeight()];
-        List<Point2D> queue = new ArrayList<>();
+        Stage dialogStage = new Stage();
+        dialogStage.initModality(Modality.APPLICATION_MODAL);
+        dialogStage.initOwner(primaryStage.getScene().getWindow());
+        dialogStage.setTitle("Load Map - KUTowerDefense");
 
-        queue.add(new Point2D(start.x, start.y));
-        visited[start.x][start.y] = true;
+        // Left side: List of maps
+        Label instructionLabel = new Label("Select a Map File:");
+        ListView<File> mapListView = new ListView<>();
+        mapListView.getStyleClass().add("map-file-list");
+        File[] mapFilesArray = mapsDirectory.listFiles((dir, name) -> name.toLowerCase().endsWith(".map"));
 
-        int head = 0;
-        while (head < queue.size()) {
-            Point2D current = queue.get(head++);
-            int x = (int) current.getX();
-            int y = (int) current.getY();
-
-            if (x == endAdjacent.x && y == endAdjacent.y) {
-                return true;
+        if (mapFilesArray != null && mapFilesArray.length > 0) {
+            Arrays.sort(mapFilesArray, Comparator.comparing(File::getName));
+            mapListView.getItems().addAll(mapFilesArray);
+            mapListView.getSelectionModel().selectFirst();
+        } else {
+            mapListView.setPlaceholder(new Label("No .map files found in " + mapsDirectory.getName()));
+        }
+        mapListView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+        mapListView.setCellFactory(lv -> new javafx.scene.control.ListCell<File>() {
+            @Override
+            protected void updateItem(File item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.getName().replace(".map", ""));
             }
+        });
+        mapListView.setPrefHeight(250); // Adjusted height for list view
+        VBox listVBox = new VBox(5, instructionLabel, mapListView);
+        listVBox.setPadding(new Insets(0, 10, 0, 0));
 
-            int[] dx = { 0, 0, -1, 1 };
-            int[] dy = { -1, 1, 0, 0 };
+        // Right side: Map Preview
+        Label previewTitleLabel = new Label("Preview:");
+        Canvas previewCanvas = new Canvas(PREVIEW_CANVAS_WIDTH, PREVIEW_CANVAS_HEIGHT);
+        GraphicsContext previewGc = previewCanvas.getGraphicsContext2D();
+        Label previewPlaceholder = new Label("Select a map to see preview.");
+        previewPlaceholder.setFont(Font.font(14));
+        VBox previewVBox = new VBox(5, previewTitleLabel, previewCanvas, previewPlaceholder);
+        previewVBox.setAlignment(Pos.CENTER);
+        previewVBox.setMinWidth(PREVIEW_CANVAS_WIDTH + 20);
+        previewVBox.getStyleClass().add("map-preview-area");
 
-            for (int i = 0; i < 4; i++) {
-                int nextX = x + dx[i];
-                int nextY = y + dy[i];
+        // Main layout for dialog content
+        HBox mainContentBox = new HBox(10, listVBox, previewVBox);
+        mainContentBox.setPadding(new Insets(10));
+        mainContentBox.getStyleClass().add("load-dialog-content-box");
 
-                if (nextX >= 0 && nextX < currentMap.getWidth() && nextY >= 0 && nextY < currentMap.getHeight()) {
-                    Tile neighbor = currentMap.getTile(nextX, nextY);
-                    if (!visited[nextX][nextY] && neighbor != null && neighbor.isWalkable()) {
-                        visited[nextX][nextY] = true;
-                        queue.add(new Point2D(nextX, nextY));
+        // Buttons
+        Button loadButton = new Button("Load");
+        loadButton.setDefaultButton(true);
+        loadButton.setId("load-map-button");
+        Button deleteButton = new Button("Delete");
+        deleteButton.setId("delete-map-button");
+        Button cancelButton = new Button("Cancel");
+        cancelButton.setCancelButton(true);
+        cancelButton.setId("cancel-map-button");
+
+        HBox buttonsBox = new HBox(10, loadButton, deleteButton, cancelButton);
+        buttonsBox.setAlignment(Pos.CENTER);
+        buttonsBox.setPadding(new Insets(10, 0, 0, 0));
+        buttonsBox.getStyleClass().add("dialog-button-bar");
+
+        // Overall dialog layout
+        VBox dialogLayout = new VBox(15, mainContentBox, buttonsBox);
+        dialogLayout.setPadding(new Insets(5));
+        dialogLayout.getStyleClass().add("load-map-dialog");
+
+        // --- Logic for preview and button states ---
+        final Optional<File>[] selectedFileResult = new Optional[] { Optional.empty() };
+        Runnable updatePreviewAction = () -> {
+            File selectedFile = mapListView.getSelectionModel().getSelectedItem();
+            boolean isFileSelected = selectedFile != null;
+            loadButton.setDisable(!isFileSelected);
+            deleteButton.setDisable(!isFileSelected);
+            previewPlaceholder.setVisible(!isFileSelected);
+            previewCanvas.setVisible(isFileSelected);
+
+            if (isFileSelected) {
+                previewPlaceholder.setText("Loading preview...");
+                previewPlaceholder.setVisible(true);
+                previewCanvas.setVisible(false);
+                try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(selectedFile))) {
+                    Object obj = ois.readObject();
+                    if (obj instanceof GameMap) {
+                        GameMap tempMap = (GameMap) obj;
+                        tempMap.renderPreview(previewGc, PREVIEW_CANVAS_WIDTH, PREVIEW_CANVAS_HEIGHT);
+                        previewPlaceholder.setVisible(false);
+                        previewCanvas.setVisible(true);
+                    } else {
+                        drawPreviewMessage(previewGc, "Invalid map file format.", PREVIEW_CANVAS_WIDTH,
+                                PREVIEW_CANVAS_HEIGHT);
+                        previewPlaceholder.setVisible(false);
+                        previewCanvas.setVisible(true);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    drawPreviewMessage(previewGc, "Preview unavailable: " + e.getMessage(), PREVIEW_CANVAS_WIDTH,
+                            PREVIEW_CANVAS_HEIGHT);
+                    previewPlaceholder.setVisible(false);
+                    previewCanvas.setVisible(true);
+                }
+            } else {
+                clearPreviewCanvas(previewGc, PREVIEW_CANVAS_WIDTH, PREVIEW_CANVAS_HEIGHT, "Select a map to preview.");
+                previewPlaceholder.setText("Select a map to see preview.");
+                previewPlaceholder.setVisible(true);
+                previewCanvas.setVisible(false);
+            }
+        };
+
+        mapListView.getSelectionModel().selectedItemProperty()
+                .addListener((obs, oldVal, newVal) -> updatePreviewAction.run());
+        updatePreviewAction.run(); // Initial call to set preview and button states
+
+        // --- Button Actions ---
+        loadButton.setOnAction(event -> {
+            File choice = mapListView.getSelectionModel().getSelectedItem();
+            if (choice != null) {
+                selectedFileResult[0] = Optional.of(choice);
+                dialogStage.close();
+            } else {
+                showAlert("No Selection", "Please select a map to load.");
+            }
+        });
+
+        deleteButton.setOnAction(event -> {
+            File selectedMapFile = mapListView.getSelectionModel().getSelectedItem();
+            if (selectedMapFile != null) {
+                Alert confirmationDialog = new Alert(Alert.AlertType.CONFIRMATION);
+                confirmationDialog.setTitle("Confirm Deletion");
+                confirmationDialog.setHeaderText("Delete Map: " + selectedMapFile.getName().replace(".map", ""));
+                confirmationDialog.setContentText(
+                        "Are you sure you want to permanently delete this map?\nThis action cannot be undone.");
+                applyDialogStyling(confirmationDialog.getDialogPane());
+
+                Optional<ButtonType> result = confirmationDialog.showAndWait();
+                if (result.isPresent() && result.get() == ButtonType.OK) {
+                    try {
+                        if (selectedMapFile.delete()) {
+                            mapListView.getItems().remove(selectedMapFile);
+                            showAlert("Map Deleted",
+                                    "Map '" + selectedMapFile.getName().replace(".map", "") + "' was deleted.");
+                            // Refresh preview after deletion (will show placeholder or next selected map)
+                            updatePreviewAction.run();
+                        } else {
+                            showAlert("Deletion Failed",
+                                    "Could not delete map '" + selectedMapFile.getName().replace(".map", "") + "'.");
+                        }
+                    } catch (Exception e) {
+                        showAlert("Deletion Error", "Error deleting map '"
+                                + selectedMapFile.getName().replace(".map", "") + "': " + e.getMessage());
+                        e.printStackTrace();
                     }
                 }
             }
+        });
+
+        cancelButton.setOnAction(event -> {
+            dialogStage.close();
+        });
+
+        // Apply general dialog styling (e.g. fonts, basic control appearances)
+        // to the Scene, not specific panes if they have their own background/border.
+        Scene dialogScene = new Scene(dialogLayout);
+        try {
+            String cssPath = getClass().getResource("/css/style.css").toExternalForm();
+            dialogScene.getStylesheets().add(cssPath);
+        } catch (Exception e) {
+            System.err.println("Could not load /css/style.css for load dialog scene: " + e.getMessage());
         }
 
-        return false;
+        // Apply specific classes to components AFTER scene stylesheet is loaded for
+        // overrides if necessary
+        // (though usually order of definition in CSS matters more for specificity)
+        instructionLabel.getStyleClass().addAll("dialog-label", "load-map-instruction");
+        previewTitleLabel.getStyleClass().addAll("dialog-label", "load-map-preview-title");
+        previewPlaceholder.getStyleClass().addAll("dialog-placeholder-label", "load-map-preview-placeholder");
+        loadButton.getStyleClass().add("button");
+        deleteButton.getStyleClass().add("button");
+        cancelButton.getStyleClass().add("button");
+
+        dialogStage.setScene(dialogScene);
+        dialogStage.sizeToScene();
+        dialogStage.showAndWait();
+
+        return selectedFileResult[0];
     }
 
-    /**
-     * Save the current map.
-     */
+    // Helper to clear and draw message on preview canvas
+    private void clearPreviewCanvas(GraphicsContext gc, double width, double height, String message) {
+        gc.clearRect(0, 0, width, height);
+        gc.setFill(Color.rgb(60, 60, 60)); // Dark background for canvas area
+        gc.fillRect(0, 0, width, height);
+        gc.setFill(Color.LIGHTGRAY);
+        gc.setFont(Font.font("System", 12));
+        gc.setTextAlign(javafx.scene.text.TextAlignment.CENTER);
+        gc.setTextBaseline(javafx.geometry.VPos.CENTER);
+        gc.fillText(message, width / 2, height / 2);
+    }
+
+    // Helper to draw an error/status message on the preview canvas
+    private void drawPreviewMessage(GraphicsContext gc, String message, double canvasWidth, double canvasHeight) {
+        gc.clearRect(0, 0, canvasWidth, canvasHeight);
+        gc.setFill(Color.rgb(80, 80, 80)); // Slightly lighter dark background
+        gc.fillRect(0, 0, canvasWidth, canvasHeight);
+        gc.setFill(Color.ORANGERED);
+        gc.setFont(Font.font("System", Font.font("System").getSize())); // Use default font size
+        gc.setTextAlign(javafx.scene.text.TextAlignment.CENTER);
+        gc.setTextBaseline(javafx.geometry.VPos.CENTER);
+        // Simple text wrapping
+        double y = canvasHeight / 2 - 10;
+        for (String line : message.split("\\n")) {
+            gc.fillText(line, canvasWidth / 2, y);
+            y += gc.getFont().getSize() + 2; // Move to next line
+        }
+    }
+
+    // Helper to apply styling to DialogPane (used for Alerts, TextInputDialogs)
+    private void applyDialogStyling(javafx.scene.control.DialogPane dialogPane) {
+        try {
+            String cssPath = getClass().getResource("/css/style.css").toExternalForm();
+            dialogPane.getStylesheets().add(cssPath);
+            dialogPane.getStyleClass().add("dialog-pane");
+            // Removed Alert-specific logic from here
+        } catch (Exception e) {
+            System.err.println("Could not load CSS for dialog pane: " + e.getMessage());
+        }
+    }
+
+    private void showAlert(String title, String content) {
+        Alert.AlertType type = Alert.AlertType.INFORMATION;
+        if (title.toLowerCase().contains("error") || title.toLowerCase().contains("failed")) {
+            type = Alert.AlertType.ERROR;
+        } else if (title.toLowerCase().contains("success") || title.toLowerCase().contains("saved")
+                || title.toLowerCase().contains("deleted")) {
+            type = Alert.AlertType.INFORMATION;
+        } else if (title.toLowerCase().contains("confirm")) {
+            // Confirmation dialogs are usually created directly, not via this generic
+            // showAlert
+            // But if they were, AlertType.CONFIRMATION would be used.
+            type = Alert.AlertType.CONFIRMATION;
+        }
+
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+
+        // Apply base dialog styling first
+        applyDialogStyling(alert.getDialogPane());
+
+        // Then add type-specific styling
+        if (alert.getAlertType() == Alert.AlertType.ERROR) {
+            alert.getDialogPane().getStyleClass().add("error-dialog");
+        } else if (alert.getAlertType() == Alert.AlertType.CONFIRMATION) {
+            // This case might be less used if confirmations are built directly
+            alert.getDialogPane().getStyleClass().add("confirmation-dialog");
+        } else if (alert.getAlertType() == Alert.AlertType.INFORMATION) {
+            // Optionally add a specific class for information dialogs if needed
+            // alert.getDialogPane().getStyleClass().add("info-dialog");
+        }
+
+        alert.showAndWait();
+    }
+
     private void saveMap() {
         if (!validateMap()) {
-            validateMap();
             return;
         }
 
         String mapName = currentMap.getName();
-        if (mapName == null || mapName.trim().isEmpty() || mapName.equals("New Map")) {
-            TextInputDialog dialog = new TextInputDialog("MyMap");
-            dialog.setTitle("Save Map");
-            dialog.setHeaderText("Please enter a name for your map");
+        boolean isNewMapOrNeedsName = mapName == null || mapName.trim().isEmpty() || mapName.equals("New Map");
+
+        if (isNewMapOrNeedsName) {
+            TextInputDialog dialog = new TextInputDialog(isNewMapOrNeedsName ? "MyMap" : mapName);
+            dialog.setTitle("Save Map As");
+            dialog.setHeaderText("Enter a name for your map. Existing maps will be overwritten.");
             dialog.setContentText("Map name:");
+            try {
+                String cssPath = getClass().getResource("/css/style.css").toExternalForm();
+                dialog.getDialogPane().getStylesheets().add(cssPath);
+                dialog.getDialogPane().getStyleClass().add("dialog-pane");
+            } catch (Exception e) {
+                System.err.println("Could not load stylesheet for save dialog: " + e.getMessage());
+            }
 
             Optional<String> result = dialog.showAndWait();
-            if (result.isPresent()) {
+            if (result.isPresent() && !result.get().trim().isEmpty()) {
                 mapName = result.get().trim();
                 currentMap.setName(mapName);
             } else {
+                showAlert("Save Cancelled", "Map saving was cancelled or no name provided.");
                 return;
             }
         }
 
-        String fileName = mapName.replaceAll("\\s+", "_") + ".map";
+        if (mapsDirectory == null) {
+            showAlert("Save Error", "Maps directory is not configured. Cannot save map.");
+            return;
+        }
+
+        String fileName = mapName.replaceAll("[^a-zA-Z0-9_\\-\\.]+", "_") + ".map";
         File mapFile = new File(mapsDirectory, fileName);
+
+        if (!isNewMapOrNeedsName && mapFile.exists()) {
+        }
 
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(mapFile))) {
             oos.writeObject(currentMap);
-
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Map Saved");
-            alert.setHeaderText("Map saved successfully");
-            alert.setContentText("The map was saved to:\n" + mapFile.getAbsolutePath());
-            alert.showAndWait();
-
-            System.out.println("Map saved to: " + mapFile.getAbsolutePath());
+            showAlert("Map Saved",
+                    "Map '" + currentMap.getName() + "' saved as " + fileName + " in " + mapsDirectory.getName() + ".");
         } catch (IOException e) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Error");
-            alert.setHeaderText("Failed to save map");
-            alert.setContentText("Error: " + e.getMessage());
-            alert.showAndWait();
-
-            System.err.println("Error saving map: " + e.getMessage());
+            showAlert("Save Error", "Failed to save map '" + currentMap.getName() + "': " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    /**
-     * Load a map from a file.
-     */
     private void loadMap() {
-        if (mapsDirectory == null || !mapsDirectory.exists()) {
-            showAlert("Load Error", "Cannot find the maps directory: "
-                    + (mapsDirectory != null ? mapsDirectory.getAbsolutePath() : "path not set"));
+        if (mapsDirectory == null) {
+            showAlert("Load Error", "Maps directory path is not configured.");
+            return;
+        }
+        if (!mapsDirectory.exists() || !mapsDirectory.isDirectory()) {
+            showAlert("Load Error", "Cannot find or access the maps directory: " + mapsDirectory.getAbsolutePath());
             return;
         }
 
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Load Map File");
-        fileChooser.setInitialDirectory(mapsDirectory);
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Map Files", "*.map"));
+        Optional<File> selectedFileOptional = showLoadMapDialog();
 
-        File selectedFile = fileChooser.showOpenDialog(primaryStage);
-
-        if (selectedFile != null) {
+        if (selectedFileOptional.isPresent()) {
+            File selectedFile = selectedFileOptional.get();
             try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(selectedFile))) {
-                GameMap loadedMap = (GameMap) ois.readObject();
-                this.currentMap = loadedMap;
+                Object loadedObject = ois.readObject();
+                if (!(loadedObject instanceof GameMap)) {
+                    throw new ClassCastException("Loaded file is not a valid GameMap object.");
+                }
+                GameMap loadedMap = (GameMap) loadedObject;
 
-                // Ensure all tiles reinitialize after loading
-                for (int x = 0; x < currentMap.getWidth(); x++) {
-                    for (int y = 0; y < currentMap.getHeight(); y++) {
-                        Tile tile = currentMap.getTile(x, y);
-                        if (tile != null) {
-                            tile.reinitializeAfterLoad();
-                        }
-                    }
+                if (loadedMap.getWidth() <= 0 || loadedMap.getHeight() <= 0) {
+                    throw new IOException("Loaded map has invalid dimensions.");
                 }
 
-                // Ensure path is regenerated
-                currentMap.generatePath();
+                this.currentMap = loadedMap;
 
                 topToolbar.setGameMap(this.currentMap);
                 canvasView.setGameMap(this.currentMap);
@@ -543,34 +711,24 @@ public class MapEditorScreen extends BorderPane {
 
             } catch (IOException | ClassNotFoundException | ClassCastException e) {
                 e.printStackTrace();
-                showAlert("Load Error", "Failed to load map file: " + e.getMessage());
+                showAlert("Load Error", "Failed to load map file '" + selectedFile.getName() + "': " + e.getMessage());
             }
+        } else {
+            System.out.println("Map loading cancelled or no file selected.");
         }
     }
 
-    /**
-     * Go back to the main menu.
-     */
     private void goBack() {
         MainMenuScreen mainMenu = new MainMenuScreen(primaryStage);
         Scene mainMenuScene = new Scene(mainMenu, primaryStage.getWidth(), primaryStage.getHeight());
         mainMenuScene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
 
-        // Set custom cursor if available
         ImageCursor customCursor = UIAssets.getCustomCursor();
         if (customCursor != null) {
             mainMenuScene.setCursor(customCursor);
         }
 
         primaryStage.setScene(mainMenuScene);
-    }
-
-    private void showAlert(String title, String content) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(content);
-        alert.showAndWait();
     }
 
     private void resizeMap(int newWidth, int newHeight) {
