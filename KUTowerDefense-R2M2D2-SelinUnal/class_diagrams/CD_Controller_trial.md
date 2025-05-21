@@ -1,296 +1,162 @@
+# Class Diagram: Controller
+
 ```mermaid
 classDiagram
-    class Application {
-        -Screen currentScreen
-        -GameController gameController
-        -MapEditorController mapEditorController
-        -OptionsController optionsController
-        -Map<String, Screen> screens
-        -ScreenFactory screenFactory
-        -ResourceManager resourceManager
-        -boolean isRunning
-        +Application()
-        +initialize()
-        +start()
-        +stop()
-        +run()
-        +switchToScreen(ScreenType screenType)
-        +handleWindowClosing()
-        +isGameActive() boolean
-        +isMapEditorActive() boolean
-        +requestExit()
-        +changeScreen(Screen screen)
-        +getResourceManager() ResourceManager
-    }
-
-    class Screen {
-        <<abstract>>
-    }
-
-    class MainMenuScreen
-    class GameScreen
-    class MapEditorScreen
-    class OptionsScreen
-    class GameOverScreen
-
-    MainMenuScreen --|> Screen
-    GameScreen --|> Screen
-    MapEditorScreen --|> Screen
-    OptionsScreen --|> Screen
-    GameOverScreen --|> Screen
-
-    class Updateable {
-        <<interface>>
-        +update(float deltaTime)
-    }
-
-    class ScreenType {
-        <<enumeration>>
-    }
-
-    class GameClock {
-        -float targetFPS
-        -float deltaTime
-        -boolean isPaused
-        -float timeScale
-        -List~Updateable~ updateables
-        +GameClock(float fps)
-        +start()
-        +stop()
-        +pause()
-        +resume()
-        +setTimeScale(float scale)
-        +getDeltaTime() float
-        +tick()
-        +registerUpdateable(Updateable updateable)
-        +unregisterUpdateable(Updateable updateable)
-        +updateStatusEffects(float deltaTime)
-        +updateDroppedItems(float deltaTime)
-    }
-
-    GameClock ..|> Updateable
-
-    class InputHandler {
-        -Map<Integer, Runnable> keyBindings
-        -Map<MouseEvent.Type, Consumer<MouseEvent>> mouseHandlers
-        -boolean isEnabled
-        +initialize()
-        +handleKeyEvent(KeyEvent event)
-        +handleMouseEvent(MouseEvent event)
-        +registerKeyBinding(int keyCode, Runnable action)
-        +registerMouseHandler(MouseEvent.Type type, Consumer<MouseEvent> handler)
-        +setEnabled(boolean enabled)
-        +isEnabled() boolean
-        +handleTowerSlotClick(Point position)
-        +handleGoldBagClick(Point position)
-        +handleTowerUpgradeClick(Point position)
-        +registerGoldBagClickHandler(Consumer<Point> handler)
-        +registerTowerUpgradeHandler(Consumer<Point> handler)
-    }
-
     class GameController {
-        -GameSession gameSession
-        -GameScreen gameScreen
-        -MapSerializer mapSerializer
-        -GameClock gameClock
-        -InputHandler inputHandler
-        -GameOptions gameOptions
-        +initialize()
-        +startNewGame()
-        +loadSelectedMap(String mapId) Map
-        +getCurrentOptions() GameOptions
-        +createGameSession(Map map, GameOptions options) GameSession
-        +getTowerSlotAt(Point position) TowerSlot
-        +placeTower(TowerSlot slot, TowerType type) boolean
-        +getTowerCost(TowerType type) int
-        +getPlayerGold() int
+        -GameMap gameMap
+        -List~Tower~ towers
+        -List~Enemy~ enemies
+        -List~Projectile~ projectiles
+        -List~DroppedGold~ activeGoldBags
+        -int playerGold
+        -int playerLives
+        -int currentWave
+        -boolean gameOver
+        -AnimationTimer gameLoop
+        -List~AnimatedEffect~ activeEffects
+        -boolean isPaused
+        -boolean speedAccelerated
+        -WaveCompletedListener onWaveCompletedListener
+        -Timeline waveTimer
+        -GameState gameState
+        -EntityManager entityManager
+        +startGame()
+        +stopGame()
         +pauseGame()
         +resumeGame()
-        +toggleGameSpeed()
-        +requestQuit()
-        +confirmQuit()
-        +cancelQuit()
+        +setPaused(boolean isPaused)
+        +update(double deltaTime)
+        +render(GraphicsContext gc)
+        +purchaseAndPlaceTower(Tower tower, int tileX, int tileY) boolean
+        +upgradeTower(Tower towerToUpgrade, int tileX, int tileY) boolean
+        +sellTower(int tileX, int tileY) int
+        +startNextWave()
+        +getTowerAtTile(int tileX, int tileY) Tower
+        +collectGoldBag(DroppedGold bag)
+        +reinitializeAfterLoad()
+        +setSpeedAccelerated(boolean accelerated)
+        +handleEnemyDeath(Enemy enemy)
+        +handleWaveCompletion()
         +checkGameOver()
+        +saveGameState()
+        +loadGameState()
+    }
+
+    class GamePlayScreen {
+        -GameController gameController
+        -GameScreen gameScreen
+        -MapGrid mapGrid
+        -GameControlPanel controlPanel
+        -ResourcePanel resourcePanel
+        -TowerPanel towerPanel
+        -WaveIndicator waveIndicator
+        -TowerRangeIndicator rangeIndicator
+        -GameState gameState
+        +initialize(GameController controller)
+        +update(float deltaTime)
+        +handleInput(InputEvent event)
+        +showTowerOptions(TowerSlot slot)
+        +updateResourceDisplay()
+        +updateWaveIndicator(int current, int total)
+        +handleTowerPlacement(int tileX, int tileY)
+        +handleTowerUpgrade(int tileX, int tileY)
+        +handleTowerSell(int tileX, int tileY)
         +showGameOverScreen(boolean victory)
-        +isGameActive() boolean
-        +editMap()
-        +returnToMainMenu()
-        +upgradeTower(Tower tower) boolean
-        +handleGoldBagCollection(Point position) int
-        +updateEnemyStatusEffects(float deltaTime)
-        +checkCombatSynergy()
-        +handleTowerUpgradeRequest(Tower tower)
-        +getTowerUpgradeCost(TowerType type) int
+        +showPauseMenu()
+        +showWaveStartBanner(int waveNumber)
+        +updateUI()
     }
 
-    class MapEditorController {
-        -Map map
-        -MapEditorScreen mapEditorScreen
-        -MapSerializer mapSerializer
-        -ValidationService validationService
-        -boolean hasUnsavedChanges
-        +initialize()
-        +openMapEditor()
-        +newMap(int width, int height)
-        +loadMap(String mapId)
-        +setSelectedTileType(TileType type)
-        +placeTile(Point position, TileType type)
-        +updateGridView()
-        +saveMap()
-        +validateMap(Map map) List~String~
-        +saveMap(Map map) boolean
-        +requestQuit()
-        +discardChanges()
-        +cancelQuit()
-        +hasUnsavedChanges() boolean
-        +returnToMainMenu()
+    class WaveCompletedListener {
+        <<interface>>
+        +onWaveCompleted(int waveNumber, int goldBonus)
+        +onWaveStart(int waveNumber)
+        +onGameOver(boolean victory)
     }
 
-    class OptionsController {
-        -GameOptions gameOptions
-        -OptionsScreen optionsScreen
-        -OptionsSerializer optionsSerializer
-        -ValidationService validationService
-        +initialize()
-        +openOptions()
-        +loadOptions() GameOptions
-        +updateOption(String category, String name, Object value)
-        +validateValue(String category, String name, Object value) boolean
-        +saveOptions()
-        +resetToDefault()
-        +cancelChanges()
-        +returnToMainMenu()
-        +showValidationError(String errorMessage)
-        +showSaveConfirmation()
+    class GameState {
+        -int playerGold
+        -int playerLives
+        -int currentWave
+        -boolean gameOver
+        -boolean isPaused
+        -boolean speedAccelerated
+        -int highScore
+        -Map~String, Object~ gameSettings
+        +getPlayerGold() int
+        +getPlayerLives() int
+        +getCurrentWave() int
+        +isGameOver() boolean
+        +isPaused() boolean
+        +isSpeedAccelerated() boolean
+        +getHighScore() int
+        +getGameSettings() Map~String, Object~
+        +setPlayerGold(int gold)
+        +setPlayerLives(int lives)
+        +setCurrentWave(int wave)
+        +setGameOver(boolean gameOver)
+        +setPaused(boolean paused)
+        +setSpeedAccelerated(boolean accelerated)
+        +setHighScore(int score)
+        +updateGameSettings(String key, Object value)
+        +saveState()
+        +loadState()
     }
 
-    class MapSerializer {
-        -String mapDirectory
-        -FileManager fileManager
-        +loadMapList() List~String~
-        +loadMap(String mapId) Map
-        +saveMap(Map map) boolean
-        +deserializeMap(String mapData) Map
-        +serializeMap(Map map) String
+    class EntityManager {
+        -List~Tower~ towers
+        -List~Enemy~ enemies
+        -List~Projectile~ projectiles
+        -List~DroppedGold~ activeGoldBags
+        -List~AnimatedEffect~ activeEffects
+        -Map~String, List~Entity~~ entityGroups
+        +addTower(Tower tower)
+        +removeTower(Tower tower)
+        +addEnemy(Enemy enemy)
+        +removeEnemy(Enemy enemy)
+        +addProjectile(Projectile projectile)
+        +removeProjectile(Projectile projectile)
+        +addGoldBag(DroppedGold goldBag)
+        +removeGoldBag(DroppedGold goldBag)
+        +addEffect(AnimatedEffect effect)
+        +removeEffect(AnimatedEffect effect)
+        +updateEntities(float deltaTime)
+        +renderEntities(GraphicsContext gc)
+        +getEntitiesInRange(Point position, float range) List~Entity~
+        +getEntitiesByType(String type) List~Entity~
+        +clearAllEntities()
+        +saveEntityStates()
+        +loadEntityStates()
     }
 
-    class OptionsSerializer {
-        -String optionsFilePath
-        -FileManager fileManager
-        +loadOptions() GameOptions
-        +saveOptions(GameOptions options) boolean
-        +deserializeOptions(String optionsData) GameOptions
-        +serializeOptions(GameOptions options) String
+    GameController *-- GameMap
+    GameController *-- GameState
+    GameController *-- EntityManager
+    GameController o-- WaveCompletedListener
+
+    GamePlayScreen *-- GameController
+    GamePlayScreen *-- GameScreen
+    GamePlayScreen *-- MapGrid
+    GamePlayScreen *-- GameControlPanel
+    GamePlayScreen *-- ResourcePanel
+    GamePlayScreen *-- TowerPanel
+    GamePlayScreen *-- WaveIndicator
+    GamePlayScreen *-- TowerRangeIndicator
+    GamePlayScreen *-- GameState
+
+    EntityManager *-- List~Tower~
+    EntityManager *-- List~Enemy~
+    EntityManager *-- List~Projectile~
+    EntityManager *-- List~DroppedGold~
+    EntityManager *-- List~AnimatedEffect~
+    EntityManager *-- EntityGroup
+
+    class EntityGroup {
+        -String type
+        -List~Entity~ entities
+        +addEntity(Entity entity)
+        +removeEntity(Entity entity)
+        +getEntities() List~Entity~
+        +getType() String
     }
-
-    class FileManager {
-        -String basePath
-        +writeFile(String fileName, String content) boolean
-        +readFile(String fileName) String
-        +fileExists(String fileName) boolean
-        +listFiles(String directory) List~String~
-        +getBasePath() String
-    }
-
-    class ValidationService {
-        +validateMap(Map map) List~String~
-        +checkStartPoint(Map map) boolean
-        +checkEndPoint(Map map) boolean
-        +checkPathConnectivity(Map map) boolean
-        +checkTowerSlots(Map map) boolean
-        +validateOptionValue(String category, String name, Object value) boolean
-        +getValidationErrors() List~String~
-    }
-
-    class ResourceManager {
-        -Map<String, Image> images
-        -Map<String, Sound> sounds
-        -Map<String, Font> fonts
-        -String resourceBasePath
-        +loadResources()
-        +getImage(String key) Image
-        +getSound(String key) Sound
-        +getFont(String key) Font
-        +loadImage(String path) Image
-        +loadSound(String path) Sound
-        +loadFont(String path, float size) Font
-        +releaseResources()
-    }
-
-    class ScreenFactory {
-        -ResourceManager resourceManager
-        +createScreen(ScreenType type) Screen
-        +createMainMenuScreen() MainMenuScreen
-        +createGameScreen() GameScreen
-        +createMapEditorScreen() MapEditorScreen
-        +createOptionsScreen() OptionsScreen
-        +createGameOverScreen() GameOverScreen
-    }
-
-    class WaveFactory {
-        -GameOptions gameOptions
-        +createWaves(Map<String, Object> waveSettings) List~Wave~
-        +determineWaveCount() int
-        +createWaveConfiguration(int waveNum) WaveConfiguration
-        +determineGroupCount(int waveNum) int
-        +determineGroupComposition(int waveNum, int groupNum) GroupConfiguration
-    }
-
-    class WaveConfiguration {
-        -int waveNumber
-        -int groupCount
-        -float delayBetweenGroups
-        -Map<Integer, GroupConfiguration> groupConfigurations
-        +WaveConfiguration(int waveNumber)
-        +setGroupCount(int count)
-        +setDelayBetweenGroups(float delay)
-        +addGroupConfiguration(int groupNumber, GroupConfiguration config)
-        +getWaveNumber() int
-        +getGroupCount() int
-        +getDelayBetweenGroups() float
-        +getGroupConfigurations() Map<Integer, GroupConfiguration>
-    }
-
-    class GroupConfiguration {
-        -int groupNumber
-        -List~EnemyType~ enemyComposition
-        -float delayBetweenEnemies
-        +GroupConfiguration(int groupNumber)
-        +setEnemyComposition(List~EnemyType~ composition)
-        +setDelayBetweenEnemies(float delay)
-        +getGroupNumber() int
-        +getEnemyComposition() List~EnemyType~
-        +getDelayBetweenEnemies() float
-    }
-
-    Application o-- GameController
-    Application o-- MapEditorController
-    Application o-- OptionsController
-    Application o-- ResourceManager
-    Application o-- ScreenFactory
-
-    GameController o-- GameSession
-    GameController o-- GameScreen
-    GameController o-- MapSerializer
-    GameController o-- GameClock
-    GameController o-- InputHandler
-    GameController o-- GameOptions
-
-    MapEditorController o-- Map
-    MapEditorController o-- MapEditorScreen
-    MapEditorController o-- MapSerializer
-    MapEditorController o-- ValidationService
-
-    OptionsController o-- GameOptions
-    OptionsController o-- OptionsScreen
-    OptionsController o-- OptionsSerializer
-    OptionsController o-- ValidationService
-
-    GameSession o-- WaveFactory
-    WaveFactory ..> WaveConfiguration
-    WaveFactory ..> GroupConfiguration
-
-    GameClock o-- Updateable
-
-    MapSerializer o-- FileManager
-    OptionsSerializer o-- FileManager
+``` 
