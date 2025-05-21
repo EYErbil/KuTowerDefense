@@ -729,6 +729,7 @@ public class MapEditorScreen extends BorderPane {
         }
 
         primaryStage.setScene(mainMenuScene);
+        primaryStage.setFullScreen(true);
     }
 
     private void resizeMap(int newWidth, int newHeight) {

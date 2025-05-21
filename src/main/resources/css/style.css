@@ -365,12 +365,16 @@
 }
 
 .game-top-bar {
-    -fx-background-image: url("/Asset_pack/UI/Ribbon_Blue_3Slides.png");
-    -fx-background-repeat: repeat-x;
+    -fx-background-image: none;
+    /* REMOVED Original: url("/Asset_pack/UI/Ribbon_Blue_3Slides.png"); */
+    -fx-background-repeat: no-repeat;
+    /* Kept for consistency, though not strictly needed with no image */
     -fx-background-position: center center;
+    /* Kept for consistency */
     -fx-background-size: auto 100%;
-    -fx-background-color: linear-gradient(to bottom, #2c3e50, #34495e);
-    /* Fallback */
+    /* Kept for consistency */
+    -fx-background-color: transparent;
+    /* CHANGED from linear-gradient */
     -fx-padding: 10px 15px 10px 15px;
     /* Adjusted padding slightly */
     -fx-alignment: center-left;

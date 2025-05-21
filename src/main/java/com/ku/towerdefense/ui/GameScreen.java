@@ -66,7 +66,7 @@ public class GameScreen extends BorderPane {
     private static final double UPGRADE_SELL_POPUP_RADIUS = 60.0;
 
     // Zoom and Pan state
-    private double currentZoomLevel = 1.5;
+    private double currentZoomLevel = 1.0;
     private double minZoom = 0.2; // Adjusted for potentially large maps, was 0.25
     private double maxZoom = 4.0;
     private double panX = 0.0;
@@ -265,11 +265,19 @@ public class GameScreen extends BorderPane {
     public GameScreen(Stage primaryStage, GameController gameController) {
         this.primaryStage = primaryStage;
         this.gameController = gameController;
-        // Initialize panX and panY to the center of the map
-        double worldWidth = gameController.getGameMap().getWidth() * TILE_SIZE;
-        double worldHeight = gameController.getGameMap().getHeight() * TILE_SIZE;
-        this.panX = worldWidth / 2.0;
-        this.panY = worldHeight / 2.0;
+
+        // Initialize panX and panY to the center of the map for initial full view
+        if (gameController != null && gameController.getGameMap() != null) {
+            double worldWidth = gameController.getGameMap().getWidth() * TILE_SIZE;
+            double worldHeight = gameController.getGameMap().getHeight() * TILE_SIZE;
+            this.panX = worldWidth / 2.0;
+            this.panY = worldHeight / 2.0;
+        } else {
+            // Fallback if map is not ready, though it should be
+            this.panX = 0;
+            this.panY = 0;
+        }
+
         initializeUI();
         startRenderLoop();
     }

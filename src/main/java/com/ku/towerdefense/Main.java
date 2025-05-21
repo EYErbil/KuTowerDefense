@@ -19,10 +19,12 @@ public class Main extends Application {
 
         // Set up the primary stage
         primaryStage.setTitle("KU Tower Defense");
+        primaryStage.setFullScreen(true);
+        primaryStage.setFullScreenExitHint("");
 
         // Create and show main menu
         MainMenuScreen mainMenu = new MainMenuScreen(primaryStage);
-        Scene scene = new Scene(mainMenu, 800, 600);
+        Scene scene = new Scene(mainMenu);
 
         // Add CSS if needed
         scene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
@@ -34,8 +36,6 @@ public class Main extends Application {
         }
 
         primaryStage.setScene(scene);
-        primaryStage.setFullScreen(true);
-        primaryStage.setFullScreenExitHint("");
         primaryStage.show();
     }
 

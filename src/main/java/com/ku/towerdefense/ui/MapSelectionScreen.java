@@ -488,6 +488,7 @@ public class MapSelectionScreen extends BorderPane {
         }
 
         primaryStage.setScene(gameScene);
+        primaryStage.setFullScreen(true); // Ensure fullscreen
 
         // Start the game loop
         gameController.startGame();
@@ -509,5 +510,6 @@ public class MapSelectionScreen extends BorderPane {
         }
 
         primaryStage.setScene(mainMenuScene);
+        primaryStage.setFullScreen(true); // Ensure fullscreen
     }
 }
