@@ -9,7 +9,6 @@ classDiagram
         -List~Tower~ towers
         -List~Enemy~ activeEnemies
         -List~Projectile~ activeProjectiles
-        -List~GoldBag~ droppedGoldBags
         -boolean isPaused
         -float gameSpeed
         -float gracePeriod
@@ -30,10 +29,6 @@ classDiagram
         +startWave(int waveNumber)
         +checkGameOver()
         +rewardPlayer(int goldAmount)
-        +addGoldBag(GoldBag goldBag)
-        +removeGoldBag(GoldBag goldBag)
-        +collectGoldBag(Point position) int
-        +updateDroppedItems(float deltaTime)
     }
 
     class Player {
@@ -117,31 +112,22 @@ classDiagram
     class Tower {
         #Point position
         #TowerType type
-        #int level
         #float range
         #float rateOfFire
         #int damage
         #int cost
-        #int upgradeCost
         #float cooldown
         #Enemy target
         +Tower(TowerType type, Point position)
         +getPosition() Point
         +getType() TowerType
-        +getLevel() int
         +getRange() float
         +getDamage() int
         +getCost() int
-        +getUpgradeCost() int
         +update(float deltaTime)
         +findTarget(List~Enemy~ enemies)
         +fire() Projectile
         +isInRange(Point position) boolean
-        +canUpgrade() boolean
-        +upgrade() boolean
-        +getEffectiveRange() float
-        +getEffectiveDamage() int
-        +getEffectiveRateOfFire() float
     }
 
     class TowerType {
@@ -155,36 +141,20 @@ classDiagram
         -int arrowDamage
         +ArcherTower(Point position)
         +fire() Arrow
-        +getEffectiveRange() float
-        +getEffectiveRateOfFire() float
-        +getLevel2Range() float
-        +getLevel2RateOfFire() float
     }
 
     class ArtilleryTower {
         -int shellDamage
         -float aoeRadius
-        -float aoeDamageMultiplier
         +ArtilleryTower(Point position)
         +fire() ArtilleryShell
         +getAOERadius() float
-        +getEffectiveRange() float
-        +getEffectiveAOEDamage() float
-        +getLevel2Range() float
-        +getLevel2AOEDamage() float
     }
 
     class MageTower {
         -int spellDamage
-        -float slowEffectDuration
-        -float slowEffectStrength
-        -float teleportChance
         +MageTower(Point position)
         +fire() Spell
-        +getSlowEffectDuration() float
-        +getSlowEffectStrength() float
-        +getTeleportChance() float
-        +getLevel2SlowEffectStrength() float
     }
 
     class Projectile {
@@ -227,15 +197,9 @@ classDiagram
 
     class Spell {
         -float effectDuration
-        -float slowEffectStrength
-        -boolean isLevel2
-        -float teleportChance
-        +Spell(Point origin, Enemy target, int damage, boolean isLevel2)
+        +Spell(Point origin, Enemy target, int damage)
         +update(float deltaTime) boolean
         +getEffectDuration() float
-        +getSlowEffectStrength() float
-        +applyTeleportEffect() boolean
-        +applySlowEffect() void
     }
 
     class Enemy {
@@ -245,11 +209,6 @@ classDiagram
         #float speed
         #float pathProgress
         #int goldValue
-        #float baseSpeed
-        #boolean isSlowed
-        #float slowEffectEndTime
-        #boolean hasCombatSynergy
-        #float combatSynergySpeed
         +Enemy(EnemyType type, Point startPosition)
         +update(float deltaTime)
         +move(float deltaTime)
@@ -260,13 +219,6 @@ classDiagram
         +getHitPoints() int
         +getType() EnemyType
         +getGoldValue() int
-        +applySlowEffect(float duration)
-        +removeSlowEffect()
-        +setCombatSynergy(boolean hasSynergy)
-        +getEffectiveSpeed() float
-        +dropGold() GoldBag
-        +updateCombatSynergy(List~Enemy~ nearbyEnemies)
-        +getCombatSynergySpeed() float
     }
 
     class EnemyType {
@@ -285,11 +237,8 @@ classDiagram
     class Knight {
         -float arrowResistance
         -float spellWeakness
-        -float combatSynergySpeed
         +Knight(Point startPosition)
         +takeDamage(int amount, ProjectileType projectileType)
-        +updateCombatSynergy(List~Enemy~ nearbyEnemies)
-        +getCombatSynergySpeed() float
     }
 
     class Wave {
@@ -334,24 +283,6 @@ classDiagram
         +getAllOptions() Map<String, Map<String, Object>>
     }
 
-    class GoldBag {
-        -Point position
-        -int amount
-        -float spawnTime
-        -float lifetime
-        +GoldBag(Point position, int amount)
-        +getPosition() Point
-        +getAmount() int
-        +isExpired() boolean
-        +update(float deltaTime)
-    }
-
-    class StatusEffectType {
-        <<enumeration>>
-        SLOW
-        COMBAT_SYNERGY
-    }
-
     GameSession "1" -- "1" Player
     GameSession "1" -- "1" Map
     GameSession "1" -- "*" Tower
@@ -373,12 +304,6 @@ classDiagram
     Enemy <|-- Knight
     Wave "1" -- "*" Group
     Tower "1" -- "*" Projectile : fires
-    GameSession "1" -- "*" GoldBag
-    Enemy "1" -- "*" GoldBag : drops
-    Tower "1" -- "1" TowerLevel
-    Spell "1" -- "1" Enemy : affects
-    Knight "1" -- "*" Enemy : has synergy with
-    Enemy "1" -- "*" StatusEffectType : has
 %% Additional semantic relationships
     Enemy --> EnemyType : has type
     Projectile --> ProjectileType : has type

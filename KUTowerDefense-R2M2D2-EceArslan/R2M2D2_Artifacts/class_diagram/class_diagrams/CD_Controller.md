@@ -52,12 +52,6 @@ classDiagram
         +isGameActive() boolean
         +editMap()
         +returnToMainMenu()
-        +upgradeTower(Tower tower) boolean
-        +handleGoldBagCollection(Point position) int
-        +updateEnemyStatusEffects(float deltaTime)
-        +checkCombatSynergy()
-        +handleTowerUpgradeRequest(Tower tower)
-        +getTowerUpgradeCost(TowerType type) int
     }
 
     class MapEditorController {
@@ -113,10 +107,6 @@ classDiagram
         +setEnabled(boolean enabled)
         +isEnabled() boolean
         +handleTowerSlotClick(Point position)
-        +handleGoldBagClick(Point position)
-        +handleTowerUpgradeClick(Point position)
-        +registerGoldBagClickHandler(Consumer<Point> handler)
-        +registerTowerUpgradeHandler(Consumer<Point> handler)
     }
 
     class GameClock {
@@ -135,8 +125,6 @@ classDiagram
         +tick()
         +registerUpdateable(Updateable updateable)
         +unregisterUpdateable(Updateable updateable)
-        +updateStatusEffects(float deltaTime)
-        +updateDroppedItems(float deltaTime)
     }
 
     class Updateable {
@@ -283,7 +271,3 @@ classDiagram
 
     MapSerializer o-- FileManager
     OptionsSerializer o-- FileManager
-
-    GameController --> GameOptions : manages
-    GameController --> InputHandler : handles
-    GameController --> GameClock : controls

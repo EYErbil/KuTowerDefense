@@ -1,3 +1,5 @@
+# Class Diagram: Controller Components
+
 ```mermaid
 classDiagram
     class Application {
@@ -21,71 +23,6 @@ classDiagram
         +requestExit()
         +changeScreen(Screen screen)
         +getResourceManager() ResourceManager
-    }
-
-    class Screen {
-        <<abstract>>
-    }
-
-    class MainMenuScreen
-    class GameScreen
-    class MapEditorScreen
-    class OptionsScreen
-    class GameOverScreen
-
-    MainMenuScreen --|> Screen
-    GameScreen --|> Screen
-    MapEditorScreen --|> Screen
-    OptionsScreen --|> Screen
-    GameOverScreen --|> Screen
-
-    class Updateable {
-        <<interface>>
-        +update(float deltaTime)
-    }
-
-    class ScreenType {
-        <<enumeration>>
-    }
-
-    class GameClock {
-        -float targetFPS
-        -float deltaTime
-        -boolean isPaused
-        -float timeScale
-        -List~Updateable~ updateables
-        +GameClock(float fps)
-        +start()
-        +stop()
-        +pause()
-        +resume()
-        +setTimeScale(float scale)
-        +getDeltaTime() float
-        +tick()
-        +registerUpdateable(Updateable updateable)
-        +unregisterUpdateable(Updateable updateable)
-        +updateStatusEffects(float deltaTime)
-        +updateDroppedItems(float deltaTime)
-    }
-
-    GameClock ..|> Updateable
-
-    class InputHandler {
-        -Map<Integer, Runnable> keyBindings
-        -Map<MouseEvent.Type, Consumer<MouseEvent>> mouseHandlers
-        -boolean isEnabled
-        +initialize()
-        +handleKeyEvent(KeyEvent event)
-        +handleMouseEvent(MouseEvent event)
-        +registerKeyBinding(int keyCode, Runnable action)
-        +registerMouseHandler(MouseEvent.Type type, Consumer<MouseEvent> handler)
-        +setEnabled(boolean enabled)
-        +isEnabled() boolean
-        +handleTowerSlotClick(Point position)
-        +handleGoldBagClick(Point position)
-        +handleTowerUpgradeClick(Point position)
-        +registerGoldBagClickHandler(Consumer<Point> handler)
-        +registerTowerUpgradeHandler(Consumer<Point> handler)
     }
 
     class GameController {
@@ -115,12 +52,6 @@ classDiagram
         +isGameActive() boolean
         +editMap()
         +returnToMainMenu()
-        +upgradeTower(Tower tower) boolean
-        +handleGoldBagCollection(Point position) int
-        +updateEnemyStatusEffects(float deltaTime)
-        +checkCombatSynergy()
-        +handleTowerUpgradeRequest(Tower tower)
-        +getTowerUpgradeCost(TowerType type) int
     }
 
     class MapEditorController {
@@ -162,6 +93,43 @@ classDiagram
         +returnToMainMenu()
         +showValidationError(String errorMessage)
         +showSaveConfirmation()
+    }
+
+    class InputHandler {
+        -Map<Integer, Runnable> keyBindings
+        -Map<MouseEvent.Type, Consumer<MouseEvent>> mouseHandlers
+        -boolean isEnabled
+        +initialize()
+        +handleKeyEvent(KeyEvent event)
+        +handleMouseEvent(MouseEvent event)
+        +registerKeyBinding(int keyCode, Runnable action)
+        +registerMouseHandler(MouseEvent.Type type, Consumer<MouseEvent> handler)
+        +setEnabled(boolean enabled)
+        +isEnabled() boolean
+        +handleTowerSlotClick(Point position)
+    }
+
+    class GameClock {
+        -float targetFPS
+        -float deltaTime
+        -boolean isPaused
+        -float timeScale
+        -List~Updateable~ updateables
+        +GameClock(float fps)
+        +start()
+        +stop()
+        +pause()
+        +resume()
+        +setTimeScale(float scale)
+        +getDeltaTime() float
+        +tick()
+        +registerUpdateable(Updateable updateable)
+        +unregisterUpdateable(Updateable updateable)
+    }
+
+    class Updateable {
+        <<interface>>
+        +update(float deltaTime)
     }
 
     class MapSerializer {
@@ -225,6 +193,15 @@ classDiagram
         +createMapEditorScreen() MapEditorScreen
         +createOptionsScreen() OptionsScreen
         +createGameOverScreen() GameOverScreen
+    }
+
+    class ScreenType {
+        <<enumeration>>
+        MAIN_MENU
+        GAME
+        MAP_EDITOR
+        OPTIONS
+        GAME_OVER
     }
 
     class WaveFactory {

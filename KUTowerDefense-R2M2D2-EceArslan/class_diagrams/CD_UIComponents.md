@@ -31,9 +31,6 @@ classDiagram
         -TowerPanel towerPanel
         -WaveIndicator waveIndicator
         -TowerRangeIndicator rangeIndicator
-        -GoldBagRenderer goldBagRenderer
-        -StatusEffectRenderer statusEffectRenderer
-        -TowerUpgradeMenu towerUpgradeMenu
         +initialize(GameSession session)
         +update(float deltaTime)
         +handleInput(InputEvent event)
@@ -42,10 +39,6 @@ classDiagram
         +updateWaveIndicator(int current, int total)
         +showGameOverScreen(boolean victory)
         +showConfirmationDialog(String message) boolean
-        +handleGoldBagClick(Point position)
-        +showTowerUpgradeMenu(Tower tower)
-        +updateStatusEffects()
-        +hideTowerUpgradeMenu()
     }
 
     class MapEditorScreen {
@@ -171,32 +164,11 @@ classDiagram
         -List~TowerType~ availableTowers
         -TowerRenderer towerRenderer
         -TowerSlot selectedSlot
-        -Map<TowerType, Integer> upgradeCosts
-        -JButton upgradeButton
         +initialize(List~TowerType~ availableTowers)
         +showTowerOptions(TowerSlot slot)
         +hideTowerOptions()
         +handleMouseClick(MouseEvent event) TowerType
         +renderTowerOption(TowerType type, int x, int y)
-        +showUpgradeOption(Tower tower)
-        +updateUpgradeButtonState(int playerGold)
-        +handleUpgradeClick(Tower tower)
-    }
-
-    class TowerUpgradeMenu {
-        -Tower tower
-        -JPanel menuPanel
-        -JButton upgradeButton
-        -JLabel costLabel
-        -JLabel statsLabel
-        +initialize(Tower tower)
-        +updateUpgradeCost(int cost)
-        +updateStatsDisplay()
-        +setUpgradeEnabled(boolean enabled)
-        +show()
-        +hide()
-        +render(Graphics g)
-        +handleMouseClick(MouseEvent event)
     }
 
     class WaveIndicator {
@@ -229,30 +201,25 @@ classDiagram
     class TowerRenderer {
         -Map<TowerType, Image> towerImages
         -Map<TowerType, Animation> constructionAnimations
-        -Map<TowerType, Image> level2TowerImages
         +loadTowerImages()
         +renderTower(Graphics g, Tower tower, int x, int y)
         +renderTowerOption(Graphics g, TowerType type, int x, int y)
-        +getTowerImage(TowerType type, int level) Image
+        +getTowerImage(TowerType type) Image
         +playConstructionAnimation(Tower tower)
     }
 
     class EnemyRenderer {
         -Map<EnemyType, Map<Direction, Animation>> enemyAnimations
         -Map<EnemyType, Image> enemyIcons
-        -Map<StatusEffectType, Image> statusEffectIcons
         +loadEnemyAnimations()
         +renderEnemy(Graphics g, Enemy enemy, int x, int y)
         +renderHealthBar(Graphics g, Enemy enemy, int x, int y)
         +getEnemyAnimation(EnemyType type, Direction direction) Animation
-        +renderStatusEffects(Graphics g, Enemy enemy, int x, int y)
-        +loadStatusEffectIcons()
     }
 
     class ProjectileRenderer {
         -Map<ProjectileType, Image> projectileImages
         -Map<ProjectileType, Animation> impactAnimations
-        -Map<ProjectileType, Image> level2ProjectileImages
         +loadProjectileImages()
         +renderProjectile(Graphics g, Projectile projectile, int x, int y)
         +playImpactAnimation(Projectile projectile, Point position)
@@ -285,30 +252,6 @@ classDiagram
         DOWN_RIGHT
     }
 
-    class GoldBagRenderer {
-        -Image goldBagImage
-        -Animation sparkleAnimation
-        +loadResources()
-        +renderGoldBag(Graphics g, GoldBag goldBag, int x, int y)
-        +renderSparkleEffect(Graphics g, GoldBag goldBag, int x, int y)
-        +update(float deltaTime)
-    }
-
-    class StatusEffectRenderer {
-        -Map<StatusEffectType, Image> effectIcons
-        -Map<StatusEffectType, Animation> effectAnimations
-        +loadEffectResources()
-        +renderEffect(Graphics g, StatusEffectType type, int x, int y)
-        +renderEffectAnimation(Graphics g, StatusEffectType type, int x, int y)
-        +renderMultipleEffects(Graphics g, List<StatusEffectType> effects, int x, int y)
-    }
-
-    class StatusEffectType {
-        <<enumeration>>
-        SLOW
-        COMBAT_SYNERGY
-    }
-
     Screen <|-- MainMenuScreen
     Screen <|-- GameScreen
     Screen <|-- MapEditorScreen
@@ -321,9 +264,6 @@ classDiagram
     GameScreen *-- TowerPanel
     GameScreen *-- WaveIndicator
     GameScreen *-- TowerRangeIndicator
-    GameScreen *-- GoldBagRenderer
-    GameScreen *-- StatusEffectRenderer
-    GameScreen *-- TowerUpgradeMenu
 
     MapEditorScreen *-- MapGrid
     MapEditorScreen *-- TileSelector
@@ -337,5 +277,3 @@ classDiagram
     TowerRenderer *-- Animation
     EnemyRenderer *-- Animation
     ProjectileRenderer *-- Animation
-    GoldBagRenderer *-- Animation
-    StatusEffectRenderer *-- Animation
