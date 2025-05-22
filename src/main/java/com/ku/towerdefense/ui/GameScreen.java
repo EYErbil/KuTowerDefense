@@ -85,8 +85,12 @@ public class GameScreen extends BorderPane {
     private ImageView livesIcon;
     private ImageView waveIcon;
 
-    private Button pauseResumeButton;
-    private Button gameSpeedButton;
+    // private Button pauseResumeButton; // REMOVED
+    // private Button gameSpeedButton; // REMOVED
+    private Button pauseButton;
+    private Button playButton;
+    private Button fastForwardButton;
+    private static final String TIME_CONTROL_SELECTED_STYLE_CLASS = "time-control-selected";
 
     // Define TowerBuildOption as a private static nested class
     private static class TowerBuildOption {
@@ -125,7 +129,8 @@ public class GameScreen extends BorderPane {
             double worldHeight = gameController.getGameMap().getHeight() * TILE_SIZE;
 
             // --- Calculate Scaling and Centering ---
-            // This baseScale ensures the whole map is visible when zoom is 1.0 and no
+            // This baseScale ensures the whole map is visible when zoom is 1.0 and
+            // no
             // panning (or panned to center)
             double baseScaleX = canvasWidth / worldWidth;
             double baseScaleY = canvasHeight / worldHeight;
@@ -479,7 +484,7 @@ public class GameScreen extends BorderPane {
         topBar.setAlignment(Pos.CENTER_LEFT);
         topBar.getStyleClass().add("game-top-bar");
 
-        Image hudIconsSheet = UIAssets.getImage("Coin_Health_Wave");
+        Image hudIconsSheet = UIAssets.getImage("GameUI"); // Corrected key, was "Coin_Health_Wave"
         double iconSheetEntryWidth = 79;
         double iconSheetEntryHeight = 218.0 / 3.0;
         double displayIconSize = 36; // Increased from 32 for better visibility
@@ -522,50 +527,110 @@ public class GameScreen extends BorderPane {
         HBox waveDisplay = new HBox(8, waveIcon, waveLabel); // Adjusted spacing
         waveDisplay.setAlignment(Pos.CENTER_LEFT);
 
-        updateTopBarLabels();
+        // updateTopBarLabels(); // Called by timer, initial state set by
+        // updateTimeControlStates
 
         Pane spacer = new Pane();
         HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
 
         // Game Controls
-        pauseResumeButton = new Button(isPaused ? "▶️ Resume" : "⏸️ Pause");
-        pauseResumeButton.getStyleClass().addAll("button", "secondary-button"); // General button style
-        pauseResumeButton.setOnAction(e -> togglePause());
+        final double controlButtonIconSize = 72.0;
 
-        Button menuButton = UIAssets.createIconButton("Menu", 3, 1, 24); // Settings icon (3,1)
+        pauseButton = UIAssets.createIconButton(UIAssets.LABEL_PAUSE, UIAssets.ICON_PAUSE_COL, UIAssets.ICON_PAUSE_ROW,
+                controlButtonIconSize);
+        pauseButton.setOnAction(e -> {
+            isPaused = true;
+            gameController.setPaused(true);
+            // gameController.setSpeedAccelerated(false); // Optional: reset speed on pause
+            updateTimeControlStates();
+            e.consume();
+        });
+
+        playButton = UIAssets.createIconButton(UIAssets.LABEL_PLAY, UIAssets.ICON_PLAY_COL, UIAssets.ICON_PLAY_ROW,
+                controlButtonIconSize);
+        playButton.setOnAction(e -> {
+            isPaused = false;
+            gameController.setPaused(false);
+            gameController.setSpeedAccelerated(false);
+            updateTimeControlStates();
+            e.consume();
+        });
+
+        fastForwardButton = UIAssets.createIconButton(UIAssets.LABEL_FAST_FORWARD, UIAssets.ICON_FAST_FORWARD_COL,
+                UIAssets.ICON_FAST_FORWARD_ROW, controlButtonIconSize);
+        fastForwardButton.setOnAction(e -> {
+            isPaused = false;
+            gameController.setPaused(false);
+            gameController.setSpeedAccelerated(true);
+            updateTimeControlStates();
+            e.consume();
+        });
+
+        Button menuButton = UIAssets.createIconButton(UIAssets.LABEL_SETTINGS, UIAssets.ICON_SETTINGS_COL,
+                UIAssets.ICON_SETTINGS_ROW, controlButtonIconSize);
         menuButton.setOnAction(e -> {
             showGameSettingsPopup();
             e.consume(); // Consume event so it doesn't propagate to uiOverlayPane click listener
         });
 
-        gameSpeedButton = new Button(gameController.isSpeedAccelerated() ? "Speed (2x)" : "Speed (1x)");
-        gameSpeedButton.getStyleClass().addAll("button", "secondary-button");
-        gameSpeedButton.setOnAction(e -> toggleGameSpeed());
+        topBar.getChildren().addAll(goldDisplay, livesDisplay, waveDisplay, spacer, pauseButton, playButton,
+                fastForwardButton, menuButton);
 
-        topBar.getChildren().addAll(goldDisplay, livesDisplay, waveDisplay, spacer, pauseResumeButton, menuButton,
-                gameSpeedButton);
+        // Set initial state of time controls
+        // Assuming game starts unpaused and at normal speed
+        isPaused = false; // Default
+        gameController.setPaused(false); // Ensure controller matches
+        gameController.setSpeedAccelerated(false); // Ensure controller matches
+        updateTimeControlStates(); // This will select the playButton and start the timer
+
         return topBar;
+    }
+
+    private void updateTimeControlStates() {
+        // Remove selected style from all buttons first
+        if (pauseButton != null)
+            pauseButton.getStyleClass().remove(TIME_CONTROL_SELECTED_STYLE_CLASS);
+        if (playButton != null)
+            playButton.getStyleClass().remove(TIME_CONTROL_SELECTED_STYLE_CLASS);
+        if (fastForwardButton != null)
+            fastForwardButton.getStyleClass().remove(TIME_CONTROL_SELECTED_STYLE_CLASS);
+
+        if (isPaused) {
+            if (pauseButton != null)
+                pauseButton.getStyleClass().add(TIME_CONTROL_SELECTED_STYLE_CLASS);
+            if (renderTimer != null)
+                renderTimer.stop();
+            // The renderTimer's internal lastTime is reset to -1 when
+            // GameScreen.this.isPaused is true in its handle() method.
+        } else {
+            if (gameController.isSpeedAccelerated()) {
+                if (fastForwardButton != null)
+                    fastForwardButton.getStyleClass().add(TIME_CONTROL_SELECTED_STYLE_CLASS);
+            } else {
+                if (playButton != null)
+                    playButton.getStyleClass().add(TIME_CONTROL_SELECTED_STYLE_CLASS);
+            }
+            if (renderTimer != null) {
+                // Ensure renderTimer's internal lastTime is reset if it was previously stopped.
+                // The timer's handle() method already does this if its lastTime < 0.
+                // Calling start() ensures it runs.
+                renderTimer.start();
+            }
+        }
     }
 
     private void updateTopBarLabels() {
         if (goldLabel != null) {
             goldLabel.setText("" + gameController.getPlayerGold());
-            System.out.println("Updating gold: " + gameController.getPlayerGold()); // For debugging
         }
         if (livesLabel != null) {
             livesLabel.setText("" + gameController.getPlayerLives());
-            System.out.println("Updating lives: " + gameController.getPlayerLives()); // For debugging
         }
         if (waveLabel != null) {
             waveLabel.setText("Wave: " + gameController.getCurrentWave());
-            System.out.println("Updating wave: " + gameController.getCurrentWave()); // For debugging
         }
-        if (pauseResumeButton != null) {
-            pauseResumeButton.setText(isPaused ? "▶️ Resume" : "⏸️ Pause");
-        }
-        if (gameSpeedButton != null) {
-            gameSpeedButton.setText(gameController.isSpeedAccelerated() ? "Speed (2x)" : "Speed (1x)");
-        }
+        // Pause/Speed button text/icon updates are now handled by
+        // updateTimeControlStates()
     }
 
     /**
@@ -779,24 +844,6 @@ public class GameScreen extends BorderPane {
         st.setInterpolator(javafx.animation.Interpolator.EASE_OUT);
         ParallelTransition pt = new ParallelTransition(ft, st);
         pt.play();
-    }
-
-    private void togglePause() {
-        isPaused = !isPaused;
-        gameController.setPaused(isPaused); // Assuming GameController has a setPaused method
-        if (isPaused) {
-            renderTimer.stop();
-            // topBarUpdateTimer can continue if it shows paused state correctly
-        } else {
-            renderTimer.start();
-            lastMouseXForPan = -1; // Reset lastTime for delta calculation in renderTimer
-        }
-        updateTopBarLabels(); // Update button text
-    }
-
-    private void toggleGameSpeed() {
-        gameController.setSpeedAccelerated(!gameController.isSpeedAccelerated());
-        updateTopBarLabels(); // Update button text
     }
 
     public void stop() { // Assuming this method exists or should be added for cleanup

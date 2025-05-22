@@ -266,6 +266,71 @@ public class UIAssets {
     public static final double KUTOWERBUTTONS_ICON_WIDTH = 69.25;
     public static final double KUTOWERBUTTONS_ICON_HEIGHT = 66.5;
 
+    // Icon Definitions for KUTowerButtons sprite sheet (kutowerbuttons4.png)
+    // Row 0
+    public static final String LABEL_EDIT = "Edit";
+    public static final int ICON_EDIT_COL = 0;
+    public static final int ICON_EDIT_ROW = 0;
+
+    public static final String LABEL_DELETE = "Delete";
+    public static final int ICON_DELETE_COL = 1;
+    public static final int ICON_DELETE_ROW = 0;
+
+    public static final String LABEL_SAVE = "Save";
+    public static final int ICON_SAVE_COL = 2;
+    public static final int ICON_SAVE_ROW = 0;
+
+    public static final String LABEL_CLOSE = "Close";
+    public static final int ICON_CLOSE_COL = 3;
+    public static final int ICON_CLOSE_ROW = 0;
+
+    // Row 1
+    public static final String LABEL_PLAY = "Play";
+    public static final int ICON_PLAY_COL = 0;
+    public static final int ICON_PLAY_ROW = 1;
+
+    public static final String LABEL_FAST_FORWARD = "Fast Forward";
+    public static final int ICON_FAST_FORWARD_COL = 1;
+    public static final int ICON_FAST_FORWARD_ROW = 1;
+
+    public static final String LABEL_PAUSE = "Pause";
+    public static final int ICON_PAUSE_COL = 2;
+    public static final int ICON_PAUSE_ROW = 1;
+
+    public static final String LABEL_SETTINGS = "Settings";
+    public static final int ICON_SETTINGS_COL = 3;
+    public static final int ICON_SETTINGS_ROW = 1;
+
+    // Row 2
+    public static final String LABEL_DESELECT = "Deselect"; // Target with an X
+    public static final int ICON_DESELECT_COL = 0;
+    public static final int ICON_DESELECT_ROW = 2;
+
+    public static final String LABEL_UPGRADE = "Upgrade"; // Star icon
+    public static final int ICON_UPGRADE_COL = 1;
+    public static final int ICON_UPGRADE_ROW = 2;
+
+    public static final String LABEL_FIRE = "Fire"; // Fire icon
+    public static final int ICON_FIRE_COL = 2;
+    public static final int ICON_FIRE_ROW = 2;
+
+    public static final String LABEL_BOMB = "Bomb"; // Bomb icon
+    public static final int ICON_BOMB_COL = 3;
+    public static final int ICON_BOMB_ROW = 2;
+
+    // Row 3
+    public static final String LABEL_FILL = "Fill"; // Paint bucket icon
+    public static final int ICON_FILL_COL = 0;
+    public static final int ICON_FILL_ROW = 3;
+
+    public static final String LABEL_ERASE = "Erase"; // Eraser icon
+    public static final int ICON_ERASER_COL = 1;
+    public static final int ICON_ERASER_ROW = 3;
+
+    public static final String LABEL_BUILD = "Build"; // Square block icon
+    public static final int ICON_BUILD_COL = 2;
+    public static final int ICON_BUILD_ROW = 3;
+
     /**
      * Creates a button with an icon from the "KUTowerButtons" sprite sheet.
      *
