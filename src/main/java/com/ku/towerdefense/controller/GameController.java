@@ -797,6 +797,15 @@ public class GameController {
     }
 
     /**
+     * Returns the current game speed multiplier.
+     * 
+     * @return 2 if fast-forward is active, 1 otherwise.
+     */
+    public int getGameSpeed() {
+        return speedAccelerated ? (int) SPEED_MULTIPLIER : 1;
+    }
+
+    /**
      * Set the game speed acceleration.
      *
      * @param speedAccelerated true to accelerate, false for normal speed
