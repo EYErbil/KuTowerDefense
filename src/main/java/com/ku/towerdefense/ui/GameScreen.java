@@ -90,6 +90,7 @@ public class GameScreen extends BorderPane {
     private Button pauseButton;
     private Button playButton;
     private Button fastForwardButton;
+    private Button menuButton;
     private static final String TIME_CONTROL_SELECTED_STYLE_CLASS = "time-control-selected";
 
     // Define TowerBuildOption as a private static nested class
@@ -312,49 +313,149 @@ public class GameScreen extends BorderPane {
     private void initializeUI() {
         getStyleClass().add("game-screen");
 
-        HBox topBar = createTopBar();
         gameCanvas = new Canvas(); // Canvas takes available space
 
-        // Configure uiOverlayPane to sit on top of the canvas and not intercept mouse
-        // events
-        // unless a UI element (like a popup) is present and interactive.
         uiOverlayPane.setPickOnBounds(false);
         uiOverlayPane.prefWidthProperty().bind(gameCanvas.widthProperty());
         uiOverlayPane.prefHeightProperty().bind(gameCanvas.heightProperty());
 
-        // Listen for clicks on the uiOverlayPane to close popups if the click is not on
-        // a popup itself
         uiOverlayPane.setOnMouseClicked(event -> {
             if (activePopup != null && !event.isConsumed()) {
-                // Check if the click was outside the bounds of the activePopup
-                // This is a simple check; more robust might be needed if popups are complex
-                // shapes
                 boolean clickOutsidePopup = true;
                 if (activePopup.getBoundsInParent().contains(event.getX(), event.getY())) {
                     clickOutsidePopup = false;
                 }
-                // Also, if the event target is the uiOverlayPane itself, it means no specific
-                // UI element was clicked
                 if (event.getTarget() == uiOverlayPane && clickOutsidePopup) {
                     clearActivePopup();
                 }
             }
         });
 
-        // Use StackPane to layer canvas and UI overlay
         canvasRootPane.getChildren().addAll(gameCanvas, uiOverlayPane);
 
-        setTop(topBar);
-        setCenter(canvasRootPane); // Use the StackPane here
-        // REMOVE SIDEBAR - setRight(createSidebar());
+        setCenter(canvasRootPane);
 
-        // Resize canvas when the GameScreen (BorderPane) size changes.
-        // Bind canvas size to the StackPane's size, which is in the center of
-        // BorderPane.
         gameCanvas.widthProperty().bind(canvasRootPane.widthProperty());
         gameCanvas.heightProperty().bind(canvasRootPane.heightProperty());
 
-        // Mouse event handling on gameCanvas (remains the same from previous state)
+        // ---- Create Game Info Display (Top-Left) ----
+        VBox gameInfoPane = new VBox(8); // Spacing between elements
+        gameInfoPane.setPadding(new Insets(15)); // Padding around the pane
+        gameInfoPane.setAlignment(Pos.TOP_LEFT);
+        // Make it transparent to mouse events so clicks go through to canvas/popups
+        // unless an element inside it consumes the event.
+        gameInfoPane.setPickOnBounds(false);
+
+        Image hudIconsSheet = UIAssets.getImage("GameUI");
+        double iconSheetEntryWidth = 79;
+        double iconSheetEntryHeight = 218.0 / 3.0;
+        double displayIconSize = 36;
+
+        // Gold Display
+        goldIcon = new ImageView(hudIconsSheet);
+        goldIcon.setViewport(new javafx.geometry.Rectangle2D(0, 0, iconSheetEntryWidth, iconSheetEntryHeight));
+        goldIcon.setFitWidth(displayIconSize);
+        goldIcon.setFitHeight(displayIconSize);
+        goldIcon.setPreserveRatio(true);
+        goldIcon.setSmooth(true);
+        goldLabel = new Label();
+        goldLabel.getStyleClass().add("game-info-text");
+        HBox goldDisplay = new HBox(8, goldIcon, goldLabel);
+        goldDisplay.setAlignment(Pos.CENTER_LEFT);
+
+        // Lives Display
+        livesIcon = new ImageView(hudIconsSheet);
+        livesIcon.setViewport(
+                new javafx.geometry.Rectangle2D(0, iconSheetEntryHeight, iconSheetEntryWidth, iconSheetEntryHeight));
+        livesIcon.setFitWidth(displayIconSize);
+        livesIcon.setFitHeight(displayIconSize);
+        livesIcon.setPreserveRatio(true);
+        livesIcon.setSmooth(true);
+        livesLabel = new Label();
+        livesLabel.getStyleClass().add("game-info-text");
+        HBox livesDisplay = new HBox(8, livesIcon, livesLabel);
+        livesDisplay.setAlignment(Pos.CENTER_LEFT);
+
+        // Wave Display
+        waveIcon = new ImageView(hudIconsSheet);
+        waveIcon.setViewport(new javafx.geometry.Rectangle2D(0, iconSheetEntryHeight * 2, iconSheetEntryWidth,
+                iconSheetEntryHeight));
+        waveIcon.setFitWidth(displayIconSize);
+        waveIcon.setFitHeight(displayIconSize);
+        waveIcon.setPreserveRatio(true);
+        waveIcon.setSmooth(true);
+        waveLabel = new Label();
+        waveLabel.getStyleClass().add("game-info-text");
+        HBox waveDisplay = new HBox(8, waveIcon, waveLabel);
+        waveDisplay.setAlignment(Pos.CENTER_LEFT);
+
+        gameInfoPane.getChildren().addAll(goldDisplay, livesDisplay, waveDisplay);
+        uiOverlayPane.getChildren().add(gameInfoPane); // Add to overlay
+
+        // ---- Create Control Buttons (Top-Right) ----
+        VBox controlButtonsPane = new VBox(10); // Spacing between buttons
+        controlButtonsPane.setPadding(new Insets(15));
+        controlButtonsPane.setAlignment(Pos.TOP_RIGHT);
+        controlButtonsPane.setPickOnBounds(false); // Allow clicks to pass through empty areas
+
+        final double controlButtonIconSize = 72.0;
+
+        pauseButton = UIAssets.createIconButton(UIAssets.LABEL_PAUSE, UIAssets.ICON_PAUSE_COL, UIAssets.ICON_PAUSE_ROW,
+                controlButtonIconSize);
+        pauseButton.setOnAction(e -> {
+            isPaused = true;
+            gameController.setPaused(true);
+            updateTimeControlStates();
+            e.consume();
+        });
+
+        playButton = UIAssets.createIconButton(UIAssets.LABEL_PLAY, UIAssets.ICON_PLAY_COL, UIAssets.ICON_PLAY_ROW,
+                controlButtonIconSize);
+        playButton.setOnAction(e -> {
+            isPaused = false;
+            gameController.setPaused(false);
+            gameController.setSpeedAccelerated(false);
+            updateTimeControlStates();
+            e.consume();
+        });
+
+        fastForwardButton = UIAssets.createIconButton(UIAssets.LABEL_FAST_FORWARD, UIAssets.ICON_FAST_FORWARD_COL,
+                UIAssets.ICON_FAST_FORWARD_ROW, controlButtonIconSize);
+        fastForwardButton.setOnAction(e -> {
+            isPaused = false;
+            gameController.setPaused(false);
+            gameController.setSpeedAccelerated(true);
+            updateTimeControlStates();
+            e.consume();
+        });
+
+        menuButton = UIAssets.createIconButton(UIAssets.LABEL_SETTINGS, UIAssets.ICON_SETTINGS_COL,
+                UIAssets.ICON_SETTINGS_ROW, controlButtonIconSize);
+        menuButton.setOnAction(e -> {
+            showGameSettingsPopup();
+            e.consume();
+        });
+
+        // Remove HBox for timeControls, add buttons directly to VBox for vertical
+        // layout
+        controlButtonsPane.getChildren().addAll(pauseButton, playButton, fastForwardButton, menuButton);
+        uiOverlayPane.getChildren().add(controlButtonsPane);
+
+        // Position controlButtonsPane at top-right
+        // We need to bind its position to the right edge of the uiOverlayPane
+        controlButtonsPane.layoutXProperty().bind(
+                uiOverlayPane.widthProperty().subtract(controlButtonsPane.widthProperty()).subtract(15) // 15 for
+                                                                                                        // padding
+        );
+        // controlButtonsPane.setLayoutY(15); // For top padding
+
+        // Initial state for time controls
+        isPaused = false;
+        gameController.setPaused(false);
+        gameController.setSpeedAccelerated(false);
+        updateTimeControlStates();
+
+        // Mouse event handling on gameCanvas (remains the same)
         gameCanvas.setOnMouseMoved(e -> renderTimer.setMousePosition(e.getX(), e.getY(), true));
         gameCanvas.setOnMouseExited(e -> renderTimer.setMousePosition(e.getX(), e.getY(), false));
         gameCanvas.setOnScroll(event -> {
@@ -468,123 +569,10 @@ public class GameScreen extends BorderPane {
         topBarUpdateTimer = new AnimationTimer() {
             @Override
             public void handle(long now) {
-                updateTopBarLabels();
+                updateGameInfoLabels();
             }
         };
         topBarUpdateTimer.start();
-    }
-
-    /**
-     * Create the top bar with game information.
-     *
-     * @return the top bar container
-     */
-    private HBox createTopBar() {
-        HBox topBar = new HBox(15); // Increased spacing a bit
-        topBar.setPadding(new Insets(10, 15, 10, 15));
-        topBar.setAlignment(Pos.CENTER_LEFT);
-        topBar.getStyleClass().add("game-top-bar");
-
-        Image hudIconsSheet = UIAssets.getImage("GameUI"); // Corrected key, was "Coin_Health_Wave"
-        double iconSheetEntryWidth = 79;
-        double iconSheetEntryHeight = 218.0 / 3.0;
-        double displayIconSize = 36; // Increased from 32 for better visibility
-
-        // Gold Display
-        goldIcon = new ImageView(hudIconsSheet);
-        goldIcon.setViewport(new javafx.geometry.Rectangle2D(0, 0, iconSheetEntryWidth, iconSheetEntryHeight));
-        goldIcon.setFitWidth(displayIconSize);
-        goldIcon.setFitHeight(displayIconSize);
-        goldIcon.setPreserveRatio(true); // Added to maintain aspect ratio
-        goldIcon.setSmooth(true);
-        goldLabel = new Label();
-        goldLabel.getStyleClass().add("game-info-text");
-        HBox goldDisplay = new HBox(8, goldIcon, goldLabel); // Adjusted spacing
-        goldDisplay.setAlignment(Pos.CENTER_LEFT);
-
-        // Lives Display
-        livesIcon = new ImageView(hudIconsSheet);
-        livesIcon.setViewport(
-                new javafx.geometry.Rectangle2D(0, iconSheetEntryHeight, iconSheetEntryWidth, iconSheetEntryHeight));
-        livesIcon.setFitWidth(displayIconSize);
-        livesIcon.setFitHeight(displayIconSize);
-        livesIcon.setPreserveRatio(true); // Added
-        livesIcon.setSmooth(true);
-        livesLabel = new Label();
-        livesLabel.getStyleClass().add("game-info-text");
-        HBox livesDisplay = new HBox(8, livesIcon, livesLabel); // Adjusted spacing
-        livesDisplay.setAlignment(Pos.CENTER_LEFT);
-
-        // Wave Display
-        waveIcon = new ImageView(hudIconsSheet);
-        waveIcon.setViewport(new javafx.geometry.Rectangle2D(0, iconSheetEntryHeight * 2, iconSheetEntryWidth,
-                iconSheetEntryHeight));
-        waveIcon.setFitWidth(displayIconSize);
-        waveIcon.setFitHeight(displayIconSize);
-        waveIcon.setPreserveRatio(true); // Added
-        waveIcon.setSmooth(true);
-        waveLabel = new Label();
-        waveLabel.getStyleClass().add("game-info-text");
-        HBox waveDisplay = new HBox(8, waveIcon, waveLabel); // Adjusted spacing
-        waveDisplay.setAlignment(Pos.CENTER_LEFT);
-
-        // updateTopBarLabels(); // Called by timer, initial state set by
-        // updateTimeControlStates
-
-        Pane spacer = new Pane();
-        HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
-
-        // Game Controls
-        final double controlButtonIconSize = 72.0;
-
-        pauseButton = UIAssets.createIconButton(UIAssets.LABEL_PAUSE, UIAssets.ICON_PAUSE_COL, UIAssets.ICON_PAUSE_ROW,
-                controlButtonIconSize);
-        pauseButton.setOnAction(e -> {
-            isPaused = true;
-            gameController.setPaused(true);
-            // gameController.setSpeedAccelerated(false); // Optional: reset speed on pause
-            updateTimeControlStates();
-            e.consume();
-        });
-
-        playButton = UIAssets.createIconButton(UIAssets.LABEL_PLAY, UIAssets.ICON_PLAY_COL, UIAssets.ICON_PLAY_ROW,
-                controlButtonIconSize);
-        playButton.setOnAction(e -> {
-            isPaused = false;
-            gameController.setPaused(false);
-            gameController.setSpeedAccelerated(false);
-            updateTimeControlStates();
-            e.consume();
-        });
-
-        fastForwardButton = UIAssets.createIconButton(UIAssets.LABEL_FAST_FORWARD, UIAssets.ICON_FAST_FORWARD_COL,
-                UIAssets.ICON_FAST_FORWARD_ROW, controlButtonIconSize);
-        fastForwardButton.setOnAction(e -> {
-            isPaused = false;
-            gameController.setPaused(false);
-            gameController.setSpeedAccelerated(true);
-            updateTimeControlStates();
-            e.consume();
-        });
-
-        Button menuButton = UIAssets.createIconButton(UIAssets.LABEL_SETTINGS, UIAssets.ICON_SETTINGS_COL,
-                UIAssets.ICON_SETTINGS_ROW, controlButtonIconSize);
-        menuButton.setOnAction(e -> {
-            showGameSettingsPopup();
-            e.consume(); // Consume event so it doesn't propagate to uiOverlayPane click listener
-        });
-
-        topBar.getChildren().addAll(goldDisplay, livesDisplay, waveDisplay, spacer, pauseButton, playButton,
-                fastForwardButton, menuButton);
-
-        // Set initial state of time controls
-        // Assuming game starts unpaused and at normal speed
-        isPaused = false; // Default
-        gameController.setPaused(false); // Ensure controller matches
-        gameController.setSpeedAccelerated(false); // Ensure controller matches
-        updateTimeControlStates(); // This will select the playButton and start the timer
-
-        return topBar;
     }
 
     private void updateTimeControlStates() {
@@ -622,7 +610,7 @@ public class GameScreen extends BorderPane {
         }
     }
 
-    private void updateTopBarLabels() {
+    private void updateGameInfoLabels() {
         if (goldLabel != null) {
             goldLabel.setText("" + gameController.getPlayerGold());
         }
@@ -932,7 +920,7 @@ public class GameScreen extends BorderPane {
 
         settingsPopup.getChildren().addAll(title, saveButton, loadButton, resumeButton, mainMenuButton);
 
-        // Position in center of screen
+        // Position in center of screen (relative to uiOverlayPane)
         settingsPopup.layoutBoundsProperty().addListener((obs, oldVal, newVal) -> {
             settingsPopup.setLayoutX((uiOverlayPane.getWidth() - newVal.getWidth()) / 2);
             settingsPopup.setLayoutY((uiOverlayPane.getHeight() - newVal.getHeight()) / 2);

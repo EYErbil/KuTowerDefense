@@ -263,8 +263,11 @@ public class UIAssets {
         }
     }
 
-    public static final double KUTOWERBUTTONS_ICON_WIDTH = 69.25;
-    public static final double KUTOWERBUTTONS_ICON_HEIGHT = 66.5;
+    /**
+     * Constants for KUTowerButtons sprite sheet (kutowerbuttons4.png)
+     */
+    public static final double KUTOWERBUTTONS_ICON_WIDTH = 64.0;
+    public static final double KUTOWERBUTTONS_ICON_HEIGHT = 64.0;
 
     // Icon Definitions for KUTowerButtons sprite sheet (kutowerbuttons4.png)
     // Row 0
