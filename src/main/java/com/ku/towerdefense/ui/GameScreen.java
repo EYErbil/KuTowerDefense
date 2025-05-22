@@ -36,6 +36,11 @@ import javafx.animation.FadeTransition;
 import javafx.animation.ScaleTransition;
 import javafx.animation.ParallelTransition;
 import javafx.geometry.Point2D;
+import javafx.beans.property.ReadOnlyDoubleProperty;
+import javafx.beans.property.ReadOnlyDoubleWrapper;
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
+import javafx.beans.binding.NumberBinding;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -93,6 +98,9 @@ public class GameScreen extends BorderPane {
     private Button menuButton;
     private static final String TIME_CONTROL_SELECTED_STYLE_CLASS = "time-control-selected";
 
+    // Property to track the visual width of the map on screen
+    private ReadOnlyDoubleWrapper visualMapWidthProperty = new ReadOnlyDoubleWrapper();
+
     // Define TowerBuildOption as a private static nested class
     private static class TowerBuildOption {
         String name;
@@ -130,15 +138,13 @@ public class GameScreen extends BorderPane {
             double worldHeight = gameController.getGameMap().getHeight() * TILE_SIZE;
 
             // --- Calculate Scaling and Centering ---
-            // This baseScale ensures the whole map is visible when zoom is 1.0 and
-            // no
-            // panning (or panned to center)
             double baseScaleX = canvasWidth / worldWidth;
             double baseScaleY = canvasHeight / worldHeight;
-            double baseScale = Math.min(baseScaleX, baseScaleY); // Maintain aspect ratio for the 'default' view
+            double baseScale = Math.min(baseScaleX, baseScaleY);
 
             double effectiveScale = baseScale * currentZoomLevel;
-            GameScreen.this.currentEffectiveScale = effectiveScale; // Update field
+            GameScreen.this.currentEffectiveScale = effectiveScale;
+            GameScreen.this.visualMapWidthProperty.set(worldWidth * effectiveScale); // Update property
 
             // Update the transformation matrix
             worldTransform.setToIdentity();
@@ -395,10 +401,10 @@ public class GameScreen extends BorderPane {
         // ---- Create Control Buttons (Top-Right) ----
         VBox controlButtonsPane = new VBox(10); // Spacing between buttons
         controlButtonsPane.setPadding(new Insets(15));
-        controlButtonsPane.setAlignment(Pos.TOP_RIGHT);
+        controlButtonsPane.setAlignment(Pos.TOP_CENTER); // Changed from TOP_RIGHT to TOP_CENTER
         controlButtonsPane.setPickOnBounds(false); // Allow clicks to pass through empty areas
 
-        final double controlButtonIconSize = 72.0;
+        final double controlButtonIconSize = 108.0;
 
         pauseButton = UIAssets.createIconButton(UIAssets.LABEL_PAUSE, UIAssets.ICON_PAUSE_COL, UIAssets.ICON_PAUSE_ROW,
                 controlButtonIconSize);
@@ -441,13 +447,24 @@ public class GameScreen extends BorderPane {
         controlButtonsPane.getChildren().addAll(pauseButton, playButton, fastForwardButton, menuButton);
         uiOverlayPane.getChildren().add(controlButtonsPane);
 
-        // Position controlButtonsPane at top-right
-        // We need to bind its position to the right edge of the uiOverlayPane
+        // Position controlButtonsPane at top-right, conditionally centered in right
+        // band
+        BooleanBinding mapIsNarrowerThanScreen = visualMapWidthProperty().lessThan(uiOverlayPane.widthProperty());
+
+        NumberBinding layoutXWhenBandExists = uiOverlayPane.widthProperty().multiply(3)
+                .add(visualMapWidthProperty())
+                .divide(4)
+                .subtract(controlButtonsPane.widthProperty().divide(2));
+
+        NumberBinding layoutXWhenNoBand = uiOverlayPane.widthProperty()
+                .subtract(controlButtonsPane.widthProperty())
+                .subtract(15); // 15px padding from far right
+
         controlButtonsPane.layoutXProperty().bind(
-                uiOverlayPane.widthProperty().subtract(controlButtonsPane.widthProperty()).subtract(15) // 15 for
-                                                                                                        // padding
-        );
-        // controlButtonsPane.setLayoutY(15); // For top padding
+                Bindings.when(mapIsNarrowerThanScreen)
+                        .then(layoutXWhenBandExists)
+                        .otherwise(layoutXWhenNoBand));
+        controlButtonsPane.setLayoutY(15.0); // Set to fixed top padding
 
         // Initial state for time controls
         isPaused = false;
@@ -941,5 +958,15 @@ public class GameScreen extends BorderPane {
         st.setInterpolator(javafx.animation.Interpolator.EASE_OUT);
         ParallelTransition pt = new ParallelTransition(ft, st);
         pt.play();
+    }
+
+    // Getter for visualMapWidth (optional, but good practice)
+    public double getVisualMapWidth() {
+        return visualMapWidthProperty.get();
+    }
+
+    // Property getter for visualMapWidth (needed for bindings)
+    public ReadOnlyDoubleProperty visualMapWidthProperty() {
+        return visualMapWidthProperty.getReadOnlyProperty();
     }
 }
