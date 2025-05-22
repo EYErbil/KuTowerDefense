@@ -59,7 +59,8 @@ public class MainMenuScreen extends VBox {
         // Attempt to prevent dragging the window by its content
         this.setOnMousePressed(event -> {
             if (event.getTarget() == this) {
-                // System.out.println("MainMenuScreen VBox pressed, consuming event to prevent potential drag.");
+                // System.out.println("MainMenuScreen VBox pressed, consuming event to prevent
+                // potential drag.");
                 event.consume();
             }
         });
@@ -89,8 +90,6 @@ public class MainMenuScreen extends VBox {
     private Button createMenuButton(String text, Runnable action) {
         Button button = new Button(text);
         button.getStyleClass().add("menu-button");
-        // Apply scale transition on click (Handled by CSS :pressed state)
-
         button.setOnAction(e -> action.run());
         return button;
     }
@@ -108,18 +107,18 @@ public class MainMenuScreen extends VBox {
             try {
                 String css = getClass().getResource("/css/style.css").toExternalForm();
                 newScene.getStylesheets().add(css);
-            } catch (NullPointerException | IllegalArgumentException e) { // Catch potential exceptions
+            } catch (NullPointerException | IllegalArgumentException e) {
                 System.err.println("Could not load stylesheet /css/style.css for the new scene: " + e.getMessage());
             }
-            
-            // Set custom cursor if available
+
             ImageCursor customCursor = UIAssets.getCustomCursor();
             if (customCursor != null) {
                 newScene.setCursor(customCursor);
             }
 
             primaryStage.setScene(newScene);
-            // Optional: Add a fade-in transition for the new scene's root node if desired
+            primaryStage.setFullScreen(true);
+
             if (newScene.getRoot() != null) {
                 FadeTransition fadeIn = new FadeTransition(Duration.millis(300), newScene.getRoot());
                 fadeIn.setFromValue(0.0);
@@ -135,11 +134,10 @@ public class MainMenuScreen extends VBox {
      */
     private void startNewGame() {
         MapSelectionScreen mapSelection = new MapSelectionScreen(primaryStage);
-        Scene mapSelectionScene = new Scene(mapSelection, primaryStage.getWidth(), primaryStage.getHeight()); // Use
-                                                                                                              // current
-                                                                                                              // stage
-                                                                                                              // size
-        transitionToScene(mapSelectionScene); // Use helper method
+        double w = primaryStage.getScene() != null ? primaryStage.getScene().getWidth() : primaryStage.getWidth();
+        double h = primaryStage.getScene() != null ? primaryStage.getScene().getHeight() : primaryStage.getHeight();
+        Scene mapSelectionScene = new Scene(mapSelection, w, h);
+        transitionToScene(mapSelectionScene);
     }
 
     /**
@@ -147,8 +145,10 @@ public class MainMenuScreen extends VBox {
      */
     private void openMapEditor() {
         MapEditorScreen mapEditor = new MapEditorScreen(primaryStage);
-        Scene mapEditorScene = new Scene(mapEditor, primaryStage.getWidth(), primaryStage.getHeight()); // Keep specific size or use current
-        transitionToScene(mapEditorScene); // Use helper method
+        double w = primaryStage.getScene() != null ? primaryStage.getScene().getWidth() : primaryStage.getWidth();
+        double h = primaryStage.getScene() != null ? primaryStage.getScene().getHeight() : primaryStage.getHeight();
+        Scene mapEditorScene = new Scene(mapEditor, w, h);
+        transitionToScene(mapEditorScene);
     }
 
     /**
@@ -156,9 +156,10 @@ public class MainMenuScreen extends VBox {
      */
     private void openOptions() {
         OptionsScreen options = new OptionsScreen(primaryStage);
-        Scene optionsScene = new Scene(options, primaryStage.getWidth(), primaryStage.getHeight()); // Use current stage
-                                                                                                    // size
-        transitionToScene(optionsScene); // Use helper method
+        double w = primaryStage.getScene() != null ? primaryStage.getScene().getWidth() : primaryStage.getWidth();
+        double h = primaryStage.getScene() != null ? primaryStage.getScene().getHeight() : primaryStage.getHeight();
+        Scene optionsScene = new Scene(options, w, h);
+        transitionToScene(optionsScene);
     }
 
     /**

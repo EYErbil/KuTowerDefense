@@ -32,7 +32,8 @@ import com.ku.towerdefense.model.wave.Wave;
 import com.ku.towerdefense.model.wave.WaveConfig;
 
 /**
- * Main controller for the game, handling the game loop, entities, and game state.
+ * Main controller for the game, handling the game loop, entities, and game
+ * state.
  */
 public class GameController {
     private GameMap gameMap;
@@ -102,7 +103,8 @@ public class GameController {
      * Starts the game loop.
      */
     public void startGame() {
-        // gameLoop.start(); // GameScreen handles AnimationTimer start/stop via its own pause
+        // gameLoop.start(); // GameScreen handles AnimationTimer start/stop via its own
+        // pause
         if (currentWave == 0) { // Auto-start first wave
             startNextWave();
         }
@@ -125,13 +127,15 @@ public class GameController {
     public void resumeGame() {
         // Add any game-specific resume logic here
     }
-    
+
     public void setPaused(boolean isPaused) {
         this.isPaused = isPaused;
         if (isPaused) {
-            if (waveTimer != null) waveTimer.pause();
+            if (waveTimer != null)
+                waveTimer.pause();
         } else {
-            if (waveTimer != null && waveTimer.getStatus() == Animation.Status.PAUSED) waveTimer.play();
+            if (waveTimer != null && waveTimer.getStatus() == Animation.Status.PAUSED)
+                waveTimer.play();
         }
     }
 
@@ -198,21 +202,26 @@ public class GameController {
                         if (projectile.hasAoeEffect()) {
                             // Log primary target impact location for AOE reference
                             Point2D impactPoint = new Point2D(target.getCenterX(), target.getCenterY());
-                            // System.out.println("AOE centered at: " + impactPoint.getX() + "," + impactPoint.getY() + " for projectile targeting " + target);
+                            // System.out.println("AOE centered at: " + impactPoint.getX() + "," +
+                            // impactPoint.getY() + " for projectile targeting " + target);
 
-                            for (Enemy enemy : new ArrayList<>(enemies)) { // Iterate over a copy to avoid ConcurrentModificationException
+                            for (Enemy enemy : new ArrayList<>(enemies)) { // Iterate over a copy to avoid
+                                                                           // ConcurrentModificationException
                                 if (enemy != target && enemy.getCurrentHealth() > 0) {
                                     Point2D enemyCenter = new Point2D(enemy.getCenterX(), enemy.getCenterY());
                                     double distance = impactPoint.distance(enemyCenter);
-                                    
+
                                     if (distance <= projectile.getAoeRange()) {
-                                        System.out.println("Artillery AOE: Hit " + enemy.getClass().getSimpleName() + 
-                                                           " (ID: " + enemy.hashCode() + ") for " + (projectile.getDamage() / 2) + " damage. " + 
-                                                           "Dist: " + String.format("%.2f", distance) + 
-                                                           ", Range: " + projectile.getAoeRange() + 
-                                                           ", Primary Target: " + target.getClass().getSimpleName() + " (ID: " + target.hashCode() + ")");
-                                        
-                                        boolean aoeKilled = enemy.applyDamage(projectile.getDamage() / 2, projectile.getDamageType()); 
+                                        System.out.println("Artillery AOE: Hit " + enemy.getClass().getSimpleName() +
+                                                " (ID: " + enemy.hashCode() + ") for " + (projectile.getDamage() / 2)
+                                                + " damage. " +
+                                                "Dist: " + String.format("%.2f", distance) +
+                                                ", Range: " + projectile.getAoeRange() +
+                                                ", Primary Target: " + target.getClass().getSimpleName() + " (ID: "
+                                                + target.hashCode() + ")");
+
+                                        boolean aoeKilled = enemy.applyDamage(projectile.getDamage() / 2,
+                                                projectile.getDamageType());
                                         if (aoeKilled) {
                                             playerGold += enemy.getGoldReward();
                                         }
@@ -222,19 +231,20 @@ public class GameController {
                         }
                     }
                     // Spawn impact visual effect
-                    Point2D impactPointForEffect = projectile.getTarget() != null ? 
-                                                   new Point2D(projectile.getTarget().getCenterX(), projectile.getTarget().getCenterY()) :
-                                                   new Point2D(projectile.getCenterX(), projectile.getCenterY()); // Fallback if target is gone
+                    Point2D impactPointForEffect = projectile.getTarget() != null
+                            ? new Point2D(projectile.getTarget().getCenterX(), projectile.getTarget().getCenterY())
+                            : new Point2D(projectile.getCenterX(), projectile.getCenterY()); // Fallback if target is
+                                                                                             // gone
 
                     switch (projectile.getImpactEffect()) {
                         case EXPLOSION:
                             Image explSheet = UIAssets.getImage("ExplosionEffect");
                             if (explSheet != null) {
                                 activeEffects.add(new AnimatedEffect(explSheet,
-                                    impactPointForEffect.getX(), impactPointForEffect.getY(),
-                                    192, 192, // frameW, frameH for Explosion.png
-                                    9,       // totalFrames for Explosion.png
-                                    0.05));  // frameDurationSeconds
+                                        impactPointForEffect.getX(), impactPointForEffect.getY(),
+                                        192, 192, // frameW, frameH for Explosion.png
+                                        9, // totalFrames for Explosion.png
+                                        0.05)); // frameDurationSeconds
                             } else {
                                 System.err.println("ExplosionEffect spritesheet not loaded!");
                             }
@@ -243,10 +253,10 @@ public class GameController {
                             Image fireSheet = UIAssets.getImage("FireEffect");
                             if (fireSheet != null) {
                                 activeEffects.add(new AnimatedEffect(fireSheet,
-                                    impactPointForEffect.getX(), impactPointForEffect.getY(),
-                                    128, 128, // frameW, frameH for Fire.png
-                                    7,       // totalFrames for Fire.png
-                                    0.05));  // frameDurationSeconds
+                                        impactPointForEffect.getX(), impactPointForEffect.getY(),
+                                        128, 128, // frameW, frameH for Fire.png
+                                        7, // totalFrames for Fire.png
+                                        0.05)); // frameDurationSeconds
                             } else {
                                 System.err.println("FireEffect spritesheet not loaded!");
                             }
@@ -279,17 +289,22 @@ public class GameController {
                 playerGold += enemy.getGoldReward(); // Base gold reward
 
                 if (Math.random() < 0.25) { // 25% chance to drop a bag
-                    int archerBaseCost = ArcherTower.BASE_COST; 
+                    int archerBaseCost = ArcherTower.BASE_COST;
                     int minGoldInBag = 2;
                     int maxGoldInBag = archerBaseCost / 2;
-                    if (maxGoldInBag < minGoldInBag) maxGoldInBag = minGoldInBag; 
-                    if (minGoldInBag > maxGoldInBag && minGoldInBag > 0) minGoldInBag = maxGoldInBag > 0 ? maxGoldInBag : 1; 
-                    else if (minGoldInBag <=0) minGoldInBag = 1; 
-                    if (maxGoldInBag <=0) maxGoldInBag = 1; 
-                    if (minGoldInBag > maxGoldInBag) minGoldInBag = maxGoldInBag; 
+                    if (maxGoldInBag < minGoldInBag)
+                        maxGoldInBag = minGoldInBag;
+                    if (minGoldInBag > maxGoldInBag && minGoldInBag > 0)
+                        minGoldInBag = maxGoldInBag > 0 ? maxGoldInBag : 1;
+                    else if (minGoldInBag <= 0)
+                        minGoldInBag = 1;
+                    if (maxGoldInBag <= 0)
+                        maxGoldInBag = 1;
+                    if (minGoldInBag > maxGoldInBag)
+                        minGoldInBag = maxGoldInBag;
 
-                    final int randomGold = minGoldInBag + (int)(Math.random() * (maxGoldInBag - minGoldInBag + 1));
-                    final int finalRandomGold = (randomGold <= 0) ? 1 : randomGold; 
+                    final int randomGold = minGoldInBag + (int) (Math.random() * (maxGoldInBag - minGoldInBag + 1));
+                    final int finalRandomGold = (randomGold <= 0) ? 1 : randomGold;
 
                     final double dropX = enemy.getCenterX();
                     final double dropY = enemy.getCenterY();
@@ -298,30 +313,35 @@ public class GameController {
                     Image goldSpawnSheet = UIAssets.getImage("GoldSpawnEffect");
                     if (goldSpawnSheet != null) {
                         AnimatedEffect goldAnimation = new AnimatedEffect(goldSpawnSheet,
-                            dropX, dropY, // Position at enemy center
-                            128, 128, // Frame width, height for G_Spawn.png
-                            7,       // Total frames
-                            0.07,    // Frame duration in seconds (approx 0.5s total animation)
-                            128, 128  // Display width/height for the animation itself
+                                dropX, dropY, // Position at enemy center
+                                128, 128, // Frame width, height for G_Spawn.png
+                                7, // Total frames
+                                0.07, // Frame duration in seconds (approx 0.5s total animation)
+                                128, 128 // Display width/height for the animation itself
                         );
                         goldAnimation.setOnCompletion(() -> {
                             DroppedGold bag = new DroppedGold(dropX, dropY, finalRandomGold);
                             activeGoldBags.add(bag);
-                            System.out.println("Dropped gold bag (value: " + finalRandomGold + "G) created AFTER animation at (" + dropX + "," + dropY + ")");
+                            System.out.println("Dropped gold bag (value: " + finalRandomGold
+                                    + "G) created AFTER animation at (" + dropX + "," + dropY + ")");
                         });
                         activeEffects.add(goldAnimation);
                         System.out.println("Spawned gold drop animation at (" + dropX + "," + dropY + ")");
                     } else {
-                        System.err.println("GoldSpawnEffect spritesheet not loaded for animation! Dropping bag directly.");
+                        System.err.println(
+                                "GoldSpawnEffect spritesheet not loaded for animation! Dropping bag directly.");
                         // Fallback: If animation sheet is missing, drop the bag directly
                         DroppedGold bag = new DroppedGold(dropX, dropY, finalRandomGold);
                         activeGoldBags.add(bag);
                     }
 
-                    // 2. Spawn the clickable DroppedGold entity (which uses last frame of G_Spawn.png)
-                    // DroppedGold bag = new DroppedGold(dropX, dropY, randomGold); // MOVED to onCompletion
+                    // 2. Spawn the clickable DroppedGold entity (which uses last frame of
+                    // G_Spawn.png)
+                    // DroppedGold bag = new DroppedGold(dropX, dropY, randomGold); // MOVED to
+                    // onCompletion
                     // activeGoldBags.add(bag); // MOVED to onCompletion
-                    // System.out.println("Dropped gold bag (value: " + randomGold + "G) and spawned animation at (" + dropX + "," + dropY + ")"); // Old log
+                    // System.out.println("Dropped gold bag (value: " + randomGold + "G) and spawned
+                    // animation at (" + dropX + "," + dropY + ")"); // Old log
                 }
             }
         }
@@ -336,7 +356,8 @@ public class GameController {
 
         // Update and remove expired gold bags
         activeGoldBags.removeIf(bag -> {
-            // DroppedGold.update() isn't strictly needed if it has no animation or per-frame logic
+            // DroppedGold.update() isn't strictly needed if it has no animation or
+            // per-frame logic
             // We just check expiry here.
             if (bag.isExpired()) {
                 System.out.println("Gold bag expired and removed.");
@@ -347,13 +368,15 @@ public class GameController {
 
         // Check if wave is completed and all enemies are spawned
         // AND if waveTimer is not already running (to prevent multiple timers)
-        if (enemies.isEmpty() && !isSpawningEnemies && currentWave > 0 && !betweenWaves && (waveTimer == null || waveTimer.getStatus() != Animation.Status.RUNNING)) {
-                betweenWaves = true;
-            System.out.println("Wave " + currentWave + " cleared! Next wave in " + (WAVE_BREAK_TIME / 1000) + " seconds.");
-                if (onWaveCompletedListener != null) {
+        if (enemies.isEmpty() && !isSpawningEnemies && currentWave > 0 && !betweenWaves
+                && (waveTimer == null || waveTimer.getStatus() != Animation.Status.RUNNING)) {
+            betweenWaves = true;
+            System.out.println(
+                    "Wave " + currentWave + " cleared! Next wave in " + (WAVE_BREAK_TIME / 1000) + " seconds.");
+            if (onWaveCompletedListener != null) {
                 onWaveCompletedListener.onWaveCompleted(currentWave, 100); // Example bonus gold
-                }
-            
+            }
+
             waveTimer = new Timeline(new KeyFrame(Duration.millis(WAVE_BREAK_TIME), ae -> {
                 betweenWaves = false;
                 isSpawningEnemies = false; // Ensure this is reset before starting next wave
@@ -361,11 +384,13 @@ public class GameController {
             }));
             waveTimer.play();
         } else if (isSpawningEnemies && enemies.isEmpty() && !anyEnemiesLeftInWave()) {
-            // This case handles if all enemies of a wave are killed before the spawning queue is empty
+            // This case handles if all enemies of a wave are killed before the spawning
+            // queue is empty
             // (e.g. very fast killing). Effectively ends the spawning part of the wave.
             isSpawningEnemies = false;
             System.out.println("All spawned enemies for wave " + currentWave + " defeated.");
-            // The main betweenWaves logic above will then trigger the timer for the next wave.
+            // The main betweenWaves logic above will then trigger the timer for the next
+            // wave.
         }
     }
 
@@ -410,14 +435,18 @@ public class GameController {
      * Attempts to purchase and place a tower.
      * Gold is deducted if placement is successful.
      *
-     * @param tower The tower instance to place (should have its x, y, and cost defined).
-     * @return true if the tower was successfully purchased and placed, false otherwise.
+     * @param tower The tower instance to place (should have its x, y, and cost
+     *              defined).
+     * @return true if the tower was successfully purchased and placed, false
+     *         otherwise.
      */
     public boolean purchaseAndPlaceTower(Tower tower) {
-        if (tower == null) return false;
+        if (tower == null)
+            return false;
 
         if (playerGold >= tower.getCost()) {
-            // Use tile-based coordinates for placement check, but GameMap.canPlaceTower expects world coordinates for center
+            // Use tile-based coordinates for placement check, but GameMap.canPlaceTower
+            // expects world coordinates for center
             // Tower X,Y should be top-left of the tile it occupies.
             double checkX = tower.getX() + (gameMap.getTileSize() / 2.0); // Center of the tile
             double checkY = tower.getY() + (gameMap.getTileSize() / 2.0); // Center of the tile
@@ -425,33 +454,39 @@ public class GameController {
             if (gameMap.canPlaceTower(checkX, checkY, towers)) {
                 playerGold -= tower.getCost();
                 towers.add(tower);
-                // System.out.println("Placed " + tower.getName() + " at (" + tower.getX() + "," + tower.getY() + "). Gold remaining: " + playerGold);
+                // System.out.println("Placed " + tower.getName() + " at (" + tower.getX() + ","
+                // + tower.getY() + "). Gold remaining: " + playerGold);
                 return true;
             }
             // else {
-            //    System.out.println("Cannot place tower at (" + tower.getX() + "," + tower.getY() + ") - map check failed.");
+            // System.out.println("Cannot place tower at (" + tower.getX() + "," +
+            // tower.getY() + ") - map check failed.");
             // }
-        } 
+        }
         // else {
-        //    System.out.println("Not enough gold to place " + tower.getName() + ". Needed: " + tower.getCost() + ", Have: " + playerGold);
+        // System.out.println("Not enough gold to place " + tower.getName() + ". Needed:
+        // " + tower.getCost() + ", Have: " + playerGold);
         // }
         return false;
     }
 
     /**
      * Places a tower at the specified position if there's enough gold.
-     * This method is kept for compatibility or specific scenarios where gold check might be external.
+     * This method is kept for compatibility or specific scenarios where gold check
+     * might be external.
      * Prefer purchaseAndPlaceTower for combined gold check and placement.
      */
     public boolean placeTower(Tower tower) {
-        if (tower == null) return false;
+        if (tower == null)
+            return false;
 
         // GameMap.canPlaceTower expects world coordinates for the center of the tile
         double checkX = tower.getX() + (gameMap.getTileSize() / 2.0);
         double checkY = tower.getY() + (gameMap.getTileSize() / 2.0);
 
         if (gameMap.canPlaceTower(checkX, checkY, towers)) {
-            // Note: Gold deduction is assumed to be handled by the caller or a different method like purchaseAndPlaceTower
+            // Note: Gold deduction is assumed to be handled by the caller or a different
+            // method like purchaseAndPlaceTower
             towers.add(tower);
             return true;
         }
@@ -472,19 +507,23 @@ public class GameController {
                 playerGold -= upgradeCost;
                 boolean success = tower.upgrade(); // Tower itself handles stat changes
                 if (success) {
-                    // System.out.println(tower.getName() + " upgraded to level " + tower.getLevel() + ". Gold remaining: " + playerGold);
+                    // System.out.println(tower.getName() + " upgraded to level " + tower.getLevel()
+                    // + ". Gold remaining: " + playerGold);
                     return true;
                 }
                 // else {
-                //    System.out.println("Tower upgrade method returned false for " + tower.getName());
+                // System.out.println("Tower upgrade method returned false for " +
+                // tower.getName());
                 // }
-            } 
+            }
             // else {
-            //    System.out.println("Not enough gold to upgrade " + tower.getName() + ". Needed: " + upgradeCost + ", Have: " + playerGold);
+            // System.out.println("Not enough gold to upgrade " + tower.getName() + ".
+            // Needed: " + upgradeCost + ", Have: " + playerGold);
             // }
         }
         // else if (tower != null) {
-        //    System.out.println(tower.getName() + " cannot be upgraded further or does not exist.");
+        // System.out.println(tower.getName() + " cannot be upgraded further or does not
+        // exist.");
         // }
         return false;
     }
@@ -534,69 +573,73 @@ public class GameController {
     public void startNextWave() {
         // Enhanced debugging for enemy path issues
         System.out.println("startNextWave called - attempting to start wave " + (currentWave + 1));
-        
+
         // Check if path exists
         if (gameMap.getEnemyPath() == null) {
-             System.err.println("ERROR: Cannot start wave - No path defined on the map. Place Start and End tiles.");
-             
-             // Debug extra information to help diagnose
-             boolean hasStartTile = false;
-             boolean hasEndTile = false;
-             for (int x = 0; x < gameMap.getWidth(); x++) {
-                 for (int y = 0; y < gameMap.getHeight(); y++) {
-                     if (gameMap.getTileType(x, y) == TileType.START_POINT) {
-                         hasStartTile = true;
-                         System.out.println("Found START_POINT at (" + x + "," + y + ")");
-                     }
-                     if (gameMap.getTileType(x, y) == TileType.END_POINT) {
-                         hasEndTile = true;
-                         System.out.println("Found END_POINT at (" + x + "," + y + ")");
-                     }
-                 }
-             }
+            System.err.println("ERROR: Cannot start wave - No path defined on the map. Place Start and End tiles.");
 
-             if (!hasStartTile) System.err.println("Missing START_POINT tile on map");
-             if (!hasEndTile) System.err.println("Missing END_POINT tile on map");
-             
-             // Try to force path generation if we have start and end points but no path
-             if (hasStartTile && hasEndTile) {
-                 System.out.println("Trying to force path generation since start and end points exist...");
-                 gameMap.generatePath();
-                 
-                 // Check if it worked
-                 if (gameMap.getEnemyPath() == null) {
-                     System.err.println("Path generation failed. Please check map configuration.");
-                     return;
-                 } else {
-                     System.out.println("Path was successfully generated!");
-                 }
-             } else {
-                 return; // Exit if we don't have both required points
-             }
+            // Debug extra information to help diagnose
+            boolean hasStartTile = false;
+            boolean hasEndTile = false;
+            for (int x = 0; x < gameMap.getWidth(); x++) {
+                for (int y = 0; y < gameMap.getHeight(); y++) {
+                    if (gameMap.getTileType(x, y) == TileType.START_POINT) {
+                        hasStartTile = true;
+                        System.out.println("Found START_POINT at (" + x + "," + y + ")");
+                    }
+                    if (gameMap.getTileType(x, y) == TileType.END_POINT) {
+                        hasEndTile = true;
+                        System.out.println("Found END_POINT at (" + x + "," + y + ")");
+                    }
+                }
+            }
+
+            if (!hasStartTile)
+                System.err.println("Missing START_POINT tile on map");
+            if (!hasEndTile)
+                System.err.println("Missing END_POINT tile on map");
+
+            // Try to force path generation if we have start and end points but no path
+            if (hasStartTile && hasEndTile) {
+                System.out.println("Trying to force path generation since start and end points exist...");
+                gameMap.generatePath();
+
+                // Check if it worked
+                if (gameMap.getEnemyPath() == null) {
+                    System.err.println("Path generation failed. Please check map configuration.");
+                    return;
+                } else {
+                    System.out.println("Path was successfully generated!");
+                }
+            } else {
+                return; // Exit if we don't have both required points
+            }
         }
 
         // Increment wave counter
         currentWave++;
         System.out.println("Starting wave " + currentWave);
-        
+
         // Calculate enemy numbers
-        int num = GameSettings.getInstance().getEnemiesPerGroup() * (1 + currentWave/3); // Example scaling
-        int goblins = (int)(num * GameSettings.getInstance().getGoblinPercentage() / 100.0);
-        int knights  = num - goblins;
+        int num = GameSettings.getInstance().getEnemiesPerGroup() * (1 + currentWave / 3); // Example scaling
+        int goblins = (int) (num * GameSettings.getInstance().getGoblinPercentage() / 100.0);
+        int knights = num - goblins;
         System.out.println("Wave " + currentWave + " will have " + goblins + " goblins and " + knights + " knights");
 
         // Find start point
         Point2D start = gameMap.getStartPoint();
         if (start == null) {
-             System.err.println("ERROR: Cannot start wave - Start point not found on map.");
-             return;
+            System.err.println("ERROR: Cannot start wave - Start point not found on map.");
+            return;
         }
         System.out.println("Using start point at: (" + start.getX() + ", " + start.getY() + ")");
 
         // Create enemy queue
         Queue<Enemy> queue = new ArrayDeque<>();
-        for (int i=0;i<goblins;i++)  queue.add(new Goblin(start.getX(), start.getY()));
-        for (int i=0;i<knights;i++)  queue.add(new Knight(start.getX(), start.getY()));
+        for (int i = 0; i < goblins; i++)
+            queue.add(new Goblin(start.getX(), start.getY()));
+        for (int i = 0; i < knights; i++)
+            queue.add(new Knight(start.getX(), start.getY()));
         System.out.println("Created queue with " + queue.size() + " enemies");
 
         // Setting up spawning
@@ -604,31 +647,31 @@ public class GameController {
         double delay = GameSettings.getInstance().getEnemyDelay() / 1000.0; // Convert ms to seconds
         System.out.println("Enemy spawn delay: " + delay + " seconds");
 
-        // Create and start Timeline for enemy spawning using AtomicReference to avoid initialization issues
+        // Create and start Timeline for enemy spawning using AtomicReference to avoid
+        // initialization issues
         final Timeline[] spawnerRef = new Timeline[1];
         Timeline spawner = new Timeline(
-            new KeyFrame(Duration.seconds(delay), e -> {
-                Enemy next = queue.poll();
-                if (next == null) {
-                    isSpawningEnemies = false;
-                    spawnerRef[0].stop();  // Use the reference instead of direct variable
-                    System.out.println("Wave " + currentWave + " spawning complete.");
-                    return;
-                }
-                
-                // Ensure the enemy has the path reference
-                GamePath path = gameMap.getEnemyPath();
-                if (path != null) {
-                    next.setPath(path);
-                    enemies.add(next);
-                    System.out.println("Spawned " + (next instanceof Goblin ? "Goblin" : "Knight") + 
-                                     " at (" + next.getX() + "," + next.getY() + ")");
-                } else {
-                    System.err.println("ERROR: Enemy path disappeared during spawning!");
-                }
-            })
-        );
-        spawnerRef[0] = spawner;  // Store the Timeline in the array reference
+                new KeyFrame(Duration.seconds(delay), e -> {
+                    Enemy next = queue.poll();
+                    if (next == null) {
+                        isSpawningEnemies = false;
+                        spawnerRef[0].stop(); // Use the reference instead of direct variable
+                        System.out.println("Wave " + currentWave + " spawning complete.");
+                        return;
+                    }
+
+                    // Ensure the enemy has the path reference
+                    GamePath path = gameMap.getEnemyPath();
+                    if (path != null) {
+                        next.setPath(path);
+                        enemies.add(next);
+                        System.out.println("Spawned " + (next instanceof Goblin ? "Goblin" : "Knight") +
+                                " at (" + next.getX() + "," + next.getY() + ")");
+                    } else {
+                        System.err.println("ERROR: Enemy path disappeared during spawning!");
+                    }
+                }));
+        spawnerRef[0] = spawner; // Store the Timeline in the array reference
         spawner.setCycleCount(Animation.INDEFINITE);
         spawner.play();
 
@@ -701,7 +744,8 @@ public class GameController {
     }
 
     /**
-     * Gets the tower at the specified world coordinates without changing selection state.
+     * Gets the tower at the specified world coordinates without changing selection
+     * state.
      *
      * @param worldX The x-coordinate in the game world.
      * @param worldY The y-coordinate in the game world.
@@ -709,18 +753,22 @@ public class GameController {
      */
     public Tower getTowerAt(double worldX, double worldY) {
         // Ensure GameMap.TILE_SIZE is used or gameMap.getTileSize() is reliable
-        double tileSize = gameMap.getTileSize(); 
-        if (tileSize <= 0) tileSize = GameMap.TILE_SIZE; // Fallback if somehow not initialized
+        double tileSize = gameMap.getTileSize();
+        if (tileSize <= 0)
+            tileSize = GameMap.TILE_SIZE; // Fallback if somehow not initialized
 
         int clickTileX = (int) (worldX / tileSize);
         int clickTileY = (int) (worldY / tileSize);
-        System.out.println("[GameController.getTowerAt] Checking for tower at world (" + worldX + "," + worldY + ") -> tile (" + clickTileX + "," + clickTileY + ")"); // DEBUG
+        System.out.println("[GameController.getTowerAt] Checking for tower at world (" + worldX + "," + worldY
+                + ") -> tile (" + clickTileX + "," + clickTileY + ")"); // DEBUG
 
         for (Tower tower : towers) {
             // Calculate tower's tile coordinates based on its top-left position
             int towerStoredTileX = (int) (tower.getX() / tileSize);
             int towerStoredTileY = (int) (tower.getY() / tileSize);
-            System.out.println("[GameController.getTowerAt]   Comparing with tower '" + tower.getName() + "' at stored tile (" + towerStoredTileX + "," + towerStoredTileY + ") / world (" + tower.getX() + "," + tower.getY() + ")"); // DEBUG
+            System.out.println("[GameController.getTowerAt]   Comparing with tower '" + tower.getName()
+                    + "' at stored tile (" + towerStoredTileX + "," + towerStoredTileY + ") / world (" + tower.getX()
+                    + "," + tower.getY() + ")"); // DEBUG
 
             if (towerStoredTileX == clickTileX && towerStoredTileY == clickTileY) {
                 System.out.println("[GameController.getTowerAt]     Found matching tower: " + tower.getName()); // DEBUG
@@ -728,7 +776,7 @@ public class GameController {
             }
         }
         System.out.println("[GameController.getTowerAt]   No tower found at these coordinates."); // DEBUG
-        return null; 
+        return null;
     }
 
     /**
@@ -786,7 +834,7 @@ public class GameController {
      */
     public void reinitializeAfterLoad() {
         System.out.println("GameController: Reinitializing all entities after loading saved game");
-        
+
         // First, ensure the map path is properly initialized
         if (gameMap != null) {
             // Force map to regenerate tiles and paths
@@ -794,7 +842,7 @@ public class GameController {
                 System.out.println("Regenerating enemy path in map...");
                 gameMap.generatePath();
             }
-            
+
             // Reload map tile images if needed
             for (int x = 0; x < gameMap.getWidth(); x++) {
                 for (int y = 0; y < gameMap.getHeight(); y++) {
@@ -804,55 +852,61 @@ public class GameController {
                 }
             }
         }
-        
+
         // Reload enemy images
         System.out.println("Reinitializing " + enemies.size() + " enemies");
         for (Enemy enemy : enemies) {
             enemy.reinitializeAfterLoad();
         }
-        
+
         // Reload projectile images
         System.out.println("Reinitializing " + projectiles.size() + " projectiles");
         for (Projectile projectile : projectiles) {
             projectile.reinitializeAfterLoad();
         }
-        
+
         // Reload tower images
         System.out.println("Reinitializing " + towers.size() + " towers");
         for (Tower tower : towers) {
             tower.reinitializeAfterLoad();
         }
-        
+
         // Reinitialize gold bags if they are part of save/load
         System.out.println("Reinitializing " + activeGoldBags.size() + " gold bags");
         for (DroppedGold bag : activeGoldBags) {
             bag.reinitializeAfterLoad();
         }
-        
+
         System.out.println("GameController: Reinitialization complete");
     }
 
-    // Helper to check if any enemies are scheduled for the current wave but not yet spawned
+    // Helper to check if any enemies are scheduled for the current wave but not yet
+    // spawned
     private boolean anyEnemiesLeftInWave() {
         Wave currentWaveData = WaveConfig.getWave(this.currentWave);
-        if (currentWaveData == null) return false;
-        // This is a simplified check. Real implementation would need to track spawned vs total for the wave.
-        // For now, if isSpawningEnemies is true, we assume some might still be in a queue.
+        if (currentWaveData == null)
+            return false;
+        // This is a simplified check. Real implementation would need to track spawned
+        // vs total for the wave.
+        // For now, if isSpawningEnemies is true, we assume some might still be in a
+        // queue.
         // The logic in startNextWave needs to manage this queue properly.
         return isSpawningEnemies; // Placeholder, proper check depends on startNextWave implementation
     }
 
     // Method to purchase and place tower using TILE coordinates
     public boolean purchaseAndPlaceTower(Tower towerTemplate, int tileX, int tileY) {
-        if (towerTemplate == null) return false;
+        if (towerTemplate == null)
+            return false;
 
         // Set tower position based on tile coordinates (top-left of the tile)
         double worldX = tileX * GameMap.TILE_SIZE;
         double worldY = tileY * GameMap.TILE_SIZE;
         towerTemplate.setX(worldX);
         towerTemplate.setY(worldY);
-        // Ensure cost is based on the template's base cost, not a potentially leveled instance
-        int cost = towerTemplate.getBaseCost(); 
+        // Ensure cost is based on the template's base cost, not a potentially leveled
+        // instance
+        int cost = towerTemplate.getBaseCost();
 
         if (playerGold >= cost) {
             if (gameMap.canPlaceTower(worldX + GameMap.TILE_SIZE / 2.0, worldY + GameMap.TILE_SIZE / 2.0, towers)) {
@@ -864,7 +918,8 @@ public class GameController {
 
                 towers.add(newTower);
                 playerGold -= cost;
-                System.out.println(newTower.getName() + " purchased and placed at (" + tileX + "," + tileY + "). Gold: " + playerGold);
+                System.out.println(newTower.getName() + " purchased and placed at (" + tileX + "," + tileY + "). Gold: "
+                        + playerGold);
                 gameMap.setTileAsOccupiedByTower(tileX, tileY, true);
                 return true;
             }
@@ -884,32 +939,37 @@ public class GameController {
                 return false;
             }
         }
-        
+
         if (towerToUpgrade.canUpgrade() && playerGold >= towerToUpgrade.getUpgradeCost()) {
             playerGold -= towerToUpgrade.getUpgradeCost();
             towerToUpgrade.upgrade();
-            System.out.println("Tower at ("+ tileX + "," + tileY + ") upgraded to level " + towerToUpgrade.getLevel() + ". Gold: " + playerGold);
+            System.out.println("Tower at (" + tileX + "," + tileY + ") upgraded to level " + towerToUpgrade.getLevel()
+                    + ". Gold: " + playerGold);
             return true;
         } else if (!towerToUpgrade.canUpgrade()) {
-             System.err.println("Upgrade failed: Tower at max level.");
+            System.err.println("Upgrade failed: Tower at max level.");
         } else {
-            System.err.println("Upgrade failed: Not enough gold. Need " + towerToUpgrade.getUpgradeCost() + ", have " + playerGold);
+            System.err.println("Upgrade failed: Not enough gold. Need " + towerToUpgrade.getUpgradeCost() + ", have "
+                    + playerGold);
         }
         return false;
     }
 
     public int sellTower(int tileX, int tileY) {
-        System.out.println("[GameController.sellTower] Attempting to sell tower at TILE: (" + tileX + "," + tileY + ")"); // DEBUG
+        System.out
+                .println("[GameController.sellTower] Attempting to sell tower at TILE: (" + tileX + "," + tileY + ")"); // DEBUG
         Tower towerToSell = null;
         int indexToRemove = -1;
         double tileSize = gameMap.getTileSize(); // Use getter for consistency, or GameMap.TILE_SIZE directly
-        if (tileSize <= 0) tileSize = GameMap.TILE_SIZE;
+        if (tileSize <= 0)
+            tileSize = GameMap.TILE_SIZE;
 
         for (int i = 0; i < towers.size(); i++) {
             Tower t = towers.get(i);
             int tTileX = (int) (t.getX() / tileSize);
             int tTileY = (int) (t.getY() / tileSize);
-            System.out.println("[GameController.sellTower]   Checking against tower '" + t.getName() + "' at tile (" + tTileX + "," + tTileY + ")"); // DEBUG
+            System.out.println("[GameController.sellTower]   Checking against tower '" + t.getName() + "' at tile ("
+                    + tTileX + "," + tTileY + ")"); // DEBUG
             if (tTileX == tileX && tTileY == tileY) {
                 towerToSell = t;
                 indexToRemove = i;
@@ -924,10 +984,12 @@ public class GameController {
             playerGold += refund;
             System.out.println("[GameController.sellTower]     Tower removed. Gold after refund: " + playerGold); // DEBUG
             gameMap.setTileAsOccupiedByTower(tileX, tileY, false);
-            System.out.println("[GameController.sellTower]     Called setTileAsOccupiedByTower for (" + tileX + "," + tileY + ") to false."); // DEBUG
+            System.out.println("[GameController.sellTower]     Called setTileAsOccupiedByTower for (" + tileX + ","
+                    + tileY + ") to false."); // DEBUG
             return refund;
         }
-        System.err.println("[GameController.sellTower] Sell failed: No tower found at tile (" + tileX + "," + tileY + ") to sell."); // DEBUG
+        System.err.println("[GameController.sellTower] Sell failed: No tower found at tile (" + tileX + "," + tileY
+                + ") to sell."); // DEBUG
         return 0;
     }
 
@@ -957,4 +1019,4 @@ public class GameController {
     public List<DroppedGold> getActiveGoldBags() {
         return activeGoldBags;
     }
-} 
+}
