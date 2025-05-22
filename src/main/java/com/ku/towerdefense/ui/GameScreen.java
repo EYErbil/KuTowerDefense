@@ -227,8 +227,9 @@ public class GameScreen extends BorderPane {
 
             // --- Update game logic ---
             if (!isPaused) {
-                if (lastTime < 0)
+                if (lastTime < 0) {
                     lastTime = now;
+                }
                 double deltaTime = (now - lastTime) / 1_000_000_000.0;
                 lastTime = now;
                 gameController.update(deltaTime);
@@ -598,8 +599,10 @@ public class GameScreen extends BorderPane {
         if (isPaused) {
             if (pauseButton != null)
                 pauseButton.getStyleClass().add(TIME_CONTROL_SELECTED_STYLE_CLASS);
-            if (renderTimer != null)
+            if (renderTimer != null) {
                 renderTimer.stop();
+                renderTimer.lastTime = -1; // Explicitly reset lastTime here
+            }
             // The renderTimer's internal lastTime is reset to -1 when
             // GameScreen.this.isPaused is true in its handle() method.
         } else {

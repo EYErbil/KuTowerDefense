@@ -174,7 +174,8 @@ public class GameMap implements Serializable {
 
         // Create GamePath from the points
         enemyPath = new GamePath(pathPoints);
-        System.out.println("Path generated successfully with " + pathPoints.size() + " points");
+        // System.out.println("Path generated successfully with " + pathPoints.size() +
+        // " points");
     }
 
     /**

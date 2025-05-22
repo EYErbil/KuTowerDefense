@@ -63,6 +63,7 @@ public class GameController {
 
     private boolean isPaused = false; // Added to track pause state internally
     private Timeline waveTimer; // For timed wave progression
+    private Duration waveTimerProgressOnPause; // To store progress when paused
 
     /**
      * Creates a new game controller with the specified game map.
@@ -131,11 +132,18 @@ public class GameController {
     public void setPaused(boolean isPaused) {
         this.isPaused = isPaused;
         if (isPaused) {
-            if (waveTimer != null)
+            if (waveTimer != null && waveTimer.getStatus() == Animation.Status.RUNNING) {
+                waveTimerProgressOnPause = waveTimer.getCurrentTime();
                 waveTimer.pause();
+            }
         } else {
-            if (waveTimer != null && waveTimer.getStatus() == Animation.Status.PAUSED)
-                waveTimer.play();
+            if (waveTimer != null && waveTimer.getStatus() == Animation.Status.PAUSED) {
+                if (waveTimerProgressOnPause != null) {
+                    waveTimer.playFrom(waveTimerProgressOnPause);
+                } else {
+                    waveTimer.play(); // Should ideally not happen if paused correctly
+                }
+            }
         }
     }
 
