@@ -617,36 +617,43 @@ public class GameScreen extends BorderPane {
     }
 
     private void updateTimeControlStates() {
-        // Remove selected style from all buttons first
-        if (pauseButton != null)
-            pauseButton.getStyleClass().remove(TIME_CONTROL_SELECTED_STYLE_CLASS);
-        if (playButton != null)
-            playButton.getStyleClass().remove(TIME_CONTROL_SELECTED_STYLE_CLASS);
-        if (fastForwardButton != null)
-            fastForwardButton.getStyleClass().remove(TIME_CONTROL_SELECTED_STYLE_CLASS);
+        boolean isCurrentlyPaused = isPaused; // Cache isPaused state
+        int currentSpeed = gameController.getGameSpeed();
 
-        if (isPaused) {
-            if (pauseButton != null)
-                pauseButton.getStyleClass().add(TIME_CONTROL_SELECTED_STYLE_CLASS);
-            if (renderTimer != null) {
+        // Update Pause Button
+        if (isCurrentlyPaused) {
+            pauseButton.getStyleClass().add(TIME_CONTROL_SELECTED_STYLE_CLASS);
+            pauseButton.setOpacity(1.0); // Selected
+        } else {
+            pauseButton.getStyleClass().removeAll(TIME_CONTROL_SELECTED_STYLE_CLASS);
+            pauseButton.setOpacity(0.6); // Not selected
+        }
+
+        // Update Play Button
+        if (!isCurrentlyPaused && currentSpeed == 1) {
+            playButton.getStyleClass().add(TIME_CONTROL_SELECTED_STYLE_CLASS);
+            playButton.setOpacity(1.0); // Selected
+        } else {
+            playButton.getStyleClass().removeAll(TIME_CONTROL_SELECTED_STYLE_CLASS);
+            playButton.setOpacity(0.6); // Not selected
+        }
+
+        // Update Fast Forward Button
+        if (!isCurrentlyPaused && currentSpeed == 2) {
+            fastForwardButton.getStyleClass().add(TIME_CONTROL_SELECTED_STYLE_CLASS);
+            fastForwardButton.setOpacity(1.0); // Selected
+        } else {
+            fastForwardButton.getStyleClass().removeAll(TIME_CONTROL_SELECTED_STYLE_CLASS);
+            fastForwardButton.setOpacity(0.6); // Not selected
+        }
+
+        // Ensure lastTime in renderTimer is reset if we are unpausing
+        if (renderTimer != null) {
+            if (!isCurrentlyPaused) {
+                renderTimer.start();
+            } else {
                 renderTimer.stop();
                 renderTimer.lastTime = -1; // Explicitly reset lastTime here
-            }
-            // The renderTimer's internal lastTime is reset to -1 when
-            // GameScreen.this.isPaused is true in its handle() method.
-        } else {
-            if (gameController.isSpeedAccelerated()) {
-                if (fastForwardButton != null)
-                    fastForwardButton.getStyleClass().add(TIME_CONTROL_SELECTED_STYLE_CLASS);
-            } else {
-                if (playButton != null)
-                    playButton.getStyleClass().add(TIME_CONTROL_SELECTED_STYLE_CLASS);
-            }
-            if (renderTimer != null) {
-                // Ensure renderTimer's internal lastTime is reset if it was previously stopped.
-                // The timer's handle() method already does this if its lastTime < 0.
-                // Calling start() ensures it runs.
-                renderTimer.start();
             }
         }
     }
