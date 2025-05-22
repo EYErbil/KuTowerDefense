@@ -113,7 +113,7 @@ public abstract class Enemy extends Entity implements Serializable {
      * @param goldReward the gold rewarded when defeated
      */
     public Enemy(double x, double y, int health, double speed, int goldReward) {
-        this(x, y, 32, 32, health, speed, goldReward);
+        this(x, y, 48, 48, health, speed, goldReward);
     }
 
     /**
