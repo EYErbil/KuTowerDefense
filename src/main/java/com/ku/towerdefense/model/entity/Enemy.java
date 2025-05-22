@@ -113,7 +113,7 @@ public abstract class Enemy extends Entity implements Serializable {
      * @param goldReward the gold rewarded when defeated
      */
     public Enemy(double x, double y, int health, double speed, int goldReward) {
-        this(x, y, 32, 32, health, speed, goldReward);
+        this(x, y, 48, 48, health, speed, goldReward);
     }
 
     /**
@@ -200,7 +200,8 @@ public abstract class Enemy extends Entity implements Serializable {
             if (snowflakeIcon != null && !snowflakeIcon.isError()) {
                 System.out.println("Loaded snow_flake_icon.png");
             } else {
-                System.err.println("Error loading snow_flake_icon.png" + (snowflakeIcon == null ? " - Stream is null" : " - Image has error"));
+                System.err.println("Error loading snow_flake_icon.png"
+                        + (snowflakeIcon == null ? " - Stream is null" : " - Image has error"));
             }
 
             String thunderBoltPath = "/Asset_pack/Effects/thunder_icon.png"; // Corrected name
@@ -208,7 +209,8 @@ public abstract class Enemy extends Entity implements Serializable {
             if (thunderIcon != null && !thunderIcon.isError()) {
                 System.out.println("Loaded thunder_icon.png for synergy");
             } else {
-                System.err.println("Error loading thunder_icon.png for synergy" + (thunderIcon == null ? " - Stream is null" : " - Image has error"));
+                System.err.println("Error loading thunder_icon.png for synergy"
+                        + (thunderIcon == null ? " - Stream is null" : " - Image has error"));
             }
         } catch (Exception e) {
             System.err.println("Exception loading effect icons: " + e.getMessage());
@@ -219,11 +221,15 @@ public abstract class Enemy extends Entity implements Serializable {
     /**
      * Updates the enemy state, including movement and animation.
      *
-     * @param deltaTime time elapsed since last update in seconds
+     * @param deltaTime  time elapsed since last update in seconds
      * @param allEnemies list of all active enemies for synergy checks
      * @return true if the enemy reached the end of the path
      */
     public boolean update(double deltaTime, List<Enemy> allEnemies) {
+        // System.out.println("[Enemy " + this.hashCode() + " type "+ this.type + "]
+        // update called. Received deltaTime: " + deltaTime + ". Current speed: " +
+        // this.speed * (isSlowed ? slowFactor : 1.0) ); // DEBUG LINE REMOVED
+
         // --- Status Effects Update ---
         if (isSlowed) {
             slowTimer -= deltaTime;
@@ -259,8 +265,10 @@ public abstract class Enemy extends Entity implements Serializable {
         if (isSlowed) {
             currentSpeed *= slowFactor;
         }
-        // Knight combat synergy speed adjustment will be handled in Knight.update() before this
-        // or passed into this update method if Enemy class needs to be aware of the final speed source.
+        // Knight combat synergy speed adjustment will be handled in Knight.update()
+        // before this
+        // or passed into this update method if Enemy class needs to be aware of the
+        // final speed source.
         // For now, assume Knight.update() adjusts this.speed directly if boosted.
 
         double distanceToMove = currentSpeed * deltaTime;
@@ -375,7 +383,7 @@ public abstract class Enemy extends Entity implements Serializable {
             gc.drawImage(snowflakeIcon, iconX + iconOffset, iconY, iconSize, iconSize);
             iconOffset += iconSize + 2; // Add padding for next icon
         }
-        
+
         if (isKnightSpeedBoosted && thunderIcon != null) { // Use corrected thunderIcon
             gc.drawImage(thunderIcon, iconX + iconOffset, iconY, iconSize, iconSize);
             // iconOffset += iconSize + 2; // If more icons could follow
@@ -455,9 +463,9 @@ public abstract class Enemy extends Entity implements Serializable {
      */
     private void renderHealthBar(GraphicsContext gc) {
         // Calculate health bar dimensions
-        double barWidth = width * 0.8;
-        double barHeight = 8; // Increased height for better visibility
-        double barY = y - 15; // Position higher above the enemy
+        double barWidth = width * 0.2;
+        double barHeight = 6;
+        double barY = y + 12; // Was y - 12, moving it 4 pixels closer
         double barX = x + (width - barWidth) / 2;
 
         // Draw background (full health bar)
@@ -482,24 +490,10 @@ public abstract class Enemy extends Entity implements Serializable {
         gc.setFill(healthColor);
         gc.fillRect(barX, barY, healthWidth, barHeight);
 
-        // Draw border with a thicker line
-        gc.setStroke(Color.BLACK);
-        gc.setLineWidth(2);
-        gc.strokeRect(barX, barY, barWidth, barHeight);
-
-        // Draw health text with better positioning and visibility
-        gc.setFill(Color.WHITE);
-        gc.setStroke(Color.BLACK);
-        gc.setLineWidth(1);
-        String healthText = currentHealth + "/" + maxHealth;
-
-        // Center the text above the health bar
-        double textX = barX + (barWidth - gc.getFont().getSize() * healthText.length() / 2) / 2;
-        double textY = barY - 5;
-
-        // Draw text with outline for better visibility
-        gc.strokeText(healthText, textX, textY);
-        gc.fillText(healthText, textX, textY);
+        // Remove border
+        // gc.setStroke(Color.BLACK);
+        // gc.setLineWidth(2);
+        // gc.strokeRect(barX, barY, barWidth, barHeight);
     }
 
     /**
@@ -628,7 +622,7 @@ public abstract class Enemy extends Entity implements Serializable {
         this.isSlowed = true;
         this.slowFactor = factor;
         this.slowTimer = duration;
-        System.out.println(this.getType() + " slowed by " + ((1-factor)*100) + "% for " + duration + "s");
+        System.out.println(this.getType() + " slowed by " + ((1 - factor) * 100) + "% for " + duration + "s");
     }
 
     public boolean isSlowed() {
@@ -647,7 +641,8 @@ public abstract class Enemy extends Entity implements Serializable {
         this.y = newY - this.height / 2.0;
         this.pathProgress = 0.0; // Reset path progress
         this.distanceTraveled = 0.0; // Reset distance traveled
-        // Current health and status effects (like slow) are maintained as per requirement.
+        // Current health and status effects (like slow) are maintained as per
+        // requirement.
         System.out.println(this.getType() + " teleported to (" + this.x + "," + this.y + "). Path progress reset.");
     }
 

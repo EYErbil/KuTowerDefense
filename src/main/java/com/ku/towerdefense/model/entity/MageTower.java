@@ -32,9 +32,9 @@ public class MageTower extends Tower implements Serializable {
      * @param y y coordinate
      */
     public MageTower(double x, double y) {
-        super(x, y, 64, 64, BASE_DAMAGE, BASE_RANGE, BASE_FIRE_RATE, BASE_COST, DamageType.MAGIC);
+        super(x, y, 72, 72, BASE_DAMAGE, BASE_RANGE, BASE_FIRE_RATE, BASE_COST, DamageType.MAGIC);
     }
-    
+
     /**
      * Create a magical spell projectile targeting the specified enemy.
      *
@@ -45,13 +45,14 @@ public class MageTower extends Tower implements Serializable {
     protected Projectile createProjectile(Enemy target) {
         double projectileX = getCenterX() - PROJECTILE_WIDTH / 2;
         double projectileY = getCenterY() - PROJECTILE_HEIGHT / 2;
-        
+
         String currentProjectileImage = L1_PROJECTILE_IMAGE_FILE;
         if (this.level == 2) {
             currentProjectileImage = L2_PROJECTILE_IMAGE_FILE;
         }
 
-        Projectile projectile = new Projectile(projectileX, projectileY, PROJECTILE_WIDTH, PROJECTILE_HEIGHT, target, this.damage, DamageType.MAGIC, PROJECTILE_SPEED, this);
+        Projectile projectile = new Projectile(projectileX, projectileY, PROJECTILE_WIDTH, PROJECTILE_HEIGHT, target,
+                this.damage, DamageType.MAGIC, PROJECTILE_SPEED, this);
         projectile.setImageFile(currentProjectileImage);
         projectile.setImpactEffect(Projectile.ImpactEffect.FIRE);
         return projectile;
@@ -82,4 +83,4 @@ public class MageTower extends Tower implements Serializable {
         MageTower clone = new MageTower(this.x, this.y);
         return clone;
     }
-} 
+}

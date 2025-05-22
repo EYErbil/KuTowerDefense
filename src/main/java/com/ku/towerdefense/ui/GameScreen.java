@@ -36,6 +36,11 @@ import javafx.animation.FadeTransition;
 import javafx.animation.ScaleTransition;
 import javafx.animation.ParallelTransition;
 import javafx.geometry.Point2D;
+import javafx.beans.property.ReadOnlyDoubleProperty;
+import javafx.beans.property.ReadOnlyDoubleWrapper;
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
+import javafx.beans.binding.NumberBinding;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +61,7 @@ public class GameScreen extends BorderPane {
     private final Pane uiOverlayPane = new Pane();
     private final Affine worldTransform = new Affine();
     private Node activePopup = null;
-    private static final double POPUP_ICON_SIZE = 36.0;
+    private static final double POPUP_ICON_SIZE = 64.0;
     // private static final double POPUP_SPACING = 5.0; // Not currently used, can
     // be removed or kept for future
 
@@ -85,8 +90,16 @@ public class GameScreen extends BorderPane {
     private ImageView livesIcon;
     private ImageView waveIcon;
 
-    private Button pauseResumeButton;
-    private Button gameSpeedButton;
+    // private Button pauseResumeButton; // REMOVED
+    // private Button gameSpeedButton; // REMOVED
+    private Button pauseButton;
+    private Button playButton;
+    private Button fastForwardButton;
+    private Button menuButton;
+    private static final String TIME_CONTROL_SELECTED_STYLE_CLASS = "time-control-selected";
+
+    // Property to track the visual width of the map on screen
+    private ReadOnlyDoubleWrapper visualMapWidthProperty = new ReadOnlyDoubleWrapper();
 
     // Define TowerBuildOption as a private static nested class
     private static class TowerBuildOption {
@@ -125,14 +138,13 @@ public class GameScreen extends BorderPane {
             double worldHeight = gameController.getGameMap().getHeight() * TILE_SIZE;
 
             // --- Calculate Scaling and Centering ---
-            // This baseScale ensures the whole map is visible when zoom is 1.0 and no
-            // panning (or panned to center)
             double baseScaleX = canvasWidth / worldWidth;
             double baseScaleY = canvasHeight / worldHeight;
-            double baseScale = Math.min(baseScaleX, baseScaleY); // Maintain aspect ratio for the 'default' view
+            double baseScale = Math.min(baseScaleX, baseScaleY);
 
             double effectiveScale = baseScale * currentZoomLevel;
-            GameScreen.this.currentEffectiveScale = effectiveScale; // Update field
+            GameScreen.this.currentEffectiveScale = effectiveScale;
+            GameScreen.this.visualMapWidthProperty.set(worldWidth * effectiveScale); // Update property
 
             // Update the transformation matrix
             worldTransform.setToIdentity();
@@ -222,8 +234,9 @@ public class GameScreen extends BorderPane {
 
             // --- Update game logic ---
             if (!isPaused) {
-                if (lastTime < 0)
+                if (lastTime < 0) {
                     lastTime = now;
+                }
                 double deltaTime = (now - lastTime) / 1_000_000_000.0;
                 lastTime = now;
                 gameController.update(deltaTime);
@@ -245,12 +258,10 @@ public class GameScreen extends BorderPane {
                 gc.setGlobalAlpha(1.0);
             }
 
-            // Debug information (top-left) - REMOVE HUD ELEMENTS FROM HERE
-            gc.setFill(javafx.scene.paint.Color.WHITE);
-            gc.fillText("Towers: " + gameController.getTowers().size(), 10, 20); // Keep for debug
-            gc.fillText("Enemies: " + gameController.getEnemies().size(), 10, 40); // Keep for debug
-            // gc.fillText("Wave: " + gameController.getCurrentWave(), 10, 60); // MOVED TO
-            // TOP BAR
+            // Debug information (top-left) - REMOVED
+            // gc.setFill(javafx.scene.paint.Color.WHITE);
+            // gc.fillText("Towers: " + gameController.getTowers().size(), 10, 20);
+            // gc.fillText("Enemies: " + gameController.getEnemies().size(), 10, 40);
 
             // Asset loading issue message
             if (!gameController.getTowers().isEmpty() && gameController.getTowers().get(0).getImage() == null) {
@@ -306,49 +317,186 @@ public class GameScreen extends BorderPane {
     private void initializeUI() {
         getStyleClass().add("game-screen");
 
-        HBox topBar = createTopBar();
         gameCanvas = new Canvas(); // Canvas takes available space
 
-        // Configure uiOverlayPane to sit on top of the canvas and not intercept mouse
-        // events
-        // unless a UI element (like a popup) is present and interactive.
         uiOverlayPane.setPickOnBounds(false);
         uiOverlayPane.prefWidthProperty().bind(gameCanvas.widthProperty());
         uiOverlayPane.prefHeightProperty().bind(gameCanvas.heightProperty());
 
-        // Listen for clicks on the uiOverlayPane to close popups if the click is not on
-        // a popup itself
         uiOverlayPane.setOnMouseClicked(event -> {
             if (activePopup != null && !event.isConsumed()) {
-                // Check if the click was outside the bounds of the activePopup
-                // This is a simple check; more robust might be needed if popups are complex
-                // shapes
                 boolean clickOutsidePopup = true;
                 if (activePopup.getBoundsInParent().contains(event.getX(), event.getY())) {
                     clickOutsidePopup = false;
                 }
-                // Also, if the event target is the uiOverlayPane itself, it means no specific
-                // UI element was clicked
                 if (event.getTarget() == uiOverlayPane && clickOutsidePopup) {
                     clearActivePopup();
                 }
             }
         });
 
-        // Use StackPane to layer canvas and UI overlay
         canvasRootPane.getChildren().addAll(gameCanvas, uiOverlayPane);
 
-        setTop(topBar);
-        setCenter(canvasRootPane); // Use the StackPane here
-        // REMOVE SIDEBAR - setRight(createSidebar());
+        setCenter(canvasRootPane);
 
-        // Resize canvas when the GameScreen (BorderPane) size changes.
-        // Bind canvas size to the StackPane's size, which is in the center of
-        // BorderPane.
         gameCanvas.widthProperty().bind(canvasRootPane.widthProperty());
         gameCanvas.heightProperty().bind(canvasRootPane.heightProperty());
 
-        // Mouse event handling on gameCanvas (remains the same from previous state)
+        // ---- Create Game Info Display (Top-Left) ----
+        VBox gameInfoPane = new VBox(12); // Spacing between elements, was 8
+        gameInfoPane.setPadding(new Insets(22)); // Padding around the pane, was 15
+        gameInfoPane.setAlignment(Pos.TOP_LEFT);
+        gameInfoPane.setPickOnBounds(false);
+
+        Image hudIconsSheet = UIAssets.getImage("GameUI");
+        double iconSheetEntryWidth = 79;
+        double iconSheetEntryHeight = 218.0 / 3.0;
+        double displayIconSize = 54.0; // Was 36.0, now 1.5x bigger
+
+        // Gold Display
+        goldIcon = new ImageView(hudIconsSheet);
+        goldIcon.setViewport(new javafx.geometry.Rectangle2D(0, 0, iconSheetEntryWidth, iconSheetEntryHeight));
+        goldIcon.setFitWidth(displayIconSize);
+        goldIcon.setFitHeight(displayIconSize);
+        goldIcon.setPreserveRatio(true);
+        goldIcon.setSmooth(true);
+        goldLabel = new Label();
+        goldLabel.getStyleClass().add("game-info-text");
+        goldLabel.setStyle("-fx-font-size: 20px;"); // Increased font size
+        HBox goldDisplay = new HBox(12, goldIcon, goldLabel); // Adjusted spacing, was 8
+        goldDisplay.setAlignment(Pos.CENTER_LEFT);
+
+        // Lives Display
+        livesIcon = new ImageView(hudIconsSheet);
+        livesIcon.setViewport(
+                new javafx.geometry.Rectangle2D(0, iconSheetEntryHeight, iconSheetEntryWidth, iconSheetEntryHeight));
+        livesIcon.setFitWidth(displayIconSize);
+        livesIcon.setFitHeight(displayIconSize);
+        livesIcon.setPreserveRatio(true);
+        livesIcon.setSmooth(true);
+        livesLabel = new Label();
+        livesLabel.getStyleClass().add("game-info-text");
+        livesLabel.setStyle("-fx-font-size: 20px;"); // Increased font size
+        HBox livesDisplay = new HBox(12, livesIcon, livesLabel); // Adjusted spacing, was 8
+        livesDisplay.setAlignment(Pos.CENTER_LEFT);
+
+        // Wave Display
+        waveIcon = new ImageView(hudIconsSheet);
+        waveIcon.setViewport(new javafx.geometry.Rectangle2D(0, iconSheetEntryHeight * 2, iconSheetEntryWidth,
+                iconSheetEntryHeight));
+        waveIcon.setFitWidth(displayIconSize);
+        waveIcon.setFitHeight(displayIconSize);
+        waveIcon.setPreserveRatio(true);
+        waveIcon.setSmooth(true);
+        waveLabel = new Label();
+        waveLabel.getStyleClass().add("game-info-text");
+        waveLabel.setStyle("-fx-font-size: 20px;"); // Increased font size
+        HBox waveDisplay = new HBox(12, waveIcon, waveLabel); // Adjusted spacing, was 8
+        waveDisplay.setAlignment(Pos.CENTER_LEFT);
+
+        gameInfoPane.getChildren().addAll(goldDisplay, livesDisplay, waveDisplay);
+        uiOverlayPane.getChildren().add(gameInfoPane);
+
+        // Position gameInfoPane conditionally
+        NumberBinding leftBandWidth = Bindings.when(visualMapWidthProperty().lessThan(uiOverlayPane.widthProperty()))
+                .then((uiOverlayPane.widthProperty().subtract(visualMapWidthProperty())).divide(2))
+                .otherwise(0.0);
+
+        NumberBinding layoutXWhenLeftBandExists = leftBandWidth.divide(2)
+                .subtract(gameInfoPane.widthProperty().divide(2));
+        // More direct: ( ( (T-M)/2 ) - I_w) / 2 if T-M > 0, else 15
+        // (
+        // (uiOverlayPane.widthProperty().subtract(visualMapWidthProperty())).divide(2)
+        // .subtract(gameInfoPane.widthProperty()) ).divide(2)
+        // Let's try centering the middle of the pane in the middle of the left band.
+        // Center of left band: ( (T-M)/2 ) / 2 = (T-M)/4
+        // Left edge of pane = Center of left band - PaneWidth/2
+        NumberBinding newLayoutXWhenLeftBandExists = (uiOverlayPane.widthProperty().subtract(visualMapWidthProperty()))
+                .divide(4)
+                .subtract(gameInfoPane.widthProperty().divide(2));
+
+        gameInfoPane.layoutXProperty().bind(
+                Bindings.when(visualMapWidthProperty().lessThan(uiOverlayPane.widthProperty()))
+                        .then(newLayoutXWhenLeftBandExists) // Center in the left band
+                        .otherwise(15.0) // Default to 15px padding from left
+        );
+        gameInfoPane.setLayoutY(15.0); // Fixed top padding
+
+        // ---- Create Control Buttons (Top-Right) ----
+        VBox controlButtonsPane = new VBox(10); // Spacing between buttons
+        controlButtonsPane.setPadding(new Insets(15));
+        controlButtonsPane.setAlignment(Pos.TOP_CENTER); // Changed from TOP_RIGHT to TOP_CENTER
+        controlButtonsPane.setPickOnBounds(false); // Allow clicks to pass through empty areas
+
+        final double controlButtonIconSize = 108.0;
+
+        pauseButton = UIAssets.createIconButton(UIAssets.LABEL_PAUSE, UIAssets.ICON_PAUSE_COL, UIAssets.ICON_PAUSE_ROW,
+                controlButtonIconSize);
+        pauseButton.setOnAction(e -> {
+            isPaused = true;
+            gameController.setPaused(true);
+            updateTimeControlStates();
+            e.consume();
+        });
+
+        playButton = UIAssets.createIconButton(UIAssets.LABEL_PLAY, UIAssets.ICON_PLAY_COL, UIAssets.ICON_PLAY_ROW,
+                controlButtonIconSize);
+        playButton.setOnAction(e -> {
+            isPaused = false;
+            gameController.setPaused(false);
+            gameController.setSpeedAccelerated(false);
+            updateTimeControlStates();
+            e.consume();
+        });
+
+        fastForwardButton = UIAssets.createIconButton(UIAssets.LABEL_FAST_FORWARD, UIAssets.ICON_FAST_FORWARD_COL,
+                UIAssets.ICON_FAST_FORWARD_ROW, controlButtonIconSize);
+        fastForwardButton.setOnAction(e -> {
+            isPaused = false;
+            gameController.setPaused(false);
+            gameController.setSpeedAccelerated(true);
+            updateTimeControlStates();
+            e.consume();
+        });
+
+        menuButton = UIAssets.createIconButton(UIAssets.LABEL_SETTINGS, UIAssets.ICON_SETTINGS_COL,
+                UIAssets.ICON_SETTINGS_ROW, controlButtonIconSize);
+        menuButton.setOnAction(e -> {
+            showGameSettingsPopup();
+            e.consume();
+        });
+
+        // Remove HBox for timeControls, add buttons directly to VBox for vertical
+        // layout
+        controlButtonsPane.getChildren().addAll(pauseButton, playButton, fastForwardButton, menuButton);
+        uiOverlayPane.getChildren().add(controlButtonsPane);
+
+        // Position controlButtonsPane at top-right, conditionally centered in right
+        // band
+        BooleanBinding mapIsNarrowerThanScreen = visualMapWidthProperty().lessThan(uiOverlayPane.widthProperty());
+
+        NumberBinding layoutXWhenBandExists = uiOverlayPane.widthProperty().multiply(3)
+                .add(visualMapWidthProperty())
+                .divide(4)
+                .subtract(controlButtonsPane.widthProperty().divide(2));
+
+        NumberBinding layoutXWhenNoBand = uiOverlayPane.widthProperty()
+                .subtract(controlButtonsPane.widthProperty())
+                .subtract(15); // 15px padding from far right
+
+        controlButtonsPane.layoutXProperty().bind(
+                Bindings.when(mapIsNarrowerThanScreen)
+                        .then(layoutXWhenBandExists)
+                        .otherwise(layoutXWhenNoBand));
+        controlButtonsPane.setLayoutY(15.0); // Set to fixed top padding
+
+        // Initial state for time controls
+        isPaused = false;
+        gameController.setPaused(false);
+        gameController.setSpeedAccelerated(false);
+        updateTimeControlStates();
+
+        // Mouse event handling on gameCanvas (remains the same)
         gameCanvas.setOnMouseMoved(e -> renderTimer.setMousePosition(e.getX(), e.getY(), true));
         gameCanvas.setOnMouseExited(e -> renderTimer.setMousePosition(e.getX(), e.getY(), false));
         gameCanvas.setOnScroll(event -> {
@@ -462,110 +610,59 @@ public class GameScreen extends BorderPane {
         topBarUpdateTimer = new AnimationTimer() {
             @Override
             public void handle(long now) {
-                updateTopBarLabels();
+                updateGameInfoLabels();
             }
         };
         topBarUpdateTimer.start();
     }
 
-    /**
-     * Create the top bar with game information.
-     *
-     * @return the top bar container
-     */
-    private HBox createTopBar() {
-        HBox topBar = new HBox(15); // Increased spacing a bit
-        topBar.setPadding(new Insets(10, 15, 10, 15));
-        topBar.setAlignment(Pos.CENTER_LEFT);
-        topBar.getStyleClass().add("game-top-bar");
+    private void updateTimeControlStates() {
+        // Remove selected style from all buttons first
+        if (pauseButton != null)
+            pauseButton.getStyleClass().remove(TIME_CONTROL_SELECTED_STYLE_CLASS);
+        if (playButton != null)
+            playButton.getStyleClass().remove(TIME_CONTROL_SELECTED_STYLE_CLASS);
+        if (fastForwardButton != null)
+            fastForwardButton.getStyleClass().remove(TIME_CONTROL_SELECTED_STYLE_CLASS);
 
-        Image hudIconsSheet = UIAssets.getImage("Coin_Health_Wave");
-        double iconSheetEntryWidth = 79;
-        double iconSheetEntryHeight = 218.0 / 3.0;
-        double displayIconSize = 36; // Increased from 32 for better visibility
-
-        // Gold Display
-        goldIcon = new ImageView(hudIconsSheet);
-        goldIcon.setViewport(new javafx.geometry.Rectangle2D(0, 0, iconSheetEntryWidth, iconSheetEntryHeight));
-        goldIcon.setFitWidth(displayIconSize);
-        goldIcon.setFitHeight(displayIconSize);
-        goldIcon.setPreserveRatio(true); // Added to maintain aspect ratio
-        goldIcon.setSmooth(true);
-        goldLabel = new Label();
-        goldLabel.getStyleClass().add("game-info-text");
-        HBox goldDisplay = new HBox(8, goldIcon, goldLabel); // Adjusted spacing
-        goldDisplay.setAlignment(Pos.CENTER_LEFT);
-
-        // Lives Display
-        livesIcon = new ImageView(hudIconsSheet);
-        livesIcon.setViewport(
-                new javafx.geometry.Rectangle2D(0, iconSheetEntryHeight, iconSheetEntryWidth, iconSheetEntryHeight));
-        livesIcon.setFitWidth(displayIconSize);
-        livesIcon.setFitHeight(displayIconSize);
-        livesIcon.setPreserveRatio(true); // Added
-        livesIcon.setSmooth(true);
-        livesLabel = new Label();
-        livesLabel.getStyleClass().add("game-info-text");
-        HBox livesDisplay = new HBox(8, livesIcon, livesLabel); // Adjusted spacing
-        livesDisplay.setAlignment(Pos.CENTER_LEFT);
-
-        // Wave Display
-        waveIcon = new ImageView(hudIconsSheet);
-        waveIcon.setViewport(new javafx.geometry.Rectangle2D(0, iconSheetEntryHeight * 2, iconSheetEntryWidth,
-                iconSheetEntryHeight));
-        waveIcon.setFitWidth(displayIconSize);
-        waveIcon.setFitHeight(displayIconSize);
-        waveIcon.setPreserveRatio(true); // Added
-        waveIcon.setSmooth(true);
-        waveLabel = new Label();
-        waveLabel.getStyleClass().add("game-info-text");
-        HBox waveDisplay = new HBox(8, waveIcon, waveLabel); // Adjusted spacing
-        waveDisplay.setAlignment(Pos.CENTER_LEFT);
-
-        updateTopBarLabels();
-
-        Pane spacer = new Pane();
-        HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
-
-        // Game Controls
-        pauseResumeButton = new Button(isPaused ? "▶️ Resume" : "⏸️ Pause");
-        pauseResumeButton.getStyleClass().addAll("button", "secondary-button"); // General button style
-        pauseResumeButton.setOnAction(e -> togglePause());
-
-        Button menuButton = UIAssets.createIconButton("Menu", 3, 1, 24); // Settings icon (3,1)
-        menuButton.setOnAction(e -> {
-            showGameSettingsPopup();
-            e.consume(); // Consume event so it doesn't propagate to uiOverlayPane click listener
-        });
-
-        gameSpeedButton = new Button(gameController.isSpeedAccelerated() ? "Speed (2x)" : "Speed (1x)");
-        gameSpeedButton.getStyleClass().addAll("button", "secondary-button");
-        gameSpeedButton.setOnAction(e -> toggleGameSpeed());
-
-        topBar.getChildren().addAll(goldDisplay, livesDisplay, waveDisplay, spacer, pauseResumeButton, menuButton,
-                gameSpeedButton);
-        return topBar;
+        if (isPaused) {
+            if (pauseButton != null)
+                pauseButton.getStyleClass().add(TIME_CONTROL_SELECTED_STYLE_CLASS);
+            if (renderTimer != null) {
+                renderTimer.stop();
+                renderTimer.lastTime = -1; // Explicitly reset lastTime here
+            }
+            // The renderTimer's internal lastTime is reset to -1 when
+            // GameScreen.this.isPaused is true in its handle() method.
+        } else {
+            if (gameController.isSpeedAccelerated()) {
+                if (fastForwardButton != null)
+                    fastForwardButton.getStyleClass().add(TIME_CONTROL_SELECTED_STYLE_CLASS);
+            } else {
+                if (playButton != null)
+                    playButton.getStyleClass().add(TIME_CONTROL_SELECTED_STYLE_CLASS);
+            }
+            if (renderTimer != null) {
+                // Ensure renderTimer's internal lastTime is reset if it was previously stopped.
+                // The timer's handle() method already does this if its lastTime < 0.
+                // Calling start() ensures it runs.
+                renderTimer.start();
+            }
+        }
     }
 
-    private void updateTopBarLabels() {
+    private void updateGameInfoLabels() {
         if (goldLabel != null) {
             goldLabel.setText("" + gameController.getPlayerGold());
-            System.out.println("Updating gold: " + gameController.getPlayerGold()); // For debugging
         }
         if (livesLabel != null) {
             livesLabel.setText("" + gameController.getPlayerLives());
-            System.out.println("Updating lives: " + gameController.getPlayerLives()); // For debugging
         }
         if (waveLabel != null) {
             waveLabel.setText("Wave: " + gameController.getCurrentWave());
-            System.out.println("Updating wave: " + gameController.getCurrentWave()); // For debugging
         }
-        if (pauseResumeButton != null) {
-            pauseResumeButton.setText(isPaused ? "▶️ Resume" : "⏸️ Pause");
-        }
-        if (gameSpeedButton != null) {
-            gameSpeedButton.setText(gameController.isSpeedAccelerated() ? "Speed (2x)" : "Speed (1x)");
-        }
+        // Pause/Speed button text/icon updates are now handled by
+        // updateTimeControlStates()
     }
 
     /**
@@ -636,9 +733,9 @@ public class GameScreen extends BorderPane {
         // BASE_COST;
         options.add(new TowerBuildOption("Archer Tower", ArcherTower.BASE_COST, 0, 2, () -> new ArcherTower(0, 0)));
         options.add(new TowerBuildOption("Mage Tower", MageTower.BASE_COST, 2, 2, () -> new MageTower(0, 0)));
+        options.add(new TowerBuildOption("Close", 0, 3, 0, null));
         options.add(new TowerBuildOption("Artillery Tower", ArtilleryTower.BASE_COST, 3, 2,
                 () -> new ArtilleryTower(0, 0)));
-        options.add(new TowerBuildOption("Close", 0, 3, 0, null));
 
         int numOptions = options.size();
         double angleStep = 360.0 / numOptions;
@@ -781,24 +878,6 @@ public class GameScreen extends BorderPane {
         pt.play();
     }
 
-    private void togglePause() {
-        isPaused = !isPaused;
-        gameController.setPaused(isPaused); // Assuming GameController has a setPaused method
-        if (isPaused) {
-            renderTimer.stop();
-            // topBarUpdateTimer can continue if it shows paused state correctly
-        } else {
-            renderTimer.start();
-            lastMouseXForPan = -1; // Reset lastTime for delta calculation in renderTimer
-        }
-        updateTopBarLabels(); // Update button text
-    }
-
-    private void toggleGameSpeed() {
-        gameController.setSpeedAccelerated(!gameController.isSpeedAccelerated());
-        updateTopBarLabels(); // Update button text
-    }
-
     public void stop() { // Assuming this method exists or should be added for cleanup
         if (renderTimer != null) {
             renderTimer.stop();
@@ -882,7 +961,7 @@ public class GameScreen extends BorderPane {
 
         settingsPopup.getChildren().addAll(title, saveButton, loadButton, resumeButton, mainMenuButton);
 
-        // Position in center of screen
+        // Position in center of screen (relative to uiOverlayPane)
         settingsPopup.layoutBoundsProperty().addListener((obs, oldVal, newVal) -> {
             settingsPopup.setLayoutX((uiOverlayPane.getWidth() - newVal.getWidth()) / 2);
             settingsPopup.setLayoutY((uiOverlayPane.getHeight() - newVal.getHeight()) / 2);
@@ -903,5 +982,15 @@ public class GameScreen extends BorderPane {
         st.setInterpolator(javafx.animation.Interpolator.EASE_OUT);
         ParallelTransition pt = new ParallelTransition(ft, st);
         pt.play();
+    }
+
+    // Getter for visualMapWidth (optional, but good practice)
+    public double getVisualMapWidth() {
+        return visualMapWidthProperty.get();
+    }
+
+    // Property getter for visualMapWidth (needed for bindings)
+    public ReadOnlyDoubleProperty visualMapWidthProperty() {
+        return visualMapWidthProperty.getReadOnlyProperty();
     }
 }
