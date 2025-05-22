@@ -258,12 +258,10 @@ public class GameScreen extends BorderPane {
                 gc.setGlobalAlpha(1.0);
             }
 
-            // Debug information (top-left) - REMOVE HUD ELEMENTS FROM HERE
-            gc.setFill(javafx.scene.paint.Color.WHITE);
-            gc.fillText("Towers: " + gameController.getTowers().size(), 10, 20); // Keep for debug
-            gc.fillText("Enemies: " + gameController.getEnemies().size(), 10, 40); // Keep for debug
-            // gc.fillText("Wave: " + gameController.getCurrentWave(), 10, 60); // MOVED TO
-            // TOP BAR
+            // Debug information (top-left) - REMOVED
+            // gc.setFill(javafx.scene.paint.Color.WHITE);
+            // gc.fillText("Towers: " + gameController.getTowers().size(), 10, 20);
+            // gc.fillText("Enemies: " + gameController.getEnemies().size(), 10, 40);
 
             // Asset loading issue message
             if (!gameController.getTowers().isEmpty() && gameController.getTowers().get(0).getImage() == null) {
@@ -345,17 +343,15 @@ public class GameScreen extends BorderPane {
         gameCanvas.heightProperty().bind(canvasRootPane.heightProperty());
 
         // ---- Create Game Info Display (Top-Left) ----
-        VBox gameInfoPane = new VBox(8); // Spacing between elements
-        gameInfoPane.setPadding(new Insets(15)); // Padding around the pane
+        VBox gameInfoPane = new VBox(12); // Spacing between elements, was 8
+        gameInfoPane.setPadding(new Insets(22)); // Padding around the pane, was 15
         gameInfoPane.setAlignment(Pos.TOP_LEFT);
-        // Make it transparent to mouse events so clicks go through to canvas/popups
-        // unless an element inside it consumes the event.
         gameInfoPane.setPickOnBounds(false);
 
         Image hudIconsSheet = UIAssets.getImage("GameUI");
         double iconSheetEntryWidth = 79;
         double iconSheetEntryHeight = 218.0 / 3.0;
-        double displayIconSize = 36;
+        double displayIconSize = 54.0; // Was 36.0, now 1.5x bigger
 
         // Gold Display
         goldIcon = new ImageView(hudIconsSheet);
@@ -366,7 +362,8 @@ public class GameScreen extends BorderPane {
         goldIcon.setSmooth(true);
         goldLabel = new Label();
         goldLabel.getStyleClass().add("game-info-text");
-        HBox goldDisplay = new HBox(8, goldIcon, goldLabel);
+        goldLabel.setStyle("-fx-font-size: 20px;"); // Increased font size
+        HBox goldDisplay = new HBox(12, goldIcon, goldLabel); // Adjusted spacing, was 8
         goldDisplay.setAlignment(Pos.CENTER_LEFT);
 
         // Lives Display
@@ -379,7 +376,8 @@ public class GameScreen extends BorderPane {
         livesIcon.setSmooth(true);
         livesLabel = new Label();
         livesLabel.getStyleClass().add("game-info-text");
-        HBox livesDisplay = new HBox(8, livesIcon, livesLabel);
+        livesLabel.setStyle("-fx-font-size: 20px;"); // Increased font size
+        HBox livesDisplay = new HBox(12, livesIcon, livesLabel); // Adjusted spacing, was 8
         livesDisplay.setAlignment(Pos.CENTER_LEFT);
 
         // Wave Display
@@ -392,11 +390,37 @@ public class GameScreen extends BorderPane {
         waveIcon.setSmooth(true);
         waveLabel = new Label();
         waveLabel.getStyleClass().add("game-info-text");
-        HBox waveDisplay = new HBox(8, waveIcon, waveLabel);
+        waveLabel.setStyle("-fx-font-size: 20px;"); // Increased font size
+        HBox waveDisplay = new HBox(12, waveIcon, waveLabel); // Adjusted spacing, was 8
         waveDisplay.setAlignment(Pos.CENTER_LEFT);
 
         gameInfoPane.getChildren().addAll(goldDisplay, livesDisplay, waveDisplay);
-        uiOverlayPane.getChildren().add(gameInfoPane); // Add to overlay
+        uiOverlayPane.getChildren().add(gameInfoPane);
+
+        // Position gameInfoPane conditionally
+        NumberBinding leftBandWidth = Bindings.when(visualMapWidthProperty().lessThan(uiOverlayPane.widthProperty()))
+                .then((uiOverlayPane.widthProperty().subtract(visualMapWidthProperty())).divide(2))
+                .otherwise(0.0);
+
+        NumberBinding layoutXWhenLeftBandExists = leftBandWidth.divide(2)
+                .subtract(gameInfoPane.widthProperty().divide(2));
+        // More direct: ( ( (T-M)/2 ) - I_w) / 2 if T-M > 0, else 15
+        // (
+        // (uiOverlayPane.widthProperty().subtract(visualMapWidthProperty())).divide(2)
+        // .subtract(gameInfoPane.widthProperty()) ).divide(2)
+        // Let's try centering the middle of the pane in the middle of the left band.
+        // Center of left band: ( (T-M)/2 ) / 2 = (T-M)/4
+        // Left edge of pane = Center of left band - PaneWidth/2
+        NumberBinding newLayoutXWhenLeftBandExists = (uiOverlayPane.widthProperty().subtract(visualMapWidthProperty()))
+                .divide(4)
+                .subtract(gameInfoPane.widthProperty().divide(2));
+
+        gameInfoPane.layoutXProperty().bind(
+                Bindings.when(visualMapWidthProperty().lessThan(uiOverlayPane.widthProperty()))
+                        .then(newLayoutXWhenLeftBandExists) // Center in the left band
+                        .otherwise(15.0) // Default to 15px padding from left
+        );
+        gameInfoPane.setLayoutY(15.0); // Fixed top padding
 
         // ---- Create Control Buttons (Top-Right) ----
         VBox controlButtonsPane = new VBox(10); // Spacing between buttons
