@@ -61,7 +61,7 @@ public class GameScreen extends BorderPane {
     private final Pane uiOverlayPane = new Pane();
     private final Affine worldTransform = new Affine();
     private Node activePopup = null;
-    private static final double POPUP_ICON_SIZE = 36.0;
+    private static final double POPUP_ICON_SIZE = 64.0;
     // private static final double POPUP_SPACING = 5.0; // Not currently used, can
     // be removed or kept for future
 
@@ -733,9 +733,9 @@ public class GameScreen extends BorderPane {
         // BASE_COST;
         options.add(new TowerBuildOption("Archer Tower", ArcherTower.BASE_COST, 0, 2, () -> new ArcherTower(0, 0)));
         options.add(new TowerBuildOption("Mage Tower", MageTower.BASE_COST, 2, 2, () -> new MageTower(0, 0)));
+        options.add(new TowerBuildOption("Close", 0, 3, 0, null));
         options.add(new TowerBuildOption("Artillery Tower", ArtilleryTower.BASE_COST, 3, 2,
                 () -> new ArtilleryTower(0, 0)));
-        options.add(new TowerBuildOption("Close", 0, 3, 0, null));
 
         int numOptions = options.size();
         double angleStep = 360.0 / numOptions;

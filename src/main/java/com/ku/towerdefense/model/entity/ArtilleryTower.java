@@ -7,7 +7,8 @@ import java.io.Serializable;
 
 /**
  * Artillery tower shoots explosive shells that cause area of effect damage.
- * Has the slowest fire rate but deals the most damage and can hit multiple enemies at once.
+ * Has the slowest fire rate but deals the most damage and can hit multiple
+ * enemies at once.
  * Deals the same damage to all enemy types.
  */
 public class ArtilleryTower extends Tower implements Serializable {
@@ -25,7 +26,7 @@ public class ArtilleryTower extends Tower implements Serializable {
     private static final double PROJECTILE_SPEED = 200;
     private static final String PROJECTILE_IMAGE_FILE = "cannon_ball.png"; // Placeholder
     private static final int AOE_RANGE = 50; // Example AOE range
-    
+
     /**
      * Create a new artillery tower at the specified position.
      *
@@ -33,10 +34,10 @@ public class ArtilleryTower extends Tower implements Serializable {
      * @param y y coordinate
      */
     public ArtilleryTower(double x, double y) {
-        super(x, y, 64, 64, BASE_DAMAGE, BASE_RANGE, BASE_FIRE_RATE, BASE_COST, DamageType.EXPLOSIVE);
+        super(x, y, 72, 72, BASE_DAMAGE, BASE_RANGE, BASE_FIRE_RATE, BASE_COST, DamageType.EXPLOSIVE);
         // Stats are now initialized in the super constructor using base values.
     }
-    
+
     /**
      * Create an artillery shell projectile targeting the specified enemy.
      * The projectile will explode on impact and damage enemies in the area.
@@ -48,7 +49,8 @@ public class ArtilleryTower extends Tower implements Serializable {
     protected Projectile createProjectile(Enemy target) {
         double projectileX = getCenterX() - PROJECTILE_WIDTH / 2;
         double projectileY = getCenterY() - PROJECTILE_HEIGHT / 2;
-        Projectile projectile = new Projectile(projectileX, projectileY, PROJECTILE_WIDTH, PROJECTILE_HEIGHT, target, this.damage, DamageType.EXPLOSIVE, PROJECTILE_SPEED, this);
+        Projectile projectile = new Projectile(projectileX, projectileY, PROJECTILE_WIDTH, PROJECTILE_HEIGHT, target,
+                this.damage, DamageType.EXPLOSIVE, PROJECTILE_SPEED, this);
         projectile.setImageFile(PROJECTILE_IMAGE_FILE);
         projectile.setImpactEffect(Projectile.ImpactEffect.EXPLOSION);
         projectile.setHasAoeEffect(true);
@@ -84,7 +86,7 @@ public class ArtilleryTower extends Tower implements Serializable {
 
         if (this.level == 2) {
             // Apply Level 2 specific stats for Artillery Tower
-            this.range = (int) (this.baseRange * 1.2);  // +20% attack range
+            this.range = (int) (this.baseRange * 1.2); // +20% attack range
             this.damage = (int) (this.baseDamage * 1.2); // +20% base damage (which will affect AOE damage)
             // Fire rate remains this.baseFireRate
             // AOE radius is handled by projectile and remains same as L1.
@@ -105,4 +107,4 @@ public class ArtilleryTower extends Tower implements Serializable {
         ArtilleryTower clone = new ArtilleryTower(this.x, this.y);
         return clone;
     }
-} 
+}
