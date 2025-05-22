@@ -67,6 +67,9 @@ public class UIAssets {
             // Item Images
             loadImage("GoldBag", "/Asset_pack/Items/gold_bag.png");
 
+            // Background Images
+            loadImage("WoodBackground", "/Asset_pack/Background/wood.jpg");
+
             // Tower specific effects/icons
             // loadImage("ThunderEffect", "/Asset_pack/Towers/thunder_icon.png"); // Removed
 

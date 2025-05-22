@@ -30,6 +30,7 @@ import javafx.scene.image.Image;
 import javafx.scene.ImageCursor;
 import javafx.scene.image.ImageView;
 import javafx.scene.Node;
+import javafx.scene.paint.ImagePattern;
 import javafx.util.Duration;
 import javafx.animation.FadeTransition;
 import javafx.animation.ScaleTransition;
@@ -148,11 +149,28 @@ public class GameScreen extends BorderPane {
             gc.save(); // Save default transform state
 
             // Clear the entire canvas (background)
-            gc.setFill(javafx.scene.paint.Color.web("#111111")); // Match background color
+            // gc.setFill(javafx.scene.paint.Color.web("#654321")); // Old color fill
+            Image backgroundImage = UIAssets.getImage("WoodBackground");
+            if (backgroundImage != null && !backgroundImage.isError()) {
+                // Make the pattern tile smaller to show more repetitions
+                double tileWidth = backgroundImage.getWidth() / 1.0;
+                double tileHeight = backgroundImage.getHeight() / 1.0;
+                ImagePattern pattern = new ImagePattern(backgroundImage, 0, 0, tileWidth, tileHeight, false);
+                gc.setFill(pattern);
+            } else {
+                // Fallback to color if image fails to load
+                gc.setFill(javafx.scene.paint.Color.web("#654321"));
+            }
             gc.fillRect(0, 0, canvasWidth, canvasHeight);
 
             // Apply the world transformation (scale and center)
             gc.setTransform(worldTransform);
+
+            // ---- Draw border around the map ---- START
+            gc.setStroke(javafx.scene.paint.Color.web("#3B270E")); // Dark brown border
+            gc.setLineWidth(12.0); // Border thickness in world units (will scale with zoom)
+            gc.strokeRect(0, 0, worldWidth, worldHeight);
+            // ---- Draw border around the map ---- END
 
             // Render game elements using original world coordinates
             // The transform handles scaling them correctly onto the canvas
