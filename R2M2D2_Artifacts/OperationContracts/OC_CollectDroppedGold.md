@@ -18,6 +18,6 @@ collectDroppedGold(position: Position): Boolean
 
 **Notes:**
 - The amount of gold in the bag is randomly determined when the bag is dropped (between 2 and half the cost of a Level 1 archer tower).
-- Only one Player can collect a given gold bag.
+- Player can collect a given gold bag only once.
 - The UI should be updated to reflect the result of the operation.
 - Gold bags are only available for collection for 10 seconds after being dropped and can be collected once.
