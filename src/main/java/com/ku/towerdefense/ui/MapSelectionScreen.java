@@ -57,14 +57,14 @@ public class MapSelectionScreen extends BorderPane {
     private List<GameMap> loadAvailableMaps() {
         List<GameMap> maps = new ArrayList<>();
 
-        // Create some default maps with different layouts
-        GameMap desertMap = createDesertMap();
-        GameMap forestMap = createForestMap();
-        GameMap castleMap = createCastleMap();
+        // Create some default maps with different layouts - REMOVED
+        // GameMap desertMap = createDesertMap();
+        // GameMap forestMap = createForestMap();
+        // GameMap castleMap = createCastleMap();
 
-        maps.add(desertMap);
-        maps.add(forestMap);
-        maps.add(castleMap);
+        // maps.add(desertMap);
+        // maps.add(forestMap);
+        // maps.add(castleMap);
 
         // Load user-created maps from the maps directory
         loadSavedMaps(maps);
