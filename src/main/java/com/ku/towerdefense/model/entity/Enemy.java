@@ -463,9 +463,9 @@ public abstract class Enemy extends Entity implements Serializable {
      */
     private void renderHealthBar(GraphicsContext gc) {
         // Calculate health bar dimensions
-        double barWidth = width * 0.8;
-        double barHeight = 8; // Increased height for better visibility
-        double barY = y - 15; // Position higher above the enemy
+        double barWidth = width * 0.2;
+        double barHeight = 6;
+        double barY = y + 12; // Was y - 12, moving it 4 pixels closer
         double barX = x + (width - barWidth) / 2;
 
         // Draw background (full health bar)
@@ -490,24 +490,10 @@ public abstract class Enemy extends Entity implements Serializable {
         gc.setFill(healthColor);
         gc.fillRect(barX, barY, healthWidth, barHeight);
 
-        // Draw border with a thicker line
-        gc.setStroke(Color.BLACK);
-        gc.setLineWidth(2);
-        gc.strokeRect(barX, barY, barWidth, barHeight);
-
-        // Draw health text with better positioning and visibility
-        gc.setFill(Color.WHITE);
-        gc.setStroke(Color.BLACK);
-        gc.setLineWidth(1);
-        String healthText = currentHealth + "/" + maxHealth;
-
-        // Center the text above the health bar
-        double textX = barX + (barWidth - gc.getFont().getSize() * healthText.length() / 2) / 2;
-        double textY = barY - 5;
-
-        // Draw text with outline for better visibility
-        gc.strokeText(healthText, textX, textY);
-        gc.fillText(healthText, textX, textY);
+        // Remove border
+        // gc.setStroke(Color.BLACK);
+        // gc.setLineWidth(2);
+        // gc.strokeRect(barX, barY, barWidth, barHeight);
     }
 
     /**
