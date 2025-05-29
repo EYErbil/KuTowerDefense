@@ -1,35 +1,35 @@
 package com.ku.towerdefense.controller;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
-import java.util.ArrayDeque;
 
 import com.ku.towerdefense.model.GamePath;
+import com.ku.towerdefense.model.effects.AnimatedEffect;
+import com.ku.towerdefense.model.entity.ArcherTower;
+import com.ku.towerdefense.model.entity.DroppedGold;
 import com.ku.towerdefense.model.entity.Enemy;
 import com.ku.towerdefense.model.entity.Goblin;
 import com.ku.towerdefense.model.entity.Knight;
+import com.ku.towerdefense.model.entity.MageTower;
 import com.ku.towerdefense.model.entity.Projectile;
 import com.ku.towerdefense.model.entity.Tower;
-import com.ku.towerdefense.model.entity.MageTower;
-import com.ku.towerdefense.model.entity.ArcherTower;
-import com.ku.towerdefense.model.entity.DroppedGold;
 import com.ku.towerdefense.model.map.GameMap;
 import com.ku.towerdefense.model.map.TileType;
-import com.ku.towerdefense.util.GameSettings;
-import com.ku.towerdefense.ui.UIAssets;
-import com.ku.towerdefense.model.effects.AnimatedEffect;
-import javafx.scene.image.Image;
-
-import javafx.animation.AnimationTimer;
-import javafx.geometry.Point2D;
-import javafx.scene.canvas.GraphicsContext;
-import javafx.animation.Timeline;
-import javafx.animation.KeyFrame;
-import javafx.util.Duration;
-import javafx.animation.Animation;
 import com.ku.towerdefense.model.wave.Wave;
 import com.ku.towerdefense.model.wave.WaveConfig;
+import com.ku.towerdefense.ui.UIAssets;
+import com.ku.towerdefense.util.GameSettings;
+
+import javafx.animation.Animation;
+import javafx.animation.AnimationTimer;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.geometry.Point2D;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
+import javafx.util.Duration;
 
 /**
  * Main controller for the game, handling the game loop, entities, and game
@@ -912,6 +912,26 @@ public class GameController {
     }
 
     // Method to purchase and place tower using TILE coordinates
+    /**
+     * Purchases and places a tower at the specified tile coordinates.
+     *
+     * REQUIRES: towerTemplate != null, tileX >= 0, tileY >= 0,
+     *          tileX < gameMap.getWidth(), tileY < gameMap.getHeight(),
+     *          gameMap != null, towers != null
+     * MODIFIES: this.towers, this.playerGold, this.gameMap
+     * EFFECTS: If player has enough gold (>= towerTemplate.getBaseCost()) and
+     *          the tile at (tileX, tileY) can accept a tower placement,
+     *          creates a new tower instance, places it at the specified tile,
+     *          deducts the tower cost from playerGold, marks the tile as occupied,
+     *          and returns true. Otherwise, returns false and leaves the game state unchanged.
+     *          The placed tower will be at level 1 with position set to world coordinates
+     *          (tileX * TILE_SIZE, tileY * TILE_SIZE).
+     *
+     * @param towerTemplate the template tower to base the new tower on
+     * @param tileX the x-coordinate of the tile (in tile units, not pixels)
+     * @param tileY the y-coordinate of the tile (in tile units, not pixels)
+     * @return true if tower was successfully purchased and placed, false otherwise
+     */
     public boolean purchaseAndPlaceTower(Tower towerTemplate, int tileX, int tileY) {
         if (towerTemplate == null)
             return false;
@@ -1020,6 +1040,28 @@ public class GameController {
         }
         return null;
     }
+    /**
+     * Collects a dropped gold bag if it is still available.
+     *
+     * Requires:
+     * - The bag parameter must not be null.
+     * - The bag must be present in the list of activeGoldBags.
+     * - bag.getGoldAmount() must be non-negative.
+     *
+     * Modifies:
+     * - Removes the collected bag from activeGoldBags.
+     * - Increases the playerGold by exactly bag.getGoldAmount().
+     *
+     * Effects:
+     * - If the bag is present in activeGoldBags:
+     *   - The player's gold balance increases by exactly bag.getGoldAmount().
+     *   - The gold bag is removed from activeGoldBags.
+     *   - A success message is logged with the amount collected and new total.
+     * - If the bag is not present in activeGoldBags:
+     *   - The game state remains unchanged.
+     *   - A warning message is logged.
+     * - The method is idempotent: calling it twice with the same bag has no effect after the first call.
+     */
 
     // Method to collect a gold bag (called by GameScreen)
     public void collectGoldBag(DroppedGold bag) {
