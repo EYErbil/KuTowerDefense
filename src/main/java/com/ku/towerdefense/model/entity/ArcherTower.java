@@ -14,7 +14,7 @@ import java.io.Serializable;
 public class ArcherTower extends Tower implements Serializable {
     private static final long serialVersionUID = 1L;
     public static final int BASE_COST = 50;
-    private static final int BASE_DAMAGE = 10; // Assuming GameSettings would provide these, hardcoding for now
+    private static final int BASE_DAMAGE = 20; // Assuming GameSettings would provide these, hardcoding for now
     private static final int BASE_RANGE = 150;
     private static final long BASE_FIRE_RATE = 1000; // milliseconds
     private static final String BASE_IMAGE_FILENAME = "Tower_archer128.png";
