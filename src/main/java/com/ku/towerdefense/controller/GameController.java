@@ -576,7 +576,19 @@ public class GameController {
     }
 
     /**
-     * Starts the next wave of enemies.
+     * Starts the next wave of enemies, ensuring a valid path exists on the map.
+     *
+     * REQUIRES: gameMap != null, currentWave >= 0
+     * MODIFIES: gameMap (may trigger path generation), may output to standard output/error
+     * EFFECTS: 
+     *   - If gameMap.getEnemyPath() is not null, begins the next wave and outputs debug info.
+     *   - If getEnemyPath() is null:
+     *       - Scans the map for START_POINT and END_POINT tiles.
+     *       - Outputs errors if either is missing and exits without starting the wave.
+     *       - If both exist, attempts to generate the path using gameMap.generatePath().
+     *           - If path generation succeeds, begins the wave and outputs success info.
+     *           - If it fails, outputs error and exits.
+     *   - No wave is started unless a valid path is present or successfully generated.
      */
     public void startNextWave() {
         // Enhanced debugging for enemy path issues
