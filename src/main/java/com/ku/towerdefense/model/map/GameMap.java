@@ -179,10 +179,48 @@ public class GameMap implements Serializable {
     }
 
     /**
-     * Uses Breadth-First Search to find a path from start to end following walkable
-     * tiles.
-     * 
-     * @return List of [x,y] coordinates for the path in tile space
+     * Uses Breadth-First Search to find a path from startTile to endTile following
+     * walkable
+     * tiles. The path search aims to reach a tile adjacent to or at the endTile.
+     * The coordinates in the returned list are pixel coordinates representing the
+     * center of each tile.
+     *
+     * @param startTile The tile where the path should begin.
+     * @param endTile   The tile where the path should end.
+     * @return List of [x,y] pixel coordinates for the path in tile-center space
+     *         (e.g., tileX * 64 + 32).
+     *         Returns null if no path is found.
+     *
+     *         REQUIRES:
+     *         - startTile is not null.
+     *         - endTile is not null.
+     *         - this.tiles (the GameMap's grid) is not null and initialized.
+     *         - this.width and this.height accurately reflect the dimensions of
+     *         this.tiles.
+     *         - Tiles with start and end point types are present on the map and
+     *         correspond to startTile and endTile.
+     *
+     *         MODIFIES:
+     *         - None (this method is side-effect free on the GameMap state, local
+     *         variables like visited and parent are used internally).
+     *
+     *         EFFECTS:
+     *         - If a path exists from startTile to a tile that is either endTile
+     *         itself (if considered walkable by the BFS logic for the purpose of
+     *         termination)
+     *         or directly adjacent to endTile, following tiles for which
+     *         tile.isWalkable() is true (or it's the endTile itself):
+     *         - Returns a List<int[]> where each int[] is a pair [x_pixel,
+     *         y_pixel].
+     *         - These coordinates represent the center of each tile in the path.
+     *         - The path starts at the center of startTile and ends at the center
+     *         of the last tile identified by the BFS
+     *         (which could be adjacent to endTile or endTile itself).
+     *         - The TILE_SIZE used for pixel calculation within this method is 64.
+     *         - If no such path is found, returns null.
+     *         - The search uses a Breadth-First Search algorithm.
+     *         - If startTile or endTile are outside map boundaries, behavior is
+     *         implicitly handled by boundary checks, likely leading to no path.
      */
     private List<int[]> findPathBFS(Tile startTile, Tile endTile) {
         final int TS = 64; // pixel size of tiles
