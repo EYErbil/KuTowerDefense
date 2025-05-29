@@ -439,124 +439,8 @@ public class GameController {
         // Additional UI rendering can be handled elsewhere
     }
 
-    /**
-     * Attempts to purchase and place a tower.
-     * Gold is deducted if placement is successful.
-     *
-     * @param tower The tower instance to place (should have its x, y, and cost
-     *              defined).
-     * @return true if the tower was successfully purchased and placed, false
-     *         otherwise.
-     */
-    public boolean purchaseAndPlaceTower(Tower tower) {
-        if (tower == null)
-            return false;
-
-        if (playerGold >= tower.getCost()) {
-            // Use tile-based coordinates for placement check, but GameMap.canPlaceTower
-            // expects world coordinates for center
-            // Tower X,Y should be top-left of the tile it occupies.
-            double checkX = tower.getX() + (gameMap.getTileSize() / 2.0); // Center of the tile
-            double checkY = tower.getY() + (gameMap.getTileSize() / 2.0); // Center of the tile
-
-            if (gameMap.canPlaceTower(checkX, checkY, towers)) {
-                playerGold -= tower.getCost();
-                towers.add(tower);
-                // System.out.println("Placed " + tower.getName() + " at (" + tower.getX() + ","
-                // + tower.getY() + "). Gold remaining: " + playerGold);
-                return true;
-            }
-            // else {
-            // System.out.println("Cannot place tower at (" + tower.getX() + "," +
-            // tower.getY() + ") - map check failed.");
-            // }
-        }
-        // else {
-        // System.out.println("Not enough gold to place " + tower.getName() + ". Needed:
-        // " + tower.getCost() + ", Have: " + playerGold);
-        // }
-        return false;
-    }
-
-    /**
-     * Places a tower at the specified position if there's enough gold.
-     * This method is kept for compatibility or specific scenarios where gold check
-     * might be external.
-     * Prefer purchaseAndPlaceTower for combined gold check and placement.
-     */
-    public boolean placeTower(Tower tower) {
-        if (tower == null)
-            return false;
-
-        // GameMap.canPlaceTower expects world coordinates for the center of the tile
-        double checkX = tower.getX() + (gameMap.getTileSize() / 2.0);
-        double checkY = tower.getY() + (gameMap.getTileSize() / 2.0);
-
-        if (gameMap.canPlaceTower(checkX, checkY, towers)) {
-            // Note: Gold deduction is assumed to be handled by the caller or a different
-            // method like purchaseAndPlaceTower
-            towers.add(tower);
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Attempts to upgrade an existing tower.
-     * Gold is deducted if the upgrade is successful.
-     *
-     * @param tower The tower to upgrade.
-     * @return true if the tower was successfully upgraded, false otherwise.
-     */
-    public boolean upgradeTower(Tower tower) {
-        if (tower != null && tower.canUpgrade()) {
-            int upgradeCost = tower.getUpgradeCost();
-            if (playerGold >= upgradeCost) {
-                playerGold -= upgradeCost;
-                boolean success = tower.upgrade(); // Tower itself handles stat changes
-                if (success) {
-                    // System.out.println(tower.getName() + " upgraded to level " + tower.getLevel()
-                    // + ". Gold remaining: " + playerGold);
-                    return true;
-                }
-                // else {
-                // System.out.println("Tower upgrade method returned false for " +
-                // tower.getName());
-                // }
-            }
-            // else {
-            // System.out.println("Not enough gold to upgrade " + tower.getName() + ".
-            // Needed: " + upgradeCost + ", Have: " + playerGold);
-            // }
-        }
-        // else if (tower != null) {
-        // System.out.println(tower.getName() + " cannot be upgraded further or does not
-        // exist.");
-        // }
-        return false;
-    }
-
-    /**
-     * Add a test enemy to the game.
-     * This is for demonstration purposes.
-     */
-    public void addTestEnemy() {
-        // Create a new enemy and add it to the list
-        Enemy enemy;
-        if (Math.random() < 0.5) {
-            enemy = new Goblin(50, 50);
-        } else {
-            enemy = new Knight(50, 50);
-        }
-
-        // Set the path for the enemy to follow
-        if (gameMap.getEnemyPath() != null) {
-            enemy.setPath(gameMap.getEnemyPath());
-            enemies.add(enemy);
-            System.out.println("Added test enemy");
-        } else {
-            System.out.println("Cannot add enemy: no path available");
-        }
+    public void setPlayerGold(int i) {
+        this.playerGold=i;
     }
 
     /**
@@ -912,6 +796,26 @@ public class GameController {
     }
 
     // Method to purchase and place tower using TILE coordinates
+    /**
+     * Purchases and places a tower at the specified tile coordinates.
+     *
+     * REQUIRES: towerTemplate != null, tileX >= 0, tileY >= 0,
+     *          tileX < gameMap.getWidth(), tileY < gameMap.getHeight(),
+     *          gameMap != null, towers != null
+     * MODIFIES: this.towers, this.playerGold, this.gameMap
+     * EFFECTS: If player has enough gold (>= towerTemplate.getBaseCost()) and
+     *          the tile at (tileX, tileY) can accept a tower placement,
+     *          creates a new tower instance, places it at the specified tile,
+     *          deducts the tower cost from playerGold, marks the tile as occupied,
+     *          and returns true. Otherwise, returns false and leaves the game state unchanged.
+     *          The placed tower will be at level 1 with position set to world coordinates
+     *          (tileX * TILE_SIZE, tileY * TILE_SIZE).
+     *
+     * @param towerTemplate the template tower to base the new tower on
+     * @param tileX the x-coordinate of the tile (in tile units, not pixels)
+     * @param tileY the y-coordinate of the tile (in tile units, not pixels)
+     * @return true if tower was successfully purchased and placed, false otherwise
+     */
     public boolean purchaseAndPlaceTower(Tower towerTemplate, int tileX, int tileY) {
         if (towerTemplate == null)
             return false;
@@ -947,28 +851,64 @@ public class GameController {
         return false;
     }
 
+    /**
+     * Attempts to upgrade a tower at the specified tile coordinates or using the provided tower reference.
+     *
+     * REQUIRES:
+     * - Either towerToUpgrade is not null and is a valid tower in the game, or there is a tower at (tileX, tileY)
+     * - tileX and tileY are valid tile coordinates within the map bounds
+     * - GameController and GameMap are properly initialized
+     *
+     * MODIFIES:
+     * - playerGold: Decreases by the upgrade cost if the upgrade is successful
+     * - towerToUpgrade.level: Increases by 1 if the upgrade is successful
+     *
+     * EFFECTS:
+     * - If the tower can be upgraded (not at max level) and the player has enough gold:
+     *     - Deducts the upgrade cost from playerGold
+     *     - Increases the tower's level by 1
+     *     - Returns true
+     * - If the tower is already at max level, or the player does not have enough gold, or no tower is found:
+     *     - Returns false and leaves the game state unchanged
+     * - If towerToUpgrade is null, attempts to find a tower at (tileX, tileY)
+     * - Does not throw exceptions for invalid input; fails gracefully
+     *
+     * @param towerToUpgrade the tower to upgrade (may be null if using coordinates)
+     * @param tileX the x-coordinate of the tile (in tile units)
+     * @param tileY the y-coordinate of the tile (in tile units)
+     * @return true if the upgrade was successful, false otherwise
+     */
     public boolean upgradeTower(Tower towerToUpgrade, int tileX, int tileY) {
+        // If the tower reference is null, try to find the tower at the given coordinates
         if (towerToUpgrade == null) {
             // Attempt to find tower if only coordinates are implicitly known by context
-            towerToUpgrade = getTowerAtTile(tileX, tileY);
+            towerToUpgrade = getTowerAtTile(tileX, tileY); // Look up tower at (tileX, tileY)
             if (towerToUpgrade == null) {
+                // No tower found at the given coordinates, fail gracefully
                 System.err.println("Upgrade failed: No tower at tile (" + tileX + "," + tileY + ")");
                 return false;
             }
         }
 
+        // Check if the tower can be upgraded and if the player has enough gold
         if (towerToUpgrade.canUpgrade() && playerGold >= towerToUpgrade.getUpgradeCost()) {
+            // Deduct the upgrade cost from the player's gold
             playerGold -= towerToUpgrade.getUpgradeCost();
+            // Perform the upgrade (increase tower level and update stats)
             towerToUpgrade.upgrade();
             System.out.println("Tower at (" + tileX + "," + tileY + ") upgraded to level " + towerToUpgrade.getLevel()
                     + ". Gold: " + playerGold);
+            // Upgrade was successful
             return true;
         } else if (!towerToUpgrade.canUpgrade()) {
+            // Tower is already at max level, cannot upgrade
             System.err.println("Upgrade failed: Tower at max level.");
         } else {
+            // Not enough gold to upgrade
             System.err.println("Upgrade failed: Not enough gold. Need " + towerToUpgrade.getUpgradeCost() + ", have "
                     + playerGold);
         }
+        // Upgrade failed (either max level or not enough gold)
         return false;
     }
 
