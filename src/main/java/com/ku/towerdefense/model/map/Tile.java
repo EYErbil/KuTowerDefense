@@ -51,7 +51,8 @@ public class Tile implements Serializable {
         TILE_COORDS.put(TileType.PATH_HORIZONTAL, new Point2D(1, 3));
         TILE_COORDS.put(TileType.PATH_HORIZONTAL_E_DE, new Point2D(2, 3));
         TILE_COORDS.put(TileType.TOWER_SLOT, new Point2D(3, 3));
-        TILE_COORDS.put(TileType.START_POINT, new Point2D(4, 0)); // Placeholder for START_POINT sprite - ADJUST IF NEEDED
+        TILE_COORDS.put(TileType.START_POINT, new Point2D(4, 0)); // Placeholder for START_POINT sprite - ADJUST IF
+                                                                  // NEEDED
         TILE_COORDS.put(TileType.TREE_BIG, new Point2D(0, 4));
         TILE_COORDS.put(TileType.TREE_MEDIUM, new Point2D(1, 4));
         TILE_COORDS.put(TileType.TREE_SMALL, new Point2D(2, 4));
@@ -71,7 +72,7 @@ public class Tile implements Serializable {
 
         // Add coordinates for the logical END_POINT, matching CASTLE1
         TILE_COORDS.put(TileType.END_POINT, new Point2D(0, 6));
-        
+
         // Add coordinates for the deprecated PATH type, matching PATH_HORIZONTAL
         TILE_COORDS.put(TileType.PATH, new Point2D(1, 3));
     }
@@ -83,6 +84,8 @@ public class Tile implements Serializable {
     private static Image castleImage; // Specific image for end point
     private static Image towerSlotImage; // Specific image for tower slot
     private static final Map<TileType, Image> CACHE = new EnumMap<>(TileType.class);
+
+    public static boolean isFxAvailable = true; // New flag for FX availability
 
     /* ────────────────────────────── Fields ─────────────────────────────── */
 
@@ -124,22 +127,22 @@ public class Tile implements Serializable {
     }
 
     public boolean isWalkable() {
-        return type == TileType.PATH_HORIZONTAL || 
-               type == TileType.PATH_VERTICAL || 
-               type == TileType.PATH || // Include legacy PATH type
-               type == TileType.PATH_CIRCLE_N || 
-               type == TileType.PATH_CIRCLE_NE || 
-               type == TileType.PATH_CIRCLE_E || 
-               type == TileType.PATH_CIRCLE_SE || 
-               type == TileType.PATH_CIRCLE_S || 
-               type == TileType.PATH_CIRCLE_SW || 
-               type == TileType.PATH_CIRCLE_W || 
-               type == TileType.PATH_CIRCLE_NW ||
-               type == TileType.PATH_VERTICAL_N_DE ||
-               type == TileType.PATH_VERTICAL_S_DE ||
-               type == TileType.PATH_HORIZONTAL_W_DE ||
-               type == TileType.PATH_HORIZONTAL_E_DE ||
-               type == TileType.START_POINT; // Start point is also walkable
+        return type == TileType.PATH_HORIZONTAL ||
+                type == TileType.PATH_VERTICAL ||
+                type == TileType.PATH || // Include legacy PATH type
+                type == TileType.PATH_CIRCLE_N ||
+                type == TileType.PATH_CIRCLE_NE ||
+                type == TileType.PATH_CIRCLE_E ||
+                type == TileType.PATH_CIRCLE_SE ||
+                type == TileType.PATH_CIRCLE_S ||
+                type == TileType.PATH_CIRCLE_SW ||
+                type == TileType.PATH_CIRCLE_W ||
+                type == TileType.PATH_CIRCLE_NW ||
+                type == TileType.PATH_VERTICAL_N_DE ||
+                type == TileType.PATH_VERTICAL_S_DE ||
+                type == TileType.PATH_HORIZONTAL_W_DE ||
+                type == TileType.PATH_HORIZONTAL_E_DE ||
+                type == TileType.START_POINT; // Start point is also walkable
     }
 
     public Image getImage() {
@@ -199,7 +202,7 @@ public class Tile implements Serializable {
                 // Assuming START_POINT tile visual from tileset is sufficient.
                 // Just add a clear text label.
                 gc.setStroke(Color.WHITE);
-                gc.setFill(Color.rgb(0,0,180)); // Darker blue text fill for contrast on potentially red 'S' tile
+                gc.setFill(Color.rgb(0, 0, 180)); // Darker blue text fill for contrast on potentially red 'S' tile
                 gc.setLineWidth(1);
                 gc.strokeText("S", x * tileSize + tileSize * 0.30, y * tileSize + tileSize * 0.70);
                 gc.fillText("S", x * tileSize + tileSize * 0.30, y * tileSize + tileSize * 0.70);
@@ -207,14 +210,17 @@ public class Tile implements Serializable {
                 // Assuming END_POINT tile visual from tileset is sufficient.
                 // Just add a clear text label on the base tile.
                 gc.setStroke(Color.WHITE);
-                gc.setFill(Color.rgb(180,0,0)); // Darker red text fill for contrast on potentially blue 'E' tile
+                gc.setFill(Color.rgb(180, 0, 0)); // Darker red text fill for contrast on potentially blue 'E' tile
                 gc.setLineWidth(1);
                 gc.strokeText("E", x * tileSize + tileSize * 0.30, y * tileSize + tileSize * 0.70);
                 gc.fillText("E", x * tileSize + tileSize * 0.30, y * tileSize + tileSize * 0.70);
-                
-                // For editor, also show the 2x2 footprint of the castle faintly if this is the base
-                // Note: This doesn't check map boundaries, so it might draw partially off-canvas
-                // if the END_POINT is at the very edge of the map. This is an editor-only visual aid.
+
+                // For editor, also show the 2x2 footprint of the castle faintly if this is the
+                // base
+                // Note: This doesn't check map boundaries, so it might draw partially
+                // off-canvas
+                // if the END_POINT is at the very edge of the map. This is an editor-only
+                // visual aid.
                 gc.setGlobalAlpha(0.3); // Faint
                 gc.setStroke(Color.WHITE);
                 gc.setLineWidth(1);
@@ -233,7 +239,7 @@ public class Tile implements Serializable {
 
         // Actual 2x2 Castle rendering for END_POINT (only in non-editor mode)
         if (type == TileType.END_POINT && !isEditorMode) {
-            renderEndPoint(gc, x, y, tileSize); 
+            renderEndPoint(gc, x, y, tileSize);
         }
     }
 
@@ -243,31 +249,31 @@ public class Tile implements Serializable {
      */
     private void renderEndPoint(GraphicsContext gc, int tileX, int tileY, int renderTileSize) {
         loadImagesIfNeeded();
-        
+
         // Use a larger castle that spans 2x2 tiles
         double castleSize = renderTileSize * 2;
-        
+
         // Grass background
         Image grassImage = CACHE.get(TileType.GRASS);
         if (grassImage != null) {
             // Draw grass under all castle tiles
-            gc.drawImage(grassImage, tileX * renderTileSize, tileY * renderTileSize, 
+            gc.drawImage(grassImage, tileX * renderTileSize, tileY * renderTileSize,
                     renderTileSize, renderTileSize);
-            gc.drawImage(grassImage, (tileX+1) * renderTileSize, tileY * renderTileSize, 
+            gc.drawImage(grassImage, (tileX + 1) * renderTileSize, tileY * renderTileSize,
                     renderTileSize, renderTileSize);
-            gc.drawImage(grassImage, tileX * renderTileSize, (tileY+1) * renderTileSize, 
+            gc.drawImage(grassImage, tileX * renderTileSize, (tileY + 1) * renderTileSize,
                     renderTileSize, renderTileSize);
-            gc.drawImage(grassImage, (tileX+1) * renderTileSize, (tileY+1) * renderTileSize, 
+            gc.drawImage(grassImage, (tileX + 1) * renderTileSize, (tileY + 1) * renderTileSize,
                     renderTileSize, renderTileSize);
         }
-        
+
         // Draw the 4 castle quarters
         drawCastleTile(gc, TileType.CASTLE1, tileX, tileY, renderTileSize);
-        drawCastleTile(gc, TileType.CASTLE2, tileX+1, tileY, renderTileSize);
-        drawCastleTile(gc, TileType.CASTLE3, tileX, tileY+1, renderTileSize);
-        drawCastleTile(gc, TileType.CASTLE4, tileX+1, tileY+1, renderTileSize);
+        drawCastleTile(gc, TileType.CASTLE2, tileX + 1, tileY, renderTileSize);
+        drawCastleTile(gc, TileType.CASTLE3, tileX, tileY + 1, renderTileSize);
+        drawCastleTile(gc, TileType.CASTLE4, tileX + 1, tileY + 1, renderTileSize);
     }
-    
+
     /**
      * Helper to draw a specific castle tile part
      */
@@ -275,10 +281,10 @@ public class Tile implements Serializable {
         Rectangle2D viewport = getSourceViewportForType(castleTileType);
         if (viewport != null && tileset != null) {
             // Draw the castle part from the tileset using the viewport
-            gc.drawImage(tileset, 
-                    viewport.getMinX(), viewport.getMinY(), 
+            gc.drawImage(tileset,
+                    viewport.getMinX(), viewport.getMinY(),
                     viewport.getWidth(), viewport.getHeight(),
-                    tileX * renderTileSize, tileY * renderTileSize, 
+                    tileX * renderTileSize, tileY * renderTileSize,
                     renderTileSize, renderTileSize);
         }
     }
@@ -311,6 +317,10 @@ public class Tile implements Serializable {
     }
 
     private void initTransientFields() {
+        if (!isFxAvailable) {
+            this.image = null; // Or a placeholder non-FX image if available/needed
+            return;
+        }
         // Try to get pre-processed image from cache
         image = CACHE.get(type);
         if (image == null) {
@@ -385,8 +395,9 @@ public class Tile implements Serializable {
     }
 
     private static synchronized void loadImagesIfNeeded() {
-        if (imagesLoaded)
+        if (!isFxAvailable || imagesLoaded) {
             return;
+        }
         System.out.println("--> Entering loadImagesIfNeeded...");
         try {
             System.out.println("    Loading tileset...");
@@ -514,7 +525,8 @@ public class Tile implements Serializable {
 
     /**
      * Called after deserialization to reinitialize transient fields.
-     * This ensures images are properly reloaded when the game is loaded from a saved file.
+     * This ensures images are properly reloaded when the game is loaded from a
+     * saved file.
      */
     public void reinitializeAfterLoad() {
         loadImagesIfNeeded();
