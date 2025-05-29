@@ -1,15 +1,12 @@
 package com.ku.towerdefense.controller;
-
 import com.ku.towerdefense.model.map.GameMap;
 import com.ku.towerdefense.model.map.TileType;
 import javafx.application.Platform;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class GameControllerTest {
@@ -113,7 +110,6 @@ class GameControllerTest {
         });
         assertTrue(latch.await(5, TimeUnit.SECONDS), "Test timed out");
     }
-
 
     @Test
     void testStartNextWaveWithStartAndEndButDisconnectedPath() throws InterruptedException {
