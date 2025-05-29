@@ -12,7 +12,16 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.*;
 
-class GameControllerTest {
+
+
+///checks: Gold deduction
+//Tower added to list
+//Correct tower type and name
+//Initial tower level is 1
+//Correct world coordinates (tileX * TILE_SIZE, tileY * TILE_SIZE)
+
+
+class EgeTest {
     private GameController controller;
     private GameMap map;
 
@@ -62,7 +71,7 @@ class GameControllerTest {
         // Create archer tower template (cost = 50)
         Tower tower = new ArcherTower(0, 0);
 
-        // Place tower on valid slot
+        // Place tower on valid slot (tileX = 1, tileY = 1)
         boolean success = controller.purchaseAndPlaceTower(tower, 1, 1);
 
         assertTrue(success, "Should successfully place tower on valid slot");
@@ -70,8 +79,15 @@ class GameControllerTest {
         assertEquals(1, controller.getTowers().size(), "Should have one tower in list");
 
         Tower placedTower = controller.getTowerAtTile(1, 1);
-        assertNotNull(placedTower, "Should find tower at placement location");
-        assertEquals("Archer Tower", placedTower.getName(), "Tower should be Archer Tower");
+        assertNotNull(placedTower, "Should find tower at placement location (1,1)");
+        assertEquals("Archer Tower", placedTower.getName(), "Placed tower should be an Archer Tower");
+        assertEquals(1, placedTower.getLevel(), "Placed tower should be level 1");
+
+        // Verify world coordinates based on TILE_SIZE
+        double expectedX = 1 * GameMap.TILE_SIZE;
+        double expectedY = 1 * GameMap.TILE_SIZE;
+        assertEquals(expectedX, placedTower.getX(), "Placed tower X coordinate should be tileX * TILE_SIZE");
+        assertEquals(expectedY, placedTower.getY(), "Placed tower Y coordinate should be tileY * TILE_SIZE");
     }
 
     @Test
@@ -217,3 +233,6 @@ class GameControllerTest {
         assertEquals(1, archer.getLevel(), "New tower should be level 1");
     }
 }
+
+
+
