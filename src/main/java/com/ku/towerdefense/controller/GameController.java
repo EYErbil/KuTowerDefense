@@ -439,6 +439,10 @@ public class GameController {
         // Additional UI rendering can be handled elsewhere
     }
 
+    public void setPlayerGold(int i) {
+        this.playerGold=i;
+    }
+
     /**
      * Interface for wave completed event
      */
