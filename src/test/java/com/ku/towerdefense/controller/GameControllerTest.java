@@ -12,9 +12,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.ku.towerdefense.model.entity.ArcherTower;
+
 import com.ku.towerdefense.model.entity.DroppedGold;
-import com.ku.towerdefense.model.entity.Tower;
+
 import com.ku.towerdefense.model.map.GameMap;
 import com.ku.towerdefense.model.map.TileType;
 
@@ -42,21 +42,11 @@ class GameControllerTest {
         final CountDownLatch setupLatch = new CountDownLatch(1);
         Platform.runLater(() -> {
             try {
-                // Create a simple 5x5 test map
                 map = new GameMap("TestMap", 5, 5);
-
-                // Set up tower slots
-                map.setTileType(1, 1, TileType.TOWER_SLOT);
-                map.setTileType(2, 2, TileType.TOWER_SLOT);
-                map.setTileType(3, 3, TileType.TOWER_SLOT);
-
-                // Set up path tiles
                 map.setTileType(0, 0, TileType.START_POINT);
                 map.setTileType(4, 4, TileType.END_POINT);
-
-                // Create controller
                 controller = new GameController(map);
-                controller.setPlayerGold(200); // Start with 200 gold
+                controller.setPlayerGold(200);
             } finally {
                 setupLatch.countDown();
             }
