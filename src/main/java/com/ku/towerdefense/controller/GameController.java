@@ -912,6 +912,26 @@ public class GameController {
     }
 
     // Method to purchase and place tower using TILE coordinates
+    /**
+     * Purchases and places a tower at the specified tile coordinates.
+     *
+     * REQUIRES: towerTemplate != null, tileX >= 0, tileY >= 0,
+     *          tileX < gameMap.getWidth(), tileY < gameMap.getHeight(),
+     *          gameMap != null, towers != null
+     * MODIFIES: this.towers, this.playerGold, this.gameMap
+     * EFFECTS: If player has enough gold (>= towerTemplate.getBaseCost()) and
+     *          the tile at (tileX, tileY) can accept a tower placement,
+     *          creates a new tower instance, places it at the specified tile,
+     *          deducts the tower cost from playerGold, marks the tile as occupied,
+     *          and returns true. Otherwise, returns false and leaves the game state unchanged.
+     *          The placed tower will be at level 1 with position set to world coordinates
+     *          (tileX * TILE_SIZE, tileY * TILE_SIZE).
+     *
+     * @param towerTemplate the template tower to base the new tower on
+     * @param tileX the x-coordinate of the tile (in tile units, not pixels)
+     * @param tileY the y-coordinate of the tile (in tile units, not pixels)
+     * @return true if tower was successfully purchased and placed, false otherwise
+     */
     public boolean purchaseAndPlaceTower(Tower towerTemplate, int tileX, int tileY) {
         if (towerTemplate == null)
             return false;
