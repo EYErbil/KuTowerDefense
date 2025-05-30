@@ -148,9 +148,9 @@ public class GameMap implements Serializable {
 
         // If we don't have both start and end points, we can't generate a path
         if (startTile == null || endTile == null) {
-            System.err.println("Cannot generate path: Missing " +
-                    (startTile == null ? "START_POINT" : "") +
-                    (endTile == null ? "END_POINT" : ""));
+            // System.err.println("Cannot generate path: Missing " +
+            // (startTile == null ? "START_POINT" : "") +
+            // (endTile == null ? "END_POINT" : ""));
             enemyPath = null;
             return;
         }
@@ -166,8 +166,9 @@ public class GameMap implements Serializable {
 
         // If no path found, show error and return
         if (pathPoints == null || pathPoints.isEmpty()) {
-            System.err.println(
-                    "No valid path found from START_POINT to END_POINT! Make sure they're connected by path tiles.");
+            // System.err.println(
+            // "No valid path found from START_POINT to END_POINT! Make sure they're
+            // connected by path tiles.");
             enemyPath = null;
             return;
         }

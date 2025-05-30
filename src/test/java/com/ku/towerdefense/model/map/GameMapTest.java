@@ -7,10 +7,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
 
-import com.ku.towerdefense.model.map.GameMap;
-import com.ku.towerdefense.model.map.Tile;
-import com.ku.towerdefense.model.map.TileType;
-import com.ku.towerdefense.model.GamePath;
 import com.ku.towerdefense.model.entity.Tower;
 import com.ku.towerdefense.model.entity.ArcherTower;
 
@@ -39,28 +35,6 @@ public class GameMapTest {
         Tile.isFxAvailable = false;
     }
 
-    // Helper to create a tile, assuming Tile and TileType exist
-    // This is a placeholder; your actual Tile class might have different needs.
-    private Tile createMockTile(int x, int y, TileType type) {
-        Tile tile = new Tile(x, y, type);
-        // Mocking isWalkable based on common assumptions.
-        // Adjust if your Tile.isWalkable() logic is different or set elsewhere.
-        // In a real scenario with a complex Tile class, consider using a mocking
-        // framework (e.g., Mockito)
-        // or making Tile.isWalkable easily configurable for tests.
-        if (type == TileType.PATH || type == TileType.START_POINT || type == TileType.END_POINT) {
-            // Assuming START_POINT and END_POINT tiles are also considered walkable for
-            // pathfinding
-            // and Tile.isWalkable() would reflect this.
-        } else {
-            // For GRASS or other non-path types
-        }
-        // For this test, we assume Tile.isWalkable() is correctly implemented in the
-        // Tile class itself
-        // based on its TileType.
-        return tile;
-    }
-
     @BeforeEach
     void setUp() {
         // Default map for setup, individual tests will often reconfigure this.
@@ -81,7 +55,7 @@ public class GameMapTest {
         // Ensure other tiles are GRASS by default by GameMap constructor
         // Then set the specific path, start, and end points.
         map.setTileType(0, 1, TileType.START_POINT);
-        map.setTileType(1, 1, TileType.PATH);
+        map.setTileType(1, 1, TileType.PATH_HORIZONTAL);
         map.setTileType(2, 1, TileType.END_POINT);
 
         List<int[]> actualPath = map.findPathBFS(map.getTile(0, 1), map.getTile(2, 1));
@@ -124,11 +98,11 @@ public class GameMapTest {
         // Define path tiles using setTileType
         // Default is GRASS
         map.setTileType(0, 2, TileType.START_POINT);
-        map.setTileType(1, 2, TileType.PATH);
-        map.setTileType(1, 1, TileType.PATH);
-        map.setTileType(2, 1, TileType.PATH);
-        map.setTileType(3, 1, TileType.PATH);
-        map.setTileType(3, 2, TileType.PATH);
+        map.setTileType(1, 2, TileType.PATH_HORIZONTAL);
+        map.setTileType(1, 1, TileType.PATH_HORIZONTAL);
+        map.setTileType(2, 1, TileType.PATH_HORIZONTAL);
+        map.setTileType(3, 1, TileType.PATH_HORIZONTAL);
+        map.setTileType(3, 2, TileType.PATH_HORIZONTAL);
         map.setTileType(4, 2, TileType.END_POINT);
 
         List<int[]> actualPath = map.findPathBFS(map.getTile(0, 2), map.getTile(4, 2));
@@ -269,10 +243,10 @@ public class GameMapTest {
     @DisplayName("Test getTile and getTileType with bounds")
     void getTile_Bounds() {
         map = new GameMap("BoundsMap", 3, 3);
-        map.setTileType(1, 1, TileType.PATH);
+        map.setTileType(1, 1, TileType.PATH_HORIZONTAL);
 
         assertNotNull(map.getTile(1, 1), "Tile(1,1) should be retrievable.");
-        assertEquals(TileType.PATH, map.getTileType(1, 1), "TileType at (1,1) should be PATH.");
+        assertEquals(TileType.PATH_HORIZONTAL, map.getTileType(1, 1), "TileType at (1,1) should be PATH_HORIZONTAL.");
 
         // Out of bounds
         assertNull(map.getTile(-1, 1), "Tile at (-1,1) should be null (out of bounds).");
@@ -306,8 +280,9 @@ public class GameMapTest {
         @Test
         @DisplayName("Changes tile type correctly")
         void setTileType_ChangesType() {
-            map.setTileType(1, 1, TileType.PATH);
-            assertEquals(TileType.PATH, map.getTileType(1, 1), "Tile type should be updated to PATH.");
+            map.setTileType(1, 1, TileType.PATH_HORIZONTAL);
+            assertEquals(TileType.PATH_HORIZONTAL, map.getTileType(1, 1),
+                    "Tile type should be updated to PATH_HORIZONTAL.");
             map.setTileType(1, 1, TileType.TOWER_SLOT);
             assertEquals(TileType.TOWER_SLOT, map.getTileType(1, 1), "Tile type should be updated to TOWER_SLOT.");
         }
@@ -385,17 +360,17 @@ public class GameMapTest {
         @Test
         @DisplayName("setTileType with out-of-bounds coordinates does nothing")
         void setTileType_OutOfBounds() {
-            map.setTileType(-1, 0, TileType.PATH);
+            map.setTileType(-1, 0, TileType.PATH_HORIZONTAL);
             assertNull(map.getTileType(-1, 0), "Setting out of bounds X (-1,0) should not change anything.");
 
-            map.setTileType(0, -1, TileType.PATH);
+            map.setTileType(0, -1, TileType.PATH_HORIZONTAL);
             assertNull(map.getTileType(0, -1), "Setting out of bounds Y (0,-1) should not change anything.");
 
-            map.setTileType(map.getWidth(), 0, TileType.PATH);
+            map.setTileType(map.getWidth(), 0, TileType.PATH_HORIZONTAL);
             assertNull(map.getTileType(map.getWidth(), 0),
                     "Setting out of bounds X (width,0) should not change anything.");
 
-            map.setTileType(0, map.getHeight(), TileType.PATH);
+            map.setTileType(0, map.getHeight(), TileType.PATH_HORIZONTAL);
             assertNull(map.getTileType(0, map.getHeight()),
                     "Setting out of bounds Y (0,height) should not change anything.");
         }
@@ -444,7 +419,7 @@ public class GameMapTest {
         @DisplayName("generatePath succeeds with a valid connection")
         void generatePath_Success() {
             map.setTileType(0, 1, TileType.START_POINT);
-            map.setTileType(1, 1, TileType.PATH);
+            map.setTileType(1, 1, TileType.PATH_HORIZONTAL);
             map.setTileType(2, 1, TileType.END_POINT);
             // setTileType for END_POINT would have called generatePath
             // map.generatePath(); // Explicit call to ensure direct test if needed
@@ -483,7 +458,7 @@ public class GameMapTest {
             // Setup a TOWER_SLOT for valid placement tests
             map.setTileType(2, 2, TileType.TOWER_SLOT);
             map.setTileType(1, 1, TileType.GRASS); // For invalid placement
-            map.setTileType(0, 0, TileType.PATH); // For invalid placement
+            map.setTileType(0, 0, TileType.PATH_HORIZONTAL); // For invalid placement
         }
 
         @Test
@@ -611,7 +586,7 @@ public class GameMapTest {
             GameMap originalMap = new GameMap(mapName, 5, 5);
             // Tile.isFxAvailable is set to false by @BeforeAll in this test class
             originalMap.setTileType(0, 1, TileType.START_POINT);
-            originalMap.setTileType(1, 1, TileType.PATH);
+            originalMap.setTileType(1, 1, TileType.PATH_HORIZONTAL);
             originalMap.setTileType(2, 1, TileType.END_POINT); // This triggers generatePath
 
             // Ensure path and points are generated before serialization
