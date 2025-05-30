@@ -19,12 +19,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ObjectInputStream;
 import java.io.IOException;
 
-// Assuming Tile and TileType are correctly defined and accessible
-// For these tests to compile and run, Tile and TileType must be resolvable.
-// Tile must have: constructor Tile(x, y, TileType), getX(), getY(), setType(TileType), getType()
-// TileType must be an enum with values: GRASS, PATH, START_POINT, END_POINT
-// Tile.isWalkable() should behave as expected (true for PATH, false for GRASS).
-
 public class GameMapTest {
 
     private GameMap map;
@@ -37,9 +31,6 @@ public class GameMapTest {
 
     @BeforeEach
     void setUp() {
-        // Default map for setup, individual tests will often reconfigure this.
-        // Dimensions don't really matter here as findPathBFS uses the provided tiles
-        // and map.tiles internally.
         map = new GameMap("TestMap", 5, 5);
     }
 
@@ -52,8 +43,6 @@ public class GameMapTest {
     void findPathBFS_simpleStraightPath() {
         map = new GameMap("StraightPathMap", 3, 3);
 
-        // Ensure other tiles are GRASS by default by GameMap constructor
-        // Then set the specific path, start, and end points.
         map.setTileType(0, 1, TileType.START_POINT);
         map.setTileType(1, 1, TileType.PATH_HORIZONTAL);
         map.setTileType(2, 1, TileType.END_POINT);
@@ -150,65 +139,16 @@ public class GameMapTest {
     @DisplayName("Test 5: Start and End are the Same Tile")
     void findPathBFS_startAndEndSameTile() {
         map = new GameMap("SameTileMap", 1, 1);
-        // GameMap.setTileType ensures only one start/end.
-        // If we set START then END on the same tile, it becomes END.
+
         map.setTileType(0, 0, TileType.START_POINT);
-        map.setTileType(0, 0, TileType.END_POINT); // This will make tile (0,0) an END_POINT
+        map.setTileType(0, 0, TileType.END_POINT);
 
-        // For findPathBFS to work as intended when start and end are the same,
-        // the startTile passed should be the conceptual start, and endTile the
-        // conceptual end.
-        // GameMap.generatePath() internally finds START_POINT and END_POINT tiles.
-        // Here, we are directly testing findPathBFS.
-        // The current findPathBFS logic might struggle if start and end are identical
-        // *and* one is START and other is END type
-        // because it looks for a tile *adjacent* to end OR the end tile itself *if it's
-        // walkable*.
-        // Let's make the tile a START_POINT for the start argument, and an END_POINT
-        // for the end argument.
-        // However, map.getTile(0,0) will reflect the latest setType, which is
-        // END_POINT.
-
-        // To test this scenario robustly for findPathBFS specifically:
-        // We want a situation where the BFS algorithm is given a start tile and an end
-        // tile that are at the same coordinates.
-        // The internal logic of findPathBFS should handle this.
-        // `(Math.abs(cx - targetX) <= 1 && cy == targetY) || (Math.abs(cy - targetY) <=
-        // 1 && cx == targetX)`
-        // If cx=targetX and cy=targetY, then this is true.
-
-        // Re-setup for clarity:
         map = new GameMap("SameTileMap", 1, 1);
-        map.setTileType(0, 0, TileType.START_POINT); // Now tile (0,0) is START_POINT
-        // We need the end tile to be distinct for the method signature, even if it's
-        // the same coords.
-        // And it needs to be END_POINT type for the BFS termination condition as
-        // designed in generatePath context.
-        // This specific test is a bit artificial for findPathBFS alone, as generatePath
-        // sets up specific start/end tiles.
-
-        // Let's use the map's state after setting a single tile to be both logically.
-        // GameMap will make it an END_POINT after the two setTileType calls.
-        // The path should be to itself if it's also considered the target destination.
-        Tile aTile = map.getTile(0, 0); // This tile is now END_POINT
-
-        // To correctly test findPathBFS with start=end, they should be the same tile
-        // object or logically identical.
-        // And the tile should be considered 'walkable' or the target itself for BFS to
-        // succeed.
-        // The test setup for GameMap usually means start and end points are distinct.
-        // If we set one tile to START, then END, it becomes END.
-        // Let's simplify: set it to START, and pass it as both start and end to
-        // findPathBFS.
-        // The BFS should find it immediately if the termination allows current ==
-        // target.
+        map.setTileType(0, 0, TileType.START_POINT);
 
         map = new GameMap("SameTileMapForBFS", 1, 1);
         map.setTileType(0, 0, TileType.START_POINT);
         Tile aStartTile = map.getTile(0, 0);
-        // For the end tile, we conceptually want the same location.
-        // The findPathBFS target check is based on coordinates of endTile.
-        // If we pass aStartTile as endTile, it's fine.
 
         List<int[]> actualPath = map.findPathBFS(aStartTile, aStartTile);
 
@@ -230,7 +170,6 @@ public class GameMapTest {
         assertEquals(mapHeight, map.getHeight(), "Map height should match constructor argument.");
         assertEquals(GameMap.TILE_SIZE, map.getTileSize(), "Tile size should match static constant.");
 
-        // Check default tile type
         for (int x = 0; x < mapWidth; x++) {
             for (int y = 0; y < mapHeight; y++) {
                 assertNotNull(map.getTile(x, y), "Tile at (" + x + "," + y + ") should not be null.");
@@ -316,9 +255,7 @@ public class GameMapTest {
             assertNull(map.getEnemyPath(), "EnemyPath should initially be null or not set if start is missing.");
 
             map.setTileType(0, 0, TileType.START_POINT); // This should trigger generatePath
-            // With both START_POINT (0,0) and END_POINT (1,1) now present, generatePath
-            // should run.
-            // Path may or may not exist depending on PATH tiles, but points should be set.
+
             assertNotNull(map.getStartPoint(),
                     "StartPoint field should be set after setting START_POINT tile and generatePath runs with an EndPoint present.");
             assertNotNull(map.getEndPoint(), // Also check EndPoint to confirm generatePath's effect
@@ -332,8 +269,7 @@ public class GameMapTest {
             assertNull(map.getEnemyPath(), "EnemyPath should initially be null if end is missing.");
 
             map.setTileType(0, 0, TileType.END_POINT); // This should trigger generatePath
-            // With both START_POINT (1,1) and END_POINT (0,0) now present, generatePath
-            // should run.
+
             assertNotNull(map.getEndPoint(),
                     "EndPoint field should be set after setting END_POINT tile and generatePath runs with a StartPoint present.");
             assertNotNull(map.getStartPoint(), // Also check StartPoint
@@ -345,9 +281,7 @@ public class GameMapTest {
         void setTileType_CallsGeneratePathForPath() {
             map.setTileType(0, 0, TileType.START_POINT);
             map.setTileType(0, 2, TileType.END_POINT);
-            // Path gen would have run once for START, once for END.
-            // To test the PATH trigger, create a situation where path doesn't exist, then
-            // add a PATH tile.
+
             map.setTileType(0, 1, TileType.GRASS); // Ensure (0,1) is not a path initially.
             map.generatePath(); // Recalculate: path from (0,0) to (0,2) should be null now.
             assertNull(map.getEnemyPath(), "Path should be null after breaking it with a GRASS tile.");
@@ -382,8 +316,7 @@ public class GameMapTest {
         @BeforeEach
         void setUpMap() {
             map = new GameMap("GeneratePathMap", 5, 5);
-            // Ensure FX is disabled as generatePath might be called by setTileType, which
-            // initializes tiles
+
             Tile.isFxAvailable = false;
         }
 
@@ -421,21 +354,13 @@ public class GameMapTest {
             map.setTileType(0, 1, TileType.START_POINT);
             map.setTileType(1, 1, TileType.PATH_HORIZONTAL);
             map.setTileType(2, 1, TileType.END_POINT);
-            // setTileType for END_POINT would have called generatePath
-            // map.generatePath(); // Explicit call to ensure direct test if needed
 
             assertNotNull(map.getEnemyPath(), "EnemyPath should not be null for a valid setup.");
             assertNotNull(map.getStartPoint(), "StartPoint field should be set.");
             assertNotNull(map.getEndPoint(), "EndPoint field should be set.");
-            //
+
             assertFalse(map.getEnemyPath().getPoints().isEmpty(), "EnemyPath should contain points.");
 
-            //
-            // Verify coordinates are pixel centers based on 32px logic size in generatePath
-            // for points
-            // and TILE_SIZE (64) for path segment calculations in findPathBFS
-            // The startPoint/endPoint in GameMap are based on a 32px tile size assumption
-            // from generatePath itself.
             final int LOGIC_TS = 32;
             assertEquals(0 * LOGIC_TS + LOGIC_TS / 2, map.getStartPoint().getX(), "StartPoint X coord mismatch.");
             assertEquals(1 * LOGIC_TS + LOGIC_TS / 2, map.getStartPoint().getY(), "StartPoint Y coord mismatch.");
@@ -452,10 +377,10 @@ public class GameMapTest {
         @BeforeEach
         void setUpMapAndTowers() {
             map = new GameMap("TowerPlaceMap", 5, 5);
-            // Ensure FX is disabled as Tile initialization might occur
+
             Tile.isFxAvailable = false;
             towers = new ArrayList<>();
-            // Setup a TOWER_SLOT for valid placement tests
+
             map.setTileType(2, 2, TileType.TOWER_SLOT);
             map.setTileType(1, 1, TileType.GRASS); // For invalid placement
             map.setTileType(0, 0, TileType.PATH_HORIZONTAL); // For invalid placement
