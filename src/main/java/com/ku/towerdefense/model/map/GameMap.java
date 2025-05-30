@@ -148,9 +148,9 @@ public class GameMap implements Serializable {
 
         // If we don't have both start and end points, we can't generate a path
         if (startTile == null || endTile == null) {
-            System.err.println("Cannot generate path: Missing " +
-                    (startTile == null ? "START_POINT" : "") +
-                    (endTile == null ? "END_POINT" : ""));
+            // System.err.println("Cannot generate path: Missing " +
+            // (startTile == null ? "START_POINT" : "") +
+            // (endTile == null ? "END_POINT" : ""));
             enemyPath = null;
             return;
         }
@@ -166,8 +166,9 @@ public class GameMap implements Serializable {
 
         // If no path found, show error and return
         if (pathPoints == null || pathPoints.isEmpty()) {
-            System.err.println(
-                    "No valid path found from START_POINT to END_POINT! Make sure they're connected by path tiles.");
+            // System.err.println(
+            // "No valid path found from START_POINT to END_POINT! Make sure they're
+            // connected by path tiles.");
             enemyPath = null;
             return;
         }
@@ -179,12 +180,50 @@ public class GameMap implements Serializable {
     }
 
     /**
-     * Uses Breadth-First Search to find a path from start to end following walkable
-     * tiles.
-     * 
-     * @return List of [x,y] coordinates for the path in tile space
+     * Uses Breadth-First Search to find a path from startTile to endTile following
+     * walkable
+     * tiles. The path search aims to reach a tile adjacent to or at the endTile.
+     * The coordinates in the returned list are pixel coordinates representing the
+     * center of each tile.
+     *
+     * @param startTile The tile where the path should begin.
+     * @param endTile   The tile where the path should end.
+     * @return List of [x,y] pixel coordinates for the path in tile-center space
+     *         (e.g., tileX * 64 + 32).
+     *         Returns null if no path is found.
+     *
+     *         REQUIRES:
+     *         - startTile is not null.
+     *         - endTile is not null.
+     *         - this.tiles (the GameMap's grid) is not null and initialized.
+     *         - this.width and this.height accurately reflect the dimensions of
+     *         this.tiles.
+     *         - Tiles with start and end point types are present on the map and
+     *         correspond to startTile and endTile.
+     *
+     *         MODIFIES:
+     *         - None (this method is side-effect free on the GameMap state, local
+     *         variables like visited and parent are used internally).
+     *
+     *         EFFECTS:
+     *         - If a path exists from startTile to a tile that is either endTile
+     *         itself (if considered walkable by the BFS logic for the purpose of
+     *         termination)
+     *         or directly adjacent to endTile, following tiles for which
+     *         tile.isWalkable() is true (or it's the endTile itself):
+     *         - Returns a List<int[]> where each int[] is a pair [x_pixel,
+     *         y_pixel].
+     *         - These coordinates represent the center of each tile in the path.
+     *         - The path starts at the center of startTile and ends at the center
+     *         of the last tile identified by the BFS
+     *         (which could be adjacent to endTile or endTile itself).
+     *         - The TILE_SIZE used for pixel calculation within this method is 64.
+     *         - If no such path is found, returns null.
+     *         - The search uses a Breadth-First Search algorithm.
+     *         - If startTile or endTile are outside map boundaries, behavior is
+     *         implicitly handled by boundary checks, likely leading to no path.
      */
-    private List<int[]> findPathBFS(Tile startTile, Tile endTile) {
+    public List<int[]> findPathBFS(Tile startTile, Tile endTile) {
         final int TS = 64; // pixel size of tiles
 
         // Directions: right, down, left, up
@@ -199,28 +238,22 @@ public class GameMap implements Serializable {
         queue.add(new int[] { startTile.getX(), startTile.getY() });
         visited[startTile.getX()][startTile.getY()] = true;
 
-        // Target coordinates
-        int targetX = endTile.getX();
-        int targetY = endTile.getY();
+        // Target coordinates - the exact end tile
+        int exactTargetX = endTile.getX();
+        int exactTargetY = endTile.getY();
 
         boolean pathFound = false;
 
         // BFS loop
-        while (!queue.isEmpty() && !pathFound) {
+        while (!queue.isEmpty()) { // Loop until queue is empty or path is found
             int[] current = queue.poll();
             int cx = current[0];
             int cy = current[1];
 
-            // Check if we've reached the end tile or one of its neighbors
-            // (since the end is typically not walkable itself)
-            if ((Math.abs(cx - targetX) <= 1 && cy == targetY) ||
-                    (Math.abs(cy - targetY) <= 1 && cx == targetX)) {
-                // Found the end or a tile next to it
+            // Check if we've reached the exact end tile
+            if (cx == exactTargetX && cy == exactTargetY) {
                 pathFound = true;
-                // Update target position to the last walkable tile
-                targetX = cx;
-                targetY = cy;
-                break;
+                break; // Path found, exit loop
             }
 
             // Check all four directions
@@ -236,9 +269,9 @@ public class GameMap implements Serializable {
                 if (visited[nx][ny])
                     continue;
 
-                // Only consider walkable tiles (including the end point's location)
+                // Only consider walkable tiles OR the end point itself
                 Tile nextTile = tiles[nx][ny];
-                if (!nextTile.isWalkable() && !(nx == endTile.getX() && ny == endTile.getY()))
+                if (!nextTile.isWalkable() && !(nx == exactTargetX && ny == exactTargetY))
                     continue;
 
                 // Mark as visited and save parent
@@ -250,25 +283,25 @@ public class GameMap implements Serializable {
             }
         }
 
-        // If we didn't find a path
+        // If we didn't find a path to the exact end tile
         if (!pathFound) {
             return null;
         }
 
-        // Reconstruct the path from end to start
+        // Reconstruct the path from the exact end tile to start
         List<int[]> reversePath = new ArrayList<>();
-        int cx = targetX;
-        int cy = targetY;
+        int reconstructX = exactTargetX;
+        int reconstructY = exactTargetY;
 
         // Start with the end point
-        reversePath.add(new int[] { cx * TS + TS / 2, cy * TS + TS / 2 });
+        reversePath.add(new int[] { reconstructX * TS + TS / 2, reconstructY * TS + TS / 2 });
 
         // Work backwards to the start
-        while (!(cx == startTile.getX() && cy == startTile.getY())) {
-            int[] p = parent[cx][cy];
-            cx = p[0];
-            cy = p[1];
-            reversePath.add(new int[] { cx * TS + TS / 2, cy * TS + TS / 2 });
+        while (!(reconstructX == startTile.getX() && reconstructY == startTile.getY())) {
+            int[] p = parent[reconstructX][reconstructY];
+            reconstructX = p[0];
+            reconstructY = p[1];
+            reversePath.add(new int[] { reconstructX * TS + TS / 2, reconstructY * TS + TS / 2 });
         }
 
         // Reverse the path to get start-to-end order
