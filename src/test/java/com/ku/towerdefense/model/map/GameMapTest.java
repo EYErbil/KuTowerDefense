@@ -84,8 +84,6 @@ public class GameMapTest {
     void findPathBFS_complexPathWithTurns() {
         map = new GameMap("ComplexPathMap", 5, 5);
 
-        // Define path tiles using setTileType
-        // Default is GRASS
         map.setTileType(0, 2, TileType.START_POINT);
         map.setTileType(1, 2, TileType.PATH_HORIZONTAL);
         map.setTileType(1, 1, TileType.PATH_HORIZONTAL);
@@ -119,9 +117,9 @@ public class GameMapTest {
     @DisplayName("Test 4: Path to End Point Itself (End Point is Walkable for BFS Target)")
     void findPathBFS_pathToEndpointItself() {
         map = new GameMap("EndpointWalkableMap", 3, 1);
-        // Start (0,0), End (2,0). Path (1,0)
+
         map.setTileType(0, 0, TileType.START_POINT);
-        map.setTileType(1, 0, TileType.PATH);
+        map.setTileType(1, 0, TileType.PATH_HORIZONTAL);
         map.setTileType(2, 0, TileType.END_POINT);
 
         List<int[]> actualPath = map.findPathBFS(map.getTile(0, 0), map.getTile(2, 0));
@@ -548,19 +546,7 @@ public class GameMapTest {
                     deserializedMap.getEnemyPath().getPoints().size(),
                     "Path point count should match.");
 
-            // Check if tile images are re-initialized (transient in Tile)
-            // This relies on Tile.reinitializeAfterLoad() and assumes FX is available for
-            // image loading part of the test.
-            // If FX is strictly disabled for all tests via a global @BeforeAll, this image
-            // check might need adjustment
-            // or run in a context where Tile.isFxAvailable can be true for this specific
-            // test.
-            // For now, assuming the @BeforeAll for GameMapTest sets Tile.isFxAvailable =
-            // false,
-            // then getImage() would be null. If we want to test re-initialization WITH
-            // images,
-            // Tile.isFxAvailable would need to be true here.
-            if (Tile.isFxAvailable) { // Only check image if FX is supposed to be available
+            if (Tile.isFxAvailable) {
                 assertNotNull(deserializedMap.getTile(0, 1).getImage(),
                         "Deserialized map tile should reinitialize its image if FX available.");
             } else {
