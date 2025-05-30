@@ -56,7 +56,8 @@ class GameControllerTest {
         }
     }
 
-  
+    //Collecting a valid gold bag
+    //Tests if a valid bag correctly adds gold and is removed.
     @Test
     void testCollectExistingGoldBag() {
         DroppedGold bag = new DroppedGold(100, 100, 50);  // 50G
@@ -68,7 +69,8 @@ class GameControllerTest {
         assertEquals(initialGold + 50, controller.getPlayerGold(), "Player should gain 50 gold");
         assertFalse(controller.getActiveGoldBags().contains(bag), "Bag should be removed after collection");
     }
-
+    //Trying to collect the same bag twice
+    //Ensures gold is not added twice and the method behaves safely on repeated calls
     @Test
     void testCollectSameGoldBagTwice() {
         DroppedGold bag = new DroppedGold(150, 150, 40);
@@ -81,7 +83,8 @@ class GameControllerTest {
         assertEquals(initialGold + 40, controller.getPlayerGold(), "Gold should only increase once");
         assertFalse(controller.getActiveGoldBags().contains(bag), "Bag should only be removed once");
     }
-
+    //Trying to collect a bag that doesn’t exist.
+    //Verifies that collecting a bag not in the list does not affect the player’s gold.
     @Test
     void testCollectNonExistentGoldBag() {
         DroppedGold fakeBag = new DroppedGold(200, 200, 30); // Not added to list
@@ -92,7 +95,8 @@ class GameControllerTest {
         assertEquals(initialGold, controller.getPlayerGold(), "Player gold should remain the same");
         assertFalse(controller.getActiveGoldBags().contains(fakeBag), "Bag should not appear in the list");
     }
-    
+    //Collecting a gold bag with 0 gold.
+    //Tests if collecting a 0G bag behaves correctly (gold doesn’t change, bag is removed)
     @Test
     void testCollectZeroGoldBag() {
         DroppedGold bag = new DroppedGold(100, 100, 0);  // 0 gold
@@ -104,7 +108,8 @@ class GameControllerTest {
         assertEquals(initialGold, controller.getPlayerGold(), "Gold should not change with 0G bag");
         assertFalse(controller.getActiveGoldBags().contains(bag), "Bag should still be removed even if 0G");
     }
-
+    //Collecting a gold bag with negative value
+    //Edge case: tests behavior if a bag with a negative value is collected (it reduces player gold)
     @Test
     void testCollectNegativeGoldBag() {
         DroppedGold bag = new DroppedGold(100, 100, -25);  // -25 gold
@@ -116,7 +121,8 @@ class GameControllerTest {
         assertEquals(initialGold - 25, controller.getPlayerGold(), "Gold should decrease with negative bag");
         assertFalse(controller.getActiveGoldBags().contains(bag), "Bag should be removed");
     }
-
+    //Collecting multiple bags in sequence.
+    //Simulates collecting more than one bag and verifies cumulative effects
     @Test
     void testCollectMultipleBagsInSequence() {
         DroppedGold bag1 = new DroppedGold(100, 100, 30);
