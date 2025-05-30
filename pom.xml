@@ -31,6 +31,12 @@
             <artifactId>javafx-media</artifactId>
             <version>${javafx.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.9.2</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -42,6 +48,28 @@
                 <configuration>
                     <source>14</source>
                     <target>14</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M9</version>
+                <configuration>
+                    <!-- turn off the URLClassPath check -->
+                    <argLine>
+                        -Djdk.net.URLClassPath.disableClassPathURLCheck=true
+                        -Dfile.encoding=UTF-8
+                        -Djava.awt.headless=true
+                    </argLine>
+                    <systemPropertyVariables>
+                        <!-- same flag for forks that inherit systemPropertyVariables -->
+                        <jdk.net.URLClassPath.disableClassPathURLCheck>true</jdk.net.URLClassPath.disableClassPathURLCheck>
+                        <file.encoding>UTF-8</file.encoding>
+                    </systemPropertyVariables>
+                    <!-- we disable the "manifest-only" optimization so it won't try to rewrite your test-classes jar -->
+                    <useManifestOnlyJar>false</useManifestOnlyJar>
+                    <!-- run in the same classloader as Maven so it picks up those argLine flags -->
+                    <useSystemClassLoader>false</useSystemClassLoader>
                 </configuration>
             </plugin>
             <plugin>

@@ -25,7 +25,7 @@ public class ArtilleryTower extends Tower implements Serializable {
     private static final double PROJECTILE_HEIGHT = 20;
     private static final double PROJECTILE_SPEED = 200;
     private static final String PROJECTILE_IMAGE_FILE = "cannon_ball.png"; // Placeholder
-    private static final int AOE_RANGE = 50; // Example AOE range
+    public static final int AOE_RANGE = 50; // Example AOE range - MADE PUBLIC for testing projectile
 
     /**
      * Create a new artillery tower at the specified position.
