@@ -32,7 +32,7 @@ public class MageTower extends Tower implements Serializable {
      * @param y y coordinate
      */
     public MageTower(double x, double y) {
-        super(x, y, 72, 72, BASE_DAMAGE, BASE_RANGE, BASE_FIRE_RATE, BASE_COST, DamageType.MAGIC);
+        super(x, y, 64, 64, BASE_DAMAGE, BASE_RANGE, BASE_FIRE_RATE, BASE_COST, DamageType.MAGIC);
     }
 
     /**

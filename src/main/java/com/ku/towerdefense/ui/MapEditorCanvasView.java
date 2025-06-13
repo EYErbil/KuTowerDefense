@@ -66,23 +66,28 @@ public class MapEditorCanvasView extends VBox {
         this.zoomLabel = (Label) zoomControls.getChildren().get(1); // Store label reference
 
         // Create canvas and group
-        mapCanvas = new Canvas(); // Initial size will be managed by layout
-        // Group canvasGroup = new Group(mapCanvas); // No longer needed if scaling via
-        // GC
-
-        // Make mapCanvas fill available space in VBox
+        mapCanvas = new Canvas(800, 600); // Set initial size to prevent zero-size issues
+        
+        // Make mapCanvas fill available space in VBox with better binding
         VBox.setVgrow(mapCanvas, Priority.ALWAYS);
-        mapCanvas.widthProperty().bind(
-                this.widthProperty()
-                        .subtract(this.paddingProperty().get().getLeft())
-                        .subtract(this.paddingProperty().get().getRight()));
-        mapCanvas.heightProperty().bind(
-                this.heightProperty()
-                        .subtract(this.paddingProperty().get().getTop())
-                        .subtract(this.paddingProperty().get().getBottom())
-                        .subtract(zoomControls.heightProperty()) // Account for zoom controls height
-                        .subtract(this.getSpacing()) // Account for VBox spacing
-        );
+        
+        // Simplified binding approach - bind to parent size with proper calculations
+        this.widthProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal.doubleValue() > 100) { // Avoid tiny sizes
+                mapCanvas.setWidth(newVal.doubleValue() - 20); // Account for padding
+                centerAndZoomMap(false); // Recenter when size changes
+            }
+        });
+        
+        this.heightProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal.doubleValue() > 100) { // Avoid tiny sizes
+                double availableHeight = newVal.doubleValue() - zoomControls.getHeight() - 40; // Account for controls and padding
+                if (availableHeight > 100) {
+                    mapCanvas.setHeight(availableHeight);
+                    centerAndZoomMap(false); // Recenter when size changes
+                }
+            }
+        });
 
         // Add scroll event for zooming directly to mapCanvas
         mapCanvas.setOnScroll(event -> {
@@ -114,31 +119,12 @@ public class MapEditorCanvasView extends VBox {
         // Add canvas directly, after zoom controls
         getChildren().addAll(zoomControls, mapCanvas);
 
-        // Listen to canvas size changes to ensure initial and subsequent renders
-        mapCanvas.widthProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal.doubleValue() > 0 && mapCanvas.getHeight() > 0) {
-                System.out.println("Canvas width changed to: " + newVal + ", centering and rendering map.");
-                centerAndZoomMap(true); // Fit and center when canvas size is known
-            }
-        });
-        mapCanvas.heightProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal.doubleValue() > 0 && mapCanvas.getWidth() > 0) {
-                System.out.println("Canvas height changed to: " + newVal + ", centering and rendering map.");
-                centerAndZoomMap(true); // Fit and center when canvas size is known
-            }
-        });
-
         // Initial setup
-        // applyZoom(); // Called by centerAndZoomMap via listeners
         setupMouseHandlers();
-        // renderMap(); // Called by centerAndZoomMap via listeners
-        // Explicit initial render might be needed if listeners don't fire immediately
-        // or if canvas has initial 0,0 size then gets updated.
-        // Let's rely on listeners first, but keep this in mind.
+        
+        // Ensure initial render happens when the view is shown
         javafx.application.Platform.runLater(() -> {
-            if (mapCanvas.getWidth() > 0 && mapCanvas.getHeight() > 0) {
-                centerAndZoomMap(true);
-            } // else listeners will catch it.
+            centerAndZoomMap(true);
         });
     }
 

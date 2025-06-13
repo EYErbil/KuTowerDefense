@@ -34,7 +34,7 @@ public class ArtilleryTower extends Tower implements Serializable {
      * @param y y coordinate
      */
     public ArtilleryTower(double x, double y) {
-        super(x, y, 72, 72, BASE_DAMAGE, BASE_RANGE, BASE_FIRE_RATE, BASE_COST, DamageType.EXPLOSIVE);
+        super(x, y, 64, 64, BASE_DAMAGE, BASE_RANGE, BASE_FIRE_RATE, BASE_COST, DamageType.EXPLOSIVE);
         // Stats are now initialized in the super constructor using base values.
     }
 

@@ -898,97 +898,159 @@ public class GameScreen extends BorderPane {
     private void showGameSettingsPopup() {
         clearActivePopup(); // Clear any existing popups like tower build/upgrade
 
-        VBox settingsPopup = new VBox(10);
-        settingsPopup.setPadding(new Insets(20));
-        settingsPopup.setAlignment(Pos.CENTER);
-        settingsPopup.getStyleClass().add("options-section"); // Reuse style for consistent look
-        settingsPopup
-                .setStyle("-fx-background-color: rgba(30, 30, 30, 0.95); -fx-border-color: #555; -fx-border-width: 2;"); // More
-                                                                                                                         // distinct
-                                                                                                                         // popup
-                                                                                                                         // style
+        // Create elegant side panel
+        VBox sidePanel = new VBox(15);
+        sidePanel.setPadding(new Insets(25, 20, 25, 20));
+        sidePanel.setAlignment(Pos.TOP_CENTER);
+        sidePanel.setPrefWidth(280);
+        sidePanel.setMaxWidth(280);
+        sidePanel.setPrefHeight(uiOverlayPane.getHeight());
+        
+        // Modern glass-like styling
+        sidePanel.setStyle(
+            "-fx-background-color: linear-gradient(to bottom, rgba(20, 20, 30, 0.95), rgba(10, 10, 20, 0.98));" +
+            "-fx-border-color: rgba(100, 150, 200, 0.6);" +
+            "-fx-border-width: 0 0 0 3px;" +
+            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.8), 15, 0, -5, 0);"
+        );
 
-        Label title = new Label("Game Menu");
-        title.getStyleClass().add("options-title"); // Reuse style
+        // Elegant title with game status
+        Label title = new Label("⚔ GAME MENU ⚔");
+        title.setStyle(
+            "-fx-font-size: 22px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-text-fill: linear-gradient(to right, #FFD700, #FFA500);" +
+            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.8), 3, 0, 1, 1);"
+        );
+        
+        // Game status info
+        VBox statusBox = new VBox(8);
+        statusBox.setAlignment(Pos.CENTER);
+        statusBox.setStyle("-fx-background-color: rgba(0, 0, 0, 0.4); -fx-background-radius: 8px;");
+        statusBox.setPadding(new Insets(12));
+        
+        Label waveStatus = new Label("Wave: " + gameController.getCurrentWave() + "/10");
+        waveStatus.setStyle("-fx-font-size: 14px; -fx-text-fill: #87CEEB;");
+        Label goldStatus = new Label("Gold: " + gameController.getPlayerGold());
+        goldStatus.setStyle("-fx-font-size: 14px; -fx-text-fill: #FFD700;");
+        Label livesStatus = new Label("Lives: " + gameController.getPlayerLives());
+        livesStatus.setStyle("-fx-font-size: 14px; -fx-text-fill: #FF6B6B;");
+        
+        statusBox.getChildren().addAll(waveStatus, goldStatus, livesStatus);
 
-        Button saveButton = new Button("Save Game");
-        saveButton.getStyleClass().addAll("button", "action-button");
-        saveButton.setPrefWidth(200);
-        saveButton.setOnAction(e -> {
-            System.out.println("Save Game clicked (Not implemented yet)");
-            // TODO: Implement save game logic
-            // gameController.saveGame("savefile.dat");
-            // renderTimer.setStatusMessage("Game Saved!");
-            clearActivePopup();
-            e.consume();
-        });
-
-        Button loadButton = new Button("Load Game");
-        loadButton.getStyleClass().addAll("button", "action-button");
-        loadButton.setPrefWidth(200);
-        loadButton.setOnAction(e -> {
-            System.out.println("Load Game clicked (Not implemented yet)");
-            // TODO: Implement load game logic
-            // gameController.loadGame("savefile.dat");
-            // renderTimer.setStatusMessage("Game Loaded!");
-            // Need to refresh UI elements based on loaded state
-            clearActivePopup();
-            e.consume();
-        });
-
-        Button resumeButton = new Button("Resume Game");
-        resumeButton.getStyleClass().addAll("button", "secondary-button");
-        resumeButton.setPrefWidth(200);
+        // Stylish action buttons
+        Button resumeButton = createModernMenuButton("▶ Resume Game", "#4CAF50", "#45a049");
         resumeButton.setOnAction(e -> {
             clearActivePopup();
             e.consume();
         });
 
-        Button mainMenuButton = new Button("Back to Main Menu");
-        mainMenuButton.getStyleClass().addAll("button", "cancel-button");
-        mainMenuButton.setPrefWidth(200);
-        mainMenuButton.setOnAction(e -> {
-            stop(); // Stop game screen timers and controller game loop
-            MainMenuScreen mainMenu = new MainMenuScreen(primaryStage);
-
-            double targetWidth = primaryStage.getScene() != null ? primaryStage.getScene().getWidth()
-                    : primaryStage.getWidth();
-            double targetHeight = primaryStage.getScene() != null ? primaryStage.getScene().getHeight()
-                    : primaryStage.getHeight();
-            Scene scene = new Scene(mainMenu, targetWidth, targetHeight);
-            scene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
-            ImageCursor customCursor = UIAssets.getCustomCursor();
-            if (customCursor != null)
-                scene.setCursor(customCursor);
-            primaryStage.setScene(scene);
-            primaryStage.setFullScreen(true); // Always set/maintain fullscreen
-
+        Button saveButton = createModernMenuButton("💾 Save Game", "#2196F3", "#1976D2");
+        saveButton.setOnAction(e -> {
+            System.out.println("Save Game clicked (Not implemented yet)");
+            renderTimer.setStatusMessage("Game Saved!");
+            clearActivePopup();
             e.consume();
         });
 
-        settingsPopup.getChildren().addAll(title, saveButton, loadButton, resumeButton, mainMenuButton);
-
-        // Position in center of screen (relative to uiOverlayPane)
-        settingsPopup.layoutBoundsProperty().addListener((obs, oldVal, newVal) -> {
-            settingsPopup.setLayoutX((uiOverlayPane.getWidth() - newVal.getWidth()) / 2);
-            settingsPopup.setLayoutY((uiOverlayPane.getHeight() - newVal.getHeight()) / 2);
+        Button loadButton = createModernMenuButton("📁 Load Game", "#FF9800", "#F57C00");
+        loadButton.setOnAction(e -> {
+            System.out.println("Load Game clicked (Not implemented yet)");
+            renderTimer.setStatusMessage("Game Loaded!");
+            clearActivePopup();
+            e.consume();
         });
 
-        activePopup = settingsPopup;
+        Button mainMenuButton = createModernMenuButton("🏠 Main Menu", "#f44336", "#d32f2f");
+        mainMenuButton.setOnAction(e -> {
+            stop();
+            MainMenuScreen mainMenu = new MainMenuScreen(primaryStage);
+            double targetWidth = primaryStage.getScene() != null ? primaryStage.getScene().getWidth() : primaryStage.getWidth();
+            double targetHeight = primaryStage.getScene() != null ? primaryStage.getScene().getHeight() : primaryStage.getHeight();
+            Scene scene = new Scene(mainMenu, targetWidth, targetHeight);
+            scene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+            ImageCursor customCursor = UIAssets.getCustomCursor();
+            if (customCursor != null) scene.setCursor(customCursor);
+            primaryStage.setScene(scene);
+            primaryStage.setFullScreen(true);
+            e.consume();
+        });
+
+        // Add spacing
+        javafx.scene.layout.Region spacer1 = new javafx.scene.layout.Region();
+        spacer1.setPrefHeight(10);
+        javafx.scene.layout.Region spacer2 = new javafx.scene.layout.Region();
+        spacer2.setPrefHeight(15);
+
+        sidePanel.getChildren().addAll(title, statusBox, spacer1, resumeButton, saveButton, loadButton, spacer2, mainMenuButton);
+
+        // Position panel off-screen initially (slide from right)
+        sidePanel.setLayoutX(uiOverlayPane.getWidth());
+        sidePanel.setLayoutY(0);
+
+        activePopup = sidePanel;
         uiOverlayPane.getChildren().add(activePopup);
 
-        // Apply animation
-        FadeTransition ft = new FadeTransition(Duration.millis(200), activePopup);
-        ft.setFromValue(0.0);
-        ft.setToValue(1.0);
-        ScaleTransition st = new ScaleTransition(Duration.millis(200), activePopup);
-        st.setFromX(0.7);
-        st.setFromY(0.7);
-        st.setToX(1.0);
-        st.setToY(1.0);
-        st.setInterpolator(javafx.animation.Interpolator.EASE_OUT);
-        ParallelTransition pt = new ParallelTransition(ft, st);
-        pt.play();
+        // Smooth slide-in animation
+        javafx.animation.TranslateTransition slideIn = new javafx.animation.TranslateTransition(Duration.millis(350), sidePanel);
+        slideIn.setFromX(0);
+        slideIn.setToX(-280); // Slide in by panel width
+        slideIn.setInterpolator(javafx.animation.Interpolator.EASE_OUT);
+        
+        FadeTransition fadeIn = new FadeTransition(Duration.millis(350), sidePanel);
+        fadeIn.setFromValue(0.0);
+        fadeIn.setToValue(1.0);
+        
+        ParallelTransition showPanel = new ParallelTransition(slideIn, fadeIn);
+        showPanel.play();
+    }
+    
+    /**
+     * Create a modern styled menu button
+     */
+    private Button createModernMenuButton(String text, String baseColor, String hoverColor) {
+        Button button = new Button(text);
+        button.setPrefWidth(240);
+        button.setPrefHeight(45);
+        button.setStyle(
+            "-fx-background-color: linear-gradient(to bottom, " + baseColor + ", derive(" + baseColor + ", -20%));" +
+            "-fx-text-fill: white;" +
+            "-fx-font-size: 14px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-background-radius: 8px;" +
+            "-fx-border-radius: 8px;" +
+            "-fx-border-color: derive(" + baseColor + ", 30%);" +
+            "-fx-border-width: 1px;" +
+            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 5, 0, 0, 2);"
+        );
+        
+        button.setOnMouseEntered(e -> button.setStyle(
+            "-fx-background-color: linear-gradient(to bottom, " + hoverColor + ", derive(" + hoverColor + ", -20%));" +
+            "-fx-text-fill: white;" +
+            "-fx-font-size: 14px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-background-radius: 8px;" +
+            "-fx-border-radius: 8px;" +
+            "-fx-border-color: derive(" + hoverColor + ", 30%);" +
+            "-fx-border-width: 1px;" +
+            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.6), 8, 0, 0, 3);" +
+            "-fx-scale-x: 1.02; -fx-scale-y: 1.02;"
+        ));
+        
+        button.setOnMouseExited(e -> button.setStyle(
+            "-fx-background-color: linear-gradient(to bottom, " + baseColor + ", derive(" + baseColor + ", -20%));" +
+            "-fx-text-fill: white;" +
+            "-fx-font-size: 14px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-background-radius: 8px;" +
+            "-fx-border-radius: 8px;" +
+            "-fx-border-color: derive(" + baseColor + ", 30%);" +
+            "-fx-border-width: 1px;" +
+            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 5, 0, 0, 2);" +
+            "-fx-scale-x: 1.0; -fx-scale-y: 1.0;"
+        ));
+        
+        return button;
     }
 
     // Getter for visualMapWidth (optional, but good practice)

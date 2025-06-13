@@ -584,39 +584,60 @@ public class MapEditorScreen extends BorderPane {
     }
 
     private void showAlert(String title, String content) {
-        Alert.AlertType type = Alert.AlertType.INFORMATION;
-        if (title.toLowerCase().contains("error") || title.toLowerCase().contains("failed")) {
-            type = Alert.AlertType.ERROR;
-        } else if (title.toLowerCase().contains("success") || title.toLowerCase().contains("saved")
-                || title.toLowerCase().contains("deleted")) {
-            type = Alert.AlertType.INFORMATION;
-        } else if (title.toLowerCase().contains("confirm")) {
-            // Confirmation dialogs are usually created directly, not via this generic
-            // showAlert
-            // But if they were, AlertType.CONFIRMATION would be used.
-            type = Alert.AlertType.CONFIRMATION;
+        try {
+            Alert.AlertType type = Alert.AlertType.INFORMATION;
+            if (title.toLowerCase().contains("error") || title.toLowerCase().contains("failed")) {
+                type = Alert.AlertType.ERROR;
+            } else if (title.toLowerCase().contains("success") || title.toLowerCase().contains("saved")
+                    || title.toLowerCase().contains("deleted")) {
+                type = Alert.AlertType.INFORMATION;
+            } else if (title.toLowerCase().contains("confirm")) {
+                // Confirmation dialogs are usually created directly, not via this generic
+                // showAlert
+                // But if they were, AlertType.CONFIRMATION would be used.
+                type = Alert.AlertType.CONFIRMATION;
+            }
+
+            Alert alert = new Alert(type);
+            alert.setTitle(title);
+            alert.setHeaderText(null);
+            alert.setContentText(content);
+
+            // Apply base dialog styling first
+            applyDialogStyling(alert.getDialogPane());
+
+            // Then add type-specific styling
+            if (alert.getAlertType() == Alert.AlertType.ERROR) {
+                alert.getDialogPane().getStyleClass().add("error-dialog");
+            } else if (alert.getAlertType() == Alert.AlertType.CONFIRMATION) {
+                // This case might be less used if confirmations are built directly
+                alert.getDialogPane().getStyleClass().add("confirmation-dialog");
+            } else if (alert.getAlertType() == Alert.AlertType.INFORMATION) {
+                // Optionally add a specific class for information dialogs if needed
+                // alert.getDialogPane().getStyleClass().add("info-dialog");
+            }
+
+            // Ensure dialog shows on top and doesn't crash the application
+            alert.initOwner(primaryStage);
+            alert.initModality(Modality.APPLICATION_MODAL);
+            alert.showAndWait();
+        } catch (Exception e) {
+            // Fallback if alert fails - log to console instead of crashing
+            System.err.println("Alert Error - " + title + ": " + content);
+            System.err.println("Exception showing alert: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Try a simple system dialog as last resort
+            try {
+                javafx.scene.control.Alert fallbackAlert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
+                fallbackAlert.setTitle("Error");
+                fallbackAlert.setContentText(title + ": " + content);
+                fallbackAlert.showAndWait();
+            } catch (Exception ex) {
+                // If even that fails, just log it
+                System.err.println("Complete dialog failure: " + ex.getMessage());
+            }
         }
-
-        Alert alert = new Alert(type);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(content);
-
-        // Apply base dialog styling first
-        applyDialogStyling(alert.getDialogPane());
-
-        // Then add type-specific styling
-        if (alert.getAlertType() == Alert.AlertType.ERROR) {
-            alert.getDialogPane().getStyleClass().add("error-dialog");
-        } else if (alert.getAlertType() == Alert.AlertType.CONFIRMATION) {
-            // This case might be less used if confirmations are built directly
-            alert.getDialogPane().getStyleClass().add("confirmation-dialog");
-        } else if (alert.getAlertType() == Alert.AlertType.INFORMATION) {
-            // Optionally add a specific class for information dialogs if needed
-            // alert.getDialogPane().getStyleClass().add("info-dialog");
-        }
-
-        alert.showAndWait();
     }
 
     private void saveMap() {

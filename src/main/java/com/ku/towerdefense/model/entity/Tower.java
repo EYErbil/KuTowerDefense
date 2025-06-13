@@ -188,24 +188,23 @@ public abstract class Tower extends Entity implements Serializable {
             loadImage();
         }
 
-        // Use the Entity's width and height for drawing
+        // Use consistent standard size for all towers regardless of image dimensions
         double drawX = x;
         double drawY = y;
+        double standardWidth = 64.0;  // Force consistent size
+        double standardHeight = 64.0; // Force consistent size
 
-        // Draw the tower image if available, scaled to the Entity's width and height
+        // Draw the tower image if available, always at the standard size
         if (image != null) {
-            gc.drawImage(image, drawX, drawY, this.width, this.height);
+            // Always render at the standard size, regardless of image or Entity dimensions
+            gc.drawImage(image, drawX, drawY, standardWidth, standardHeight);
         } else {
-            // Fallback to a simple shape if no image, using Entity's width and height
+            // Fallback to a simple shape if no image, using standard size
             gc.setFill(Color.DARKGRAY);
-            gc.fillRect(drawX, drawY, this.width, this.height);
+            gc.fillRect(drawX, drawY, standardWidth, standardHeight);
         }
 
-        // Render level indicator
-        if (level > 0) { // Could also check if tower is placed / active
-            gc.setFill(Color.YELLOW);
-            gc.fillText("L" + level, drawX + 2, drawY + 10); // Small text at top-left
-        }
+        // Level is shown by different images, no text indicator needed
 
         // Draw range circle if selected
         if (selected) {

@@ -32,8 +32,7 @@ public class ArcherTower extends Tower implements Serializable {
      * @param y y coordinate
      */
     public ArcherTower(double x, double y) {
-        super(x, y, 72, 72, BASE_DAMAGE, BASE_RANGE, BASE_FIRE_RATE, BASE_COST, DamageType.ARROW); // Was 64, 64. Now
-                                                                                                   // 1.5x bigger
+        super(x, y, 64, 64, BASE_DAMAGE, BASE_RANGE, BASE_FIRE_RATE, BASE_COST, DamageType.ARROW); // Consistent 64x64 size for all levels
         // Stats are now initialized in the super constructor using base values.
         // Level 1 specific stats (damage, range, fireRate) are set from baseDamage,
         // baseRange, baseFireRate.
