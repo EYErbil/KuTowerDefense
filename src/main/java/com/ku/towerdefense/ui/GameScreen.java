@@ -897,6 +897,11 @@ public class GameScreen extends BorderPane {
 
     private void showGameSettingsPopup() {
         clearActivePopup(); // Clear any existing popups like tower build/upgrade
+        
+        // Auto-pause the game when menu opens
+        isPaused = true;
+        gameController.setPaused(true);
+        updateTimeControlStates();
 
         // Create elegant side panel
         VBox sidePanel = new VBox(15);
@@ -941,6 +946,11 @@ public class GameScreen extends BorderPane {
         // Stylish action buttons
         Button resumeButton = createModernMenuButton("▶ Resume Game", "#4CAF50", "#45a049");
         resumeButton.setOnAction(e -> {
+            // Unpause the game when resuming
+            isPaused = false;
+            gameController.setPaused(false);
+            gameController.setSpeedAccelerated(false); // Reset to normal speed
+            updateTimeControlStates();
             clearActivePopup();
             e.consume();
         });

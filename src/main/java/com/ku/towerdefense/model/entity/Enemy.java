@@ -202,7 +202,7 @@ public abstract class Enemy extends Entity implements Serializable {
                 if (originalSnow != null && !originalSnow.isError()) {
                     snowflakeIcon = removeWhiteBackground(originalSnow);
                     System.out.println("Loaded and processed snowflake icon from: " + snowflakePath);
-                } else {
+            } else {
                     throw new Exception("Failed to load original image");
                 }
             } catch (Exception e) {
@@ -217,7 +217,7 @@ public abstract class Enemy extends Entity implements Serializable {
                 if (originalThunder != null && !originalThunder.isError()) {
                     thunderIcon = removeWhiteBackground(originalThunder);
                     System.out.println("Loaded and processed thunder icon from: " + thunderPath);
-                } else {
+            } else {
                     throw new Exception("Failed to load original image");
                 }
             } catch (Exception e) {
@@ -465,8 +465,8 @@ public abstract class Enemy extends Entity implements Serializable {
         renderHealthBar(gc);
 
         // Render status icons very close to the enemy
-        double iconX = this.x + this.width - 12; // Position much closer to enemy, more overlap
-        double iconY = this.y - 4; // Position just above the enemy
+        double iconX = this.x + this.width - 16; // Position much closer, more overlap
+        double iconY = this.y - 2; // Position almost touching enemy
         double iconSize = 16; // Back to original size
         int iconOffset = 0;
 
