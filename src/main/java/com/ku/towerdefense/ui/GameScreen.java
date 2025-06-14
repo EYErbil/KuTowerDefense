@@ -9,6 +9,7 @@ import com.ku.towerdefense.model.entity.DroppedGold;
 import com.ku.towerdefense.model.map.Tile;
 import com.ku.towerdefense.model.map.TileType;
 import com.ku.towerdefense.ui.MainMenuScreen;
+import com.ku.towerdefense.Main;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
@@ -19,6 +20,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -44,7 +46,9 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.NumberBinding;
 
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -1362,21 +1366,8 @@ public class GameScreen extends BorderPane {
             e.consume();
         });
 
-        Button saveButton = createModernMenuButton("💾 Save Game", "#2196F3", "#1976D2");
-        saveButton.setOnAction(e -> {
-            System.out.println("Save Game clicked (Not implemented yet)");
-            renderTimer.setStatusMessage("Game Saved!");
-            clearActivePopup();
-            e.consume();
-        });
-
-        Button loadButton = createModernMenuButton("📁 Load Game", "#FF9800", "#F57C00");
-        loadButton.setOnAction(e -> {
-            System.out.println("Load Game clicked (Not implemented yet)");
-            renderTimer.setStatusMessage("Game Loaded!");
-            clearActivePopup();
-            e.consume();
-        });
+        // Music Selection Section
+        VBox musicSection = createMusicSelectionSection();
 
         Button mainMenuButton = createModernMenuButton("🏠 Main Menu", "#f44336", "#d32f2f");
         mainMenuButton.setOnAction(e -> {
@@ -1399,7 +1390,7 @@ public class GameScreen extends BorderPane {
         javafx.scene.layout.Region spacer2 = new javafx.scene.layout.Region();
         spacer2.setPrefHeight(15);
 
-        sidePanel.getChildren().addAll(title, statusBox, spacer1, resumeButton, saveButton, loadButton, spacer2, mainMenuButton);
+        sidePanel.getChildren().addAll(title, statusBox, spacer1, resumeButton, musicSection, spacer2, mainMenuButton);
 
         // Position panel off-screen initially (slide from right)
         sidePanel.setLayoutX(uiOverlayPane.getWidth());
@@ -1481,50 +1472,137 @@ public class GameScreen extends BorderPane {
     }
     
     /**
-     * Create enhanced buttons for the game over screen.
+     * Create the music selection section for the in-game menu.
      */
-    private Button createEnhancedGameOverButton(String text, String baseColor, String hoverColor) {
-        Button button = new Button(text);
-        button.setPrefWidth(180);
-        button.setPrefHeight(50);
+    private VBox createMusicSelectionSection() {
+        VBox musicSection = new VBox(8);
+        musicSection.setAlignment(Pos.CENTER);
+        musicSection.setStyle(
+            "-fx-background-color: rgba(0, 0, 0, 0.4); " +
+            "-fx-background-radius: 8px; " +
+            "-fx-padding: 15px;"
+        );
+        
+        // Music section title
+        Label musicTitle = new Label("🎵 MUSIC SELECTION 🎵");
+        musicTitle.setStyle(
+            "-fx-font-size: 16px; " +
+            "-fx-font-weight: bold; " +
+            "-fx-text-fill: #87CEEB; " +
+            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.7), 2, 0, 1, 1);"
+        );
+        
+        // Available music tracks
+        List<MusicTrack> musicTracks = Arrays.asList(
+            new MusicTrack("Yeah", "Yeah.mp3", "🎸 Rock Energy"),
+            new MusicTrack("Club", "Club.mp3", "🕺 Club Vibes"),
+            new MusicTrack("Hips", "Hips.mp3", "💃 Dance Beat"),
+            new MusicTrack("Candy", "Candy.mp3", "🍭 Sweet Pop"),
+            new MusicTrack("Toxic", "Toxic.mp3", "⚡ Electric")
+        );
+        
+        // Create scrollable music list
+        VBox musicList = new VBox(5);
+        musicList.setAlignment(Pos.CENTER);
+        
+        for (MusicTrack track : musicTracks) {
+            Button trackButton = createMusicTrackButton(track);
+            musicList.getChildren().add(trackButton);
+        }
+        
+        // Add scroll pane for music list (in case we add more tracks)
+        ScrollPane scrollPane = new ScrollPane(musicList);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setPrefHeight(120);
+        scrollPane.setStyle(
+            "-fx-background-color: transparent; " +
+            "-fx-background: transparent;"
+        );
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        
+        musicSection.getChildren().addAll(musicTitle, scrollPane);
+        return musicSection;
+    }
+    
+    /**
+     * Create a button for a music track.
+     */
+    private Button createMusicTrackButton(MusicTrack track) {
+        Button button = new Button(track.displayName);
+        button.setPrefWidth(220);
+        button.setPrefHeight(30);
         button.setStyle(
-            "-fx-background-color: linear-gradient(to bottom, " + baseColor + ", derive(" + baseColor + ", -15%));" +
-            "-fx-text-fill: white;" +
-            "-fx-font-size: 16px;" +
-            "-fx-font-weight: bold;" +
-            "-fx-background-radius: 12px;" +
-            "-fx-border-radius: 12px;" +
-            "-fx-border-color: derive(" + baseColor + ", 20%);" +
-            "-fx-border-width: 2px;" +
-            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.6), 8, 0, 0, 4);"
+            "-fx-background-color: linear-gradient(to bottom, #2c3e50, #34495e); " +
+            "-fx-text-fill: white; " +
+            "-fx-font-size: 12px; " +
+            "-fx-font-weight: normal; " +
+            "-fx-background-radius: 6px; " +
+            "-fx-border-radius: 6px; " +
+            "-fx-border-color: #3498db; " +
+            "-fx-border-width: 1px; " +
+            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 3, 0, 0, 1);"
         );
         
         button.setOnMouseEntered(e -> button.setStyle(
-            "-fx-background-color: linear-gradient(to bottom, " + hoverColor + ", derive(" + hoverColor + ", -15%));" +
-            "-fx-text-fill: white;" +
-            "-fx-font-size: 16px;" +
-            "-fx-font-weight: bold;" +
-            "-fx-background-radius: 12px;" +
-            "-fx-border-radius: 12px;" +
-            "-fx-border-color: derive(" + hoverColor + ", 20%);" +
-            "-fx-border-width: 2px;" +
-            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.8), 12, 0, 0, 6);" +
-            "-fx-scale-x: 1.05; -fx-scale-y: 1.05;"
+            "-fx-background-color: linear-gradient(to bottom, #3498db, #2980b9); " +
+            "-fx-text-fill: white; " +
+            "-fx-font-size: 12px; " +
+            "-fx-font-weight: bold; " +
+            "-fx-background-radius: 6px; " +
+            "-fx-border-radius: 6px; " +
+            "-fx-border-color: #87ceeb; " +
+            "-fx-border-width: 1px; " +
+            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 5, 0, 0, 2); " +
+            "-fx-scale-x: 1.02; -fx-scale-y: 1.02;"
         ));
         
         button.setOnMouseExited(e -> button.setStyle(
-            "-fx-background-color: linear-gradient(to bottom, " + baseColor + ", derive(" + baseColor + ", -15%));" +
-            "-fx-text-fill: white;" +
-            "-fx-font-size: 16px;" +
-            "-fx-font-weight: bold;" +
-            "-fx-background-radius: 12px;" +
-            "-fx-border-radius: 12px;" +
-            "-fx-border-color: derive(" + baseColor + ", 20%);" +
-            "-fx-border-width: 2px;" +
-            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.6), 8, 0, 0, 4);" +
+            "-fx-background-color: linear-gradient(to bottom, #2c3e50, #34495e); " +
+            "-fx-text-fill: white; " +
+            "-fx-font-size: 12px; " +
+            "-fx-font-weight: normal; " +
+            "-fx-background-radius: 6px; " +
+            "-fx-border-radius: 6px; " +
+            "-fx-border-color: #3498db; " +
+            "-fx-border-width: 1px; " +
+            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 3, 0, 0, 1); " +
             "-fx-scale-x: 1.0; -fx-scale-y: 1.0;"
         ));
         
+        button.setOnAction(e -> {
+            switchMusic(track.fileName);
+            renderTimer.setStatusMessage("♪ Now Playing: " + track.displayName);
+            e.consume();
+        });
+        
         return button;
+    }
+    
+    /**
+     * Switch to a different music track.
+     */
+    private void switchMusic(String fileName) {
+        try {
+            Main.switchBackgroundMusic(fileName);
+        } catch (Exception e) {
+            System.err.println("Error switching music to " + fileName + ": " + e.getMessage());
+            renderTimer.setStatusMessage("❌ Failed to switch music");
+        }
+    }
+    
+    /**
+     * Helper class to represent a music track.
+     */
+    private static class MusicTrack {
+        final String name;
+        final String fileName;
+        final String displayName;
+        
+        MusicTrack(String name, String fileName, String displayName) {
+            this.name = name;
+            this.fileName = fileName;
+            this.displayName = displayName;
+        }
     }
 }
