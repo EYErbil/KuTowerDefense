@@ -768,6 +768,10 @@ public class GameController {
         return enemies;
     }
 
+    public List<Projectile> getProjectiles() {
+        return projectiles;
+    }
+
     public int getPlayerGold() {
         return playerGold;
     }

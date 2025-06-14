@@ -94,6 +94,10 @@ public class GameScreen extends BorderPane {
     // Tower hover tracking
     private Tower hoveredTower = null;
 
+    // Memory tracker
+    private MemoryTracker memoryTracker;
+    private boolean memoryTrackerVisible = false;
+
     private Label goldLabel;
     private Label livesLabel;
     private Label waveLabel;
@@ -564,10 +568,22 @@ public class GameScreen extends BorderPane {
             e.consume();
         });
 
+        // Memory tracker toggle button
+        Button memoryTrackerButton = UIAssets.createIconButton("Memory Tracker", UIAssets.ICON_BUILD_COL,
+                UIAssets.ICON_BUILD_ROW, controlButtonIconSize);
+        memoryTrackerButton.setOnAction(e -> {
+            toggleMemoryTracker();
+            e.consume();
+        });
+
+        // Initialize memory tracker
+        memoryTracker = new MemoryTracker(gameController);
+        memoryTracker.setVisible(false);
+
         // Remove HBox for timeControls, add buttons directly to VBox for vertical
         // layout
-        controlButtonsPane.getChildren().addAll(pauseButton, playButton, fastForwardButton, menuButton);
-        uiOverlayPane.getChildren().add(controlButtonsPane);
+        controlButtonsPane.getChildren().addAll(pauseButton, playButton, fastForwardButton, menuButton, memoryTrackerButton);
+        uiOverlayPane.getChildren().addAll(controlButtonsPane, memoryTracker);
 
         // Position controlButtonsPane at top-right, conditionally centered in right
         // band
@@ -598,6 +614,10 @@ public class GameScreen extends BorderPane {
         
         controlButtonsPane.layoutXProperty().bind(buttonPosition);
         controlButtonsPane.setLayoutY(15.0); // Set to fixed top padding
+
+        // Position memory tracker on the left side
+        memoryTracker.setLayoutX(15.0);
+        memoryTracker.setLayoutY(200.0); // Below the game info panel
 
         // Initial state for time controls
         isPaused = false;
@@ -1064,6 +1084,9 @@ public class GameScreen extends BorderPane {
         }
         if (topBarUpdateTimer != null) {
             topBarUpdateTimer.stop();
+        }
+        if (memoryTracker != null) {
+            memoryTracker.stop();
         }
         gameController.stopGame(); // Ensure controller's game loop is also stopped
     }
@@ -1691,5 +1714,25 @@ public class GameScreen extends BorderPane {
     // Property getter for visualMapWidth (needed for bindings)
     public ReadOnlyDoubleProperty visualMapWidthProperty() {
         return visualMapWidthProperty.getReadOnlyProperty();
+    }
+    
+    /**
+     * Toggle the memory tracker visibility
+     */
+    private void toggleMemoryTracker() {
+        memoryTrackerVisible = !memoryTrackerVisible;
+        memoryTracker.setVisible(memoryTrackerVisible);
+        
+        if (memoryTrackerVisible) {
+            memoryTracker.start();
+            if (renderTimer != null) {
+                renderTimer.setStatusMessage("🔧 Memory Tracker Enabled");
+            }
+        } else {
+            memoryTracker.stop();
+            if (renderTimer != null) {
+                renderTimer.setStatusMessage("🔧 Memory Tracker Disabled");
+            }
+        }
     }
 }
