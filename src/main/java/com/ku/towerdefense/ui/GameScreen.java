@@ -39,6 +39,8 @@ import javafx.util.Duration;
 import javafx.animation.FadeTransition;
 import javafx.animation.ScaleTransition;
 import javafx.animation.ParallelTransition;
+import javafx.animation.TranslateTransition;
+import javafx.animation.Interpolator;
 import javafx.geometry.Point2D;
 import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.beans.property.ReadOnlyDoubleWrapper;
@@ -1051,7 +1053,7 @@ public class GameScreen extends BorderPane {
         st.setFromY(0.7);
         st.setToX(1.0);
         st.setToY(1.0);
-        st.setInterpolator(javafx.animation.Interpolator.EASE_OUT);
+                    st.setInterpolator(Interpolator.EASE_OUT);
         ParallelTransition pt = new ParallelTransition(ft, st);
         pt.play();
     }
@@ -1199,7 +1201,7 @@ public class GameScreen extends BorderPane {
             scaleUp.setFromY(0.7);
             scaleUp.setToX(1.0);
             scaleUp.setToY(1.0);
-            scaleUp.setInterpolator(javafx.animation.Interpolator.EASE_OUT);
+            scaleUp.setInterpolator(Interpolator.EASE_OUT);
             
             // Sequence the animations
             ParallelTransition showAnimation = new ParallelTransition(backgroundFade, scaleUp);
@@ -1314,48 +1316,81 @@ public class GameScreen extends BorderPane {
         gameController.setPaused(true);
         updateTimeControlStates();
 
-        // Create elegant side panel
-        VBox sidePanel = new VBox(15);
-        sidePanel.setPadding(new Insets(25, 20, 25, 20));
+        // Create medieval-themed side panel with wooden background
+        VBox sidePanel = new VBox(20);
+        sidePanel.setPadding(new Insets(30, 25, 30, 25));
         sidePanel.setAlignment(Pos.TOP_CENTER);
-        sidePanel.setPrefWidth(280);
-        sidePanel.setMaxWidth(280);
+        sidePanel.setPrefWidth(320);
+        sidePanel.setMaxWidth(320);
         sidePanel.setPrefHeight(uiOverlayPane.getHeight());
         
-        // Modern glass-like styling
-        sidePanel.setStyle(
-            "-fx-background-color: linear-gradient(to bottom, rgba(20, 20, 30, 0.95), rgba(10, 10, 20, 0.98));" +
-            "-fx-border-color: rgba(100, 150, 200, 0.6);" +
-            "-fx-border-width: 0 0 0 3px;" +
-            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.8), 15, 0, -5, 0);"
-        );
+        // Medieval wooden panel styling with authentic textures
+        try {
+            URL woodUrl = getClass().getResource("/Asset_pack/Background/wood.jpg");
+            if (woodUrl != null) {
+                sidePanel.setStyle(
+                    "-fx-background-image: url('" + woodUrl.toExternalForm() + "');" +
+                    "-fx-background-repeat: repeat;" +
+                    "-fx-background-size: 200px 200px;" +
+                    "-fx-border-color: linear-gradient(to bottom, #8B4513, #654321, #3E2723);" +
+                    "-fx-border-width: 0 0 0 8px;" +
+                    "-fx-border-style: solid;" +
+                    "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.9), 20, 0, -8, 0), " +
+                    "innershadow(gaussian, rgba(139, 69, 19, 0.3), 10, 0, 2, 2);"
+                );
+            } else {
+                // Fallback wooden styling
+                sidePanel.setStyle(
+                    "-fx-background-color: linear-gradient(to bottom, #8B4513, #654321, #3E2723);" +
+                    "-fx-border-color: linear-gradient(to bottom, #D2691E, #8B4513, #654321);" +
+                    "-fx-border-width: 0 0 0 8px;" +
+                    "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.9), 20, 0, -8, 0);"
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading wood background: " + e.getMessage());
+            // Fallback wooden styling
+            sidePanel.setStyle(
+                "-fx-background-color: linear-gradient(to bottom, #8B4513, #654321, #3E2723);" +
+                "-fx-border-color: linear-gradient(to bottom, #D2691E, #8B4513, #654321);" +
+                "-fx-border-width: 0 0 0 8px;" +
+                "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.9), 20, 0, -8, 0);"
+            );
+        }
 
-        // Elegant title with game status
+        // Medieval banner title using ribbon assets
+        StackPane titleBanner = new StackPane();
+        titleBanner.setPrefWidth(280);
+        titleBanner.setPrefHeight(60);
+        
+        // Use the blue ribbon as background for title
+        try {
+            Image blueRibbon = UIAssets.getImage("Ribbon_Blue_3Slides");
+            if (blueRibbon != null) {
+                ImageView ribbonBg = new ImageView(blueRibbon);
+                ribbonBg.setFitWidth(280);
+                ribbonBg.setFitHeight(60);
+                ribbonBg.setPreserveRatio(false);
+                titleBanner.getChildren().add(ribbonBg);
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading blue ribbon: " + e.getMessage());
+        }
+        
         Label title = new Label("⚔ GAME MENU ⚔");
         title.setStyle(
-            "-fx-font-size: 22px;" +
+            "-fx-font-family: 'Serif';" +
+            "-fx-font-size: 26px;" +
             "-fx-font-weight: bold;" +
-            "-fx-text-fill: linear-gradient(to right, #FFD700, #FFA500);" +
+            "-fx-text-fill: #F5DEB3;" + // Wheat color for medieval parchment look
             "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.8), 3, 0, 1, 1);"
         );
+        titleBanner.getChildren().add(title);
         
-        // Game status info
-        VBox statusBox = new VBox(8);
-        statusBox.setAlignment(Pos.CENTER);
-        statusBox.setStyle("-fx-background-color: rgba(0, 0, 0, 0.4); -fx-background-radius: 8px;");
-        statusBox.setPadding(new Insets(12));
-        
-        Label waveStatus = new Label("Wave: " + gameController.getCurrentWave() + "/10");
-        waveStatus.setStyle("-fx-font-size: 14px; -fx-text-fill: #87CEEB;");
-        Label goldStatus = new Label("Gold: " + gameController.getPlayerGold());
-        goldStatus.setStyle("-fx-font-size: 14px; -fx-text-fill: #FFD700;");
-        Label livesStatus = new Label("Lives: " + gameController.getPlayerLives());
-        livesStatus.setStyle("-fx-font-size: 14px; -fx-text-fill: #FF6B6B;");
-        
-        statusBox.getChildren().addAll(waveStatus, goldStatus, livesStatus);
 
-        // Stylish action buttons
-        Button resumeButton = createModernMenuButton("▶ Resume Game", "#4CAF50", "#45a049");
+
+        // Medieval action buttons using the game's button assets
+        Button resumeButton = createMedievalButton("▶ Resume Battle", "blue");
         resumeButton.setOnAction(e -> {
             // Unpause the game when resuming
             isPaused = false;
@@ -1366,10 +1401,10 @@ public class GameScreen extends BorderPane {
             e.consume();
         });
 
-        // Music Selection Section
-        VBox musicSection = createMusicSelectionSection();
+        // Medieval music selection scroll
+        VBox musicSection = createMedievalMusicSection();
 
-        Button mainMenuButton = createModernMenuButton("🏠 Main Menu", "#f44336", "#d32f2f");
+        Button mainMenuButton = createMedievalButton("🏠 Return to Castle", "red");
         mainMenuButton.setOnAction(e -> {
             stop();
             MainMenuScreen mainMenu = new MainMenuScreen(primaryStage);
@@ -1384,13 +1419,15 @@ public class GameScreen extends BorderPane {
             e.consume();
         });
 
-        // Add spacing
+        // Add decorative spacing with medieval elements
         javafx.scene.layout.Region spacer1 = new javafx.scene.layout.Region();
-        spacer1.setPrefHeight(10);
+        spacer1.setPrefHeight(25);
         javafx.scene.layout.Region spacer2 = new javafx.scene.layout.Region();
-        spacer2.setPrefHeight(15);
+        spacer2.setPrefHeight(25);
+        javafx.scene.layout.Region spacer3 = new javafx.scene.layout.Region();
+        spacer3.setPrefHeight(25);
 
-        sidePanel.getChildren().addAll(title, statusBox, spacer1, resumeButton, musicSection, spacer2, mainMenuButton);
+        sidePanel.getChildren().addAll(titleBanner, spacer1, resumeButton, spacer2, musicSection, spacer3, mainMenuButton);
 
         // Position panel off-screen initially (slide from right)
         sidePanel.setLayoutX(uiOverlayPane.getWidth());
@@ -1399,13 +1436,13 @@ public class GameScreen extends BorderPane {
         activePopup = sidePanel;
         uiOverlayPane.getChildren().add(activePopup);
 
-        // Smooth slide-in animation
-        javafx.animation.TranslateTransition slideIn = new javafx.animation.TranslateTransition(Duration.millis(350), sidePanel);
+        // Medieval-style slide-in animation (slower, more dramatic)
+        TranslateTransition slideIn = new TranslateTransition(Duration.millis(500), sidePanel);
         slideIn.setFromX(0);
-        slideIn.setToX(-280); // Slide in by panel width
-        slideIn.setInterpolator(javafx.animation.Interpolator.EASE_OUT);
+        slideIn.setToX(-320); // Slide in by panel width
+        slideIn.setInterpolator(Interpolator.EASE_OUT);
         
-        FadeTransition fadeIn = new FadeTransition(Duration.millis(350), sidePanel);
+        FadeTransition fadeIn = new FadeTransition(Duration.millis(500), sidePanel);
         fadeIn.setFromValue(0.0);
         fadeIn.setToValue(1.0);
         
@@ -1414,166 +1451,206 @@ public class GameScreen extends BorderPane {
     }
     
     /**
-     * Create a modern styled menu button
+     * Create a medieval-themed button using the game's UI assets
      */
-    private Button createModernMenuButton(String text, String baseColor, String hoverColor) {
+    private Button createMedievalButton(String text, String color) {
         Button button = new Button(text);
-        button.setPrefWidth(240);
-        button.setPrefHeight(45);
+        button.setPrefWidth(260);
+        button.setPrefHeight(55);
+        
+        // Create beautiful medieval button styling similar to Bard's Melodies
+        String baseColor = color.equals("blue") ? "#4682B4" : "#8B4513"; // Steel blue or saddle brown
+        String hoverColor = color.equals("blue") ? "#5A9BD4" : "#A0522D"; // Lighter variants
+        
         button.setStyle(
             "-fx-background-color: linear-gradient(to bottom, " + baseColor + ", derive(" + baseColor + ", -20%));" +
-            "-fx-text-fill: white;" +
-            "-fx-font-size: 14px;" +
+            "-fx-text-fill: #F5DEB3;" + // Wheat color like Bard's Melodies
+            "-fx-font-family: 'Serif';" +
+            "-fx-font-size: 18px;" +
             "-fx-font-weight: bold;" +
             "-fx-background-radius: 8px;" +
+            "-fx-border-color: derive(" + baseColor + ", -30%);" +
+            "-fx-border-width: 3px;" +
             "-fx-border-radius: 8px;" +
-            "-fx-border-color: derive(" + baseColor + ", 30%);" +
-            "-fx-border-width: 1px;" +
-            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 5, 0, 0, 2);"
+            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.7), 4, 0, 1, 2);"
         );
         
-        button.setOnMouseEntered(e -> button.setStyle(
-            "-fx-background-color: linear-gradient(to bottom, " + hoverColor + ", derive(" + hoverColor + ", -20%));" +
-            "-fx-text-fill: white;" +
-            "-fx-font-size: 14px;" +
-            "-fx-font-weight: bold;" +
-            "-fx-background-radius: 8px;" +
-            "-fx-border-radius: 8px;" +
-            "-fx-border-color: derive(" + hoverColor + ", 30%);" +
-            "-fx-border-width: 1px;" +
-            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.6), 8, 0, 0, 4);" +
-            "-fx-scale-x: 1.02; -fx-scale-y: 1.02;"
-        ));
+        // Add hover effects similar to music buttons
+        button.setOnMouseEntered(e -> {
+            button.setStyle(
+                "-fx-background-color: linear-gradient(to bottom, " + hoverColor + ", derive(" + hoverColor + ", -20%));" +
+                "-fx-text-fill: #FFFACD;" + // Light goldenrod like music buttons
+                "-fx-font-family: 'Serif';" +
+                "-fx-font-size: 18px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-background-radius: 8px;" +
+                "-fx-border-color: derive(" + hoverColor + ", -30%);" +
+                "-fx-border-width: 3px;" +
+                "-fx-border-radius: 8px;" +
+                "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.8), 6, 0, 1, 3);" +
+                "-fx-scale-x: 1.03; -fx-scale-y: 1.03;"
+            );
+        });
         
-        button.setOnMouseExited(e -> button.setStyle(
-            "-fx-background-color: linear-gradient(to bottom, " + baseColor + ", derive(" + baseColor + ", -20%));" +
-            "-fx-text-fill: white;" +
-            "-fx-font-size: 14px;" +
-            "-fx-font-weight: bold;" +
-            "-fx-background-radius: 8px;" +
-            "-fx-border-radius: 8px;" +
-            "-fx-border-color: derive(" + baseColor + ", 30%);" +
-            "-fx-border-width: 1px;" +
-            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 5, 0, 0, 2);" +
-            "-fx-scale-x: 1.0; -fx-scale-y: 1.0;"
-        ));
+        button.setOnMouseExited(e -> {
+            button.setStyle(
+                "-fx-background-color: linear-gradient(to bottom, " + baseColor + ", derive(" + baseColor + ", -20%));" +
+                "-fx-text-fill: #F5DEB3;" +
+                "-fx-font-family: 'Serif';" +
+                "-fx-font-size: 18px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-background-radius: 8px;" +
+                "-fx-border-color: derive(" + baseColor + ", -30%);" +
+                "-fx-border-width: 3px;" +
+                "-fx-border-radius: 8px;" +
+                "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.7), 4, 0, 1, 2);" +
+                "-fx-scale-x: 1.0; -fx-scale-y: 1.0;"
+            );
+        });
         
         return button;
     }
-
-    // Getter for visualMapWidth (optional, but good practice)
-    public double getVisualMapWidth() {
-        return visualMapWidthProperty.get();
-    }
-
-    // Property getter for visualMapWidth (needed for bindings)
-    public ReadOnlyDoubleProperty visualMapWidthProperty() {
-        return visualMapWidthProperty.getReadOnlyProperty();
-    }
     
     /**
-     * Create the music selection section for the in-game menu.
+     * Create the medieval-themed music selection section.
      */
-    private VBox createMusicSelectionSection() {
-        VBox musicSection = new VBox(8);
+    private VBox createMedievalMusicSection() {
+        VBox musicSection = new VBox(12);
         musicSection.setAlignment(Pos.CENTER);
-        musicSection.setStyle(
-            "-fx-background-color: rgba(0, 0, 0, 0.4); " +
-            "-fx-background-radius: 8px; " +
-            "-fx-padding: 15px;"
-        );
+        musicSection.setPrefWidth(280);
         
-        // Music section title
-        Label musicTitle = new Label("🎵 MUSIC SELECTION 🎵");
+        // Medieval music scroll banner
+        StackPane musicBanner = new StackPane();
+        musicBanner.setPrefWidth(260);
+        musicBanner.setPrefHeight(50);
+        
+        try {
+            Image redRibbon = UIAssets.getImage("Ribbon_Red_3Slides");
+            if (redRibbon != null) {
+                ImageView musicRibbonBg = new ImageView(redRibbon);
+                musicRibbonBg.setFitWidth(260);
+                musicRibbonBg.setFitHeight(50);
+                musicRibbonBg.setPreserveRatio(false);
+                musicBanner.getChildren().add(musicRibbonBg);
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading red ribbon: " + e.getMessage());
+        }
+        
+        Label musicTitle = new Label("🎵 BARD'S MELODIES 🎵");
         musicTitle.setStyle(
-            "-fx-font-size: 16px; " +
-            "-fx-font-weight: bold; " +
-            "-fx-text-fill: #87CEEB; " +
-            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.7), 2, 0, 1, 1);"
+            "-fx-font-family: 'Serif';" +
+            "-fx-font-size: 20px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-text-fill: #F5DEB3;" + // Wheat color for parchment look
+            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.8), 2, 0, 1, 1);"
         );
+        musicBanner.getChildren().add(musicTitle);
         
-        // Available music tracks
+        // Medieval music tracks with thematic names
         List<MusicTrack> musicTracks = Arrays.asList(
-            new MusicTrack("Yeah", "Yeah.mp3", "🎸 Rock Energy"),
-            new MusicTrack("Club", "Club.mp3", "🕺 Club Vibes"),
-            new MusicTrack("Hips", "Hips.mp3", "💃 Dance Beat"),
-            new MusicTrack("Candy", "Candy.mp3", "🍭 Sweet Pop"),
-            new MusicTrack("Toxic", "Toxic.mp3", "⚡ Electric")
+            new MusicTrack("Yeah", "Yeah.mp3", "⚔️ Battle Anthem"),
+            new MusicTrack("Club", "Club.mp3", "🏰 Castle Feast"),
+            new MusicTrack("Hips", "Hips.mp3", "🎭 Royal Dance"),
+            new MusicTrack("Candy", "Candy.mp3", "🌸 Spring Festival"),
+            new MusicTrack("Toxic", "Toxic.mp3", "⚡ Thunder Storm")
         );
         
-        // Create scrollable music list
-        VBox musicList = new VBox(5);
+        // Create medieval-styled music list with wooden background
+        VBox musicList = new VBox(8);
         musicList.setAlignment(Pos.CENTER);
+        musicList.setPadding(new Insets(15));
+        musicList.setStyle(
+            "-fx-background-color: rgba(139, 69, 19, 0.3);" +
+            "-fx-background-radius: 8px;" +
+            "-fx-border-color: #8B4513;" +
+            "-fx-border-width: 2px;" +
+            "-fx-border-radius: 8px;" +
+            "-fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.5), 5, 0, 0, 2);"
+        );
         
         for (MusicTrack track : musicTracks) {
-            Button trackButton = createMusicTrackButton(track);
+            Button trackButton = createMedievalMusicButton(track);
             musicList.getChildren().add(trackButton);
         }
         
-        // Add scroll pane for music list (in case we add more tracks)
+        // Make music list scrollable if needed
         ScrollPane scrollPane = new ScrollPane(musicList);
         scrollPane.setFitToWidth(true);
-        scrollPane.setPrefHeight(120);
+        scrollPane.setPrefHeight(150);
+        scrollPane.setMaxHeight(150);
         scrollPane.setStyle(
-            "-fx-background-color: transparent; " +
-            "-fx-background: transparent;"
+            "-fx-background-color: transparent;" +
+            "-fx-background: transparent;" +
+            "-fx-border-color: transparent;"
         );
-        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         
-        musicSection.getChildren().addAll(musicTitle, scrollPane);
+        musicSection.getChildren().addAll(musicBanner, scrollPane);
         return musicSection;
     }
     
     /**
-     * Create a button for a music track.
+     * Create a medieval-themed music track button
      */
-    private Button createMusicTrackButton(MusicTrack track) {
+    private Button createMedievalMusicButton(MusicTrack track) {
         Button button = new Button(track.displayName);
         button.setPrefWidth(220);
-        button.setPrefHeight(30);
+        button.setPrefHeight(35);
+        
+        // Medieval wooden button styling
         button.setStyle(
-            "-fx-background-color: linear-gradient(to bottom, #2c3e50, #34495e); " +
-            "-fx-text-fill: white; " +
-            "-fx-font-size: 12px; " +
-            "-fx-font-weight: normal; " +
-            "-fx-background-radius: 6px; " +
-            "-fx-border-radius: 6px; " +
-            "-fx-border-color: #3498db; " +
-            "-fx-border-width: 1px; " +
-            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 3, 0, 0, 1);"
+            "-fx-background-color: linear-gradient(to bottom, #D2691E, #8B4513);" +
+            "-fx-text-fill: #F5DEB3;" + // Wheat color for readability
+            "-fx-font-family: 'Serif';" +
+            "-fx-font-size: 14px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-background-radius: 6px;" +
+            "-fx-border-color: #654321;" +
+            "-fx-border-width: 2px;" +
+            "-fx-border-radius: 6px;" +
+            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.7), 3, 0, 1, 1);"
         );
         
-        button.setOnMouseEntered(e -> button.setStyle(
-            "-fx-background-color: linear-gradient(to bottom, #3498db, #2980b9); " +
-            "-fx-text-fill: white; " +
-            "-fx-font-size: 12px; " +
-            "-fx-font-weight: bold; " +
-            "-fx-background-radius: 6px; " +
-            "-fx-border-radius: 6px; " +
-            "-fx-border-color: #87ceeb; " +
-            "-fx-border-width: 1px; " +
-            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 5, 0, 0, 2); " +
-            "-fx-scale-x: 1.02; -fx-scale-y: 1.02;"
-        ));
+        button.setOnMouseEntered(e -> {
+            button.setStyle(
+                "-fx-background-color: linear-gradient(to bottom, #CD853F, #A0522D);" +
+                "-fx-text-fill: #FFFACD;" + // Light goldenrod yellow for hover
+                "-fx-font-family: 'Serif';" +
+                "-fx-font-size: 14px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-background-radius: 6px;" +
+                "-fx-border-color: #8B4513;" +
+                "-fx-border-width: 2px;" +
+                "-fx-border-radius: 6px;" +
+                "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.8), 4, 0, 1, 2);" +
+                "-fx-scale-x: 1.05; -fx-scale-y: 1.05;"
+            );
+        });
         
-        button.setOnMouseExited(e -> button.setStyle(
-            "-fx-background-color: linear-gradient(to bottom, #2c3e50, #34495e); " +
-            "-fx-text-fill: white; " +
-            "-fx-font-size: 12px; " +
-            "-fx-font-weight: normal; " +
-            "-fx-background-radius: 6px; " +
-            "-fx-border-radius: 6px; " +
-            "-fx-border-color: #3498db; " +
-            "-fx-border-width: 1px; " +
-            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 3, 0, 0, 1); " +
-            "-fx-scale-x: 1.0; -fx-scale-y: 1.0;"
-        ));
+        button.setOnMouseExited(e -> {
+            button.setStyle(
+                "-fx-background-color: linear-gradient(to bottom, #D2691E, #8B4513);" +
+                "-fx-text-fill: #F5DEB3;" + // Back to wheat color
+                "-fx-font-family: 'Serif';" +
+                "-fx-font-size: 14px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-background-radius: 6px;" +
+                "-fx-border-color: #654321;" +
+                "-fx-border-width: 2px;" +
+                "-fx-border-radius: 6px;" +
+                "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.7), 3, 0, 1, 1);" +
+                "-fx-scale-x: 1.0; -fx-scale-y: 1.0;"
+            );
+        });
         
         button.setOnAction(e -> {
             switchMusic(track.fileName);
-            renderTimer.setStatusMessage("♪ Now Playing: " + track.displayName);
-            e.consume();
+            // Show medieval-style feedback message
+            if (renderTimer != null) {
+                renderTimer.setStatusMessage("🎵 Now playing: " + track.displayName + " 🎵");
+            }
         });
         
         return button;
@@ -1604,5 +1681,15 @@ public class GameScreen extends BorderPane {
             this.fileName = fileName;
             this.displayName = displayName;
         }
+    }
+
+    // Getter for visualMapWidth (optional, but good practice)
+    public double getVisualMapWidth() {
+        return visualMapWidthProperty.get();
+    }
+
+    // Property getter for visualMapWidth (needed for bindings)
+    public ReadOnlyDoubleProperty visualMapWidthProperty() {
+        return visualMapWidthProperty.getReadOnlyProperty();
     }
 }
