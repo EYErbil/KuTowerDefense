@@ -17,11 +17,13 @@ import javafx.scene.input.MouseEvent; // Import MouseEvent
 import javafx.scene.input.MouseButton; // Import MouseButton
 import javafx.scene.input.ScrollEvent; // Import ScrollEvent
 import javafx.scene.Cursor; // Import Cursor
+import javafx.scene.ImageCursor; // Import ImageCursor
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.Priority; // Import Priority
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Scale;
+import javafx.scene.image.Image;
 
 /**
  * Manages the map canvas, rendering, zoom, and placement logic for the Map
@@ -67,6 +69,12 @@ public class MapEditorCanvasView extends VBox {
 
         // Create canvas and group
         mapCanvas = new Canvas(800, 600); // Set initial size to prevent zero-size issues
+        
+        // Set custom cursor on canvas initialization
+        ImageCursor customCursor = UIAssets.getCustomCursor();
+        if (customCursor != null) {
+            mapCanvas.setCursor(customCursor);
+        }
         
         // Make mapCanvas fill available space in VBox with better binding
         VBox.setVgrow(mapCanvas, Priority.ALWAYS);
@@ -403,46 +411,53 @@ public class MapEditorCanvasView extends VBox {
     }
 
     private void handleMousePressForPanning(MouseEvent event) {
-        if (event.getButton() == MouseButton.PRIMARY) {
-            lastPanX = event.getX(); // Coordinates relative to the (scaled) canvas
+        if (event.getButton() == MouseButton.SECONDARY) {
+            // Right mouse button starts panning
+            isPanning = true;
+            lastPanX = event.getX();
             lastPanY = event.getY();
-            // isPanning = false; // Will be set to true on first drag
-            // Do not consume here, let click handler decide based on dragging
-        } else if (event.getButton() == MouseButton.SECONDARY) {
-            // Allow right-click to pass through to the MOUSE_CLICKED handler for grass
-            // placement
+            
+            // Use custom cursor for panning instead of system MOVE cursor
+            ImageCursor customCursor = UIAssets.getCustomCursor();
+            if (customCursor != null) {
+                mapCanvas.setCursor(customCursor);
+            } else {
+                mapCanvas.setCursor(Cursor.MOVE); // Fallback only if custom cursor unavailable
+            }
+            
+            event.consume();
         }
     }
 
     private void handleMouseDragForPanning(MouseEvent event) {
-        if (event.getButton() == MouseButton.PRIMARY) {
-            if (!isPanning) {
-                isPanning = true;
-                mapCanvas.setCursor(Cursor.MOVE);
-            }
-
+        if (event.getButton() == MouseButton.SECONDARY && isPanning) {
             double deltaX = event.getX() - lastPanX;
             double deltaY = event.getY() - lastPanY;
 
-            // Update view offsets directly
             viewOffsetX += deltaX;
             viewOffsetY += deltaY;
 
             lastPanX = event.getX();
             lastPanY = event.getY();
 
-            renderMap(); // Re-render to show pan
+            renderMap();
             event.consume();
         }
     }
 
     private void handleMouseReleaseForPanning(MouseEvent event) {
-        if (event.getButton() == MouseButton.PRIMARY) {
-            if (isPanning) {
-                mapCanvas.setCursor(Cursor.DEFAULT);
-                isPanning = false;
-                event.consume(); // Consume if it was a pan to prevent click handler tile placement
+        if (event.getButton() == MouseButton.SECONDARY && isPanning) {
+            isPanning = false;
+            
+            // Restore custom cursor after panning instead of DEFAULT cursor
+            ImageCursor customCursor = UIAssets.getCustomCursor();
+            if (customCursor != null) {
+                mapCanvas.setCursor(customCursor);
+            } else {
+                mapCanvas.setCursor(Cursor.DEFAULT); // Fallback only if custom cursor unavailable
             }
+            
+            event.consume();
         }
     }
 

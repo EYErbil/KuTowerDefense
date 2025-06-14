@@ -824,7 +824,11 @@ public class MapEditorScreen extends BorderPane {
 
     private void goBack() {
         MainMenuScreen mainMenu = new MainMenuScreen(primaryStage);
-        Scene mainMenuScene = new Scene(mainMenu, primaryStage.getWidth(), primaryStage.getHeight());
+        
+        // Use screen dimensions to match fullscreen size
+        double w = javafx.stage.Screen.getPrimary().getBounds().getWidth();
+        double h = javafx.stage.Screen.getPrimary().getBounds().getHeight();
+        Scene mainMenuScene = new Scene(mainMenu, w, h);
         mainMenuScene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
 
         ImageCursor customCursor = UIAssets.getCustomCursor();
@@ -832,8 +836,23 @@ public class MapEditorScreen extends BorderPane {
             mainMenuScene.setCursor(customCursor);
         }
 
-        primaryStage.setScene(mainMenuScene);
-        primaryStage.setFullScreen(true);
+        // IMPROVED FIX: Use Platform.runLater for smooth transition and cursor enforcement
+        javafx.application.Platform.runLater(() -> {
+            String originalHint = primaryStage.getFullScreenExitHint();
+            primaryStage.setFullScreenExitHint("");
+            
+            primaryStage.setFullScreen(false);
+            primaryStage.setScene(mainMenuScene);
+            
+            // Enforce custom cursor on the new scene
+            UIAssets.enforceCustomCursor(mainMenuScene);
+            UIAssets.startCursorEnforcement(mainMenuScene);
+            
+            javafx.application.Platform.runLater(() -> {
+                primaryStage.setFullScreen(true);
+                primaryStage.setFullScreenExitHint(originalHint);
+            });
+        });
     }
 
     private void resizeMap(int newWidth, int newHeight) {

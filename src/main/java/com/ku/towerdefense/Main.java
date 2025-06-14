@@ -43,6 +43,11 @@ public class Main extends Application {
         }
 
         primaryStage.setScene(scene);
+        
+        // Enforce custom cursor throughout the application
+        UIAssets.enforceCustomCursor(scene);
+        UIAssets.startCursorEnforcement(scene);
+        
         primaryStage.show();
     }
 

@@ -391,4 +391,115 @@ public class UIAssets {
 
         return button;
     }
+
+    /**
+     * Enforces the custom cursor on a scene and all its children.
+     * This prevents UI elements from overriding the custom cursor.
+     * 
+     * @param scene the scene to enforce cursor on
+     */
+    public static void enforceCustomCursor(javafx.scene.Scene scene) {
+        ImageCursor customCursor = getCustomCursor();
+        if (customCursor != null && scene != null) {
+            // Set cursor on scene
+            scene.setCursor(customCursor);
+            
+            // Force cursor on root and all children
+            if (scene.getRoot() != null) {
+                enforceCustomCursorOnNode(scene.getRoot());
+            }
+            
+            // Add listeners to maintain cursor when scene focus changes
+            scene.focusOwnerProperty().addListener((obs, oldNode, newNode) -> {
+                javafx.application.Platform.runLater(() -> {
+                    if (scene.getCursor() != customCursor) {
+                        scene.setCursor(customCursor);
+                    }
+                });
+            });
+        }
+    }
+
+    /**
+     * Recursively enforces custom cursor on a node and all its children.
+     */
+    private static void enforceCustomCursorOnNode(javafx.scene.Node node) {
+        ImageCursor customCursor = getCustomCursor();
+        if (customCursor == null) return;
+        
+        // Set cursor on this node
+        node.setCursor(customCursor);
+        
+        // Special handling for different node types
+        if (node instanceof javafx.scene.control.Button) {
+            Button button = (Button) node;
+            
+            // Override button hover behavior to maintain custom cursor
+            button.setOnMouseEntered(e -> {
+                button.setCursor(customCursor);
+                e.consume();
+            });
+            
+            button.setOnMouseExited(e -> {
+                button.setCursor(customCursor);
+                e.consume();
+            });
+            
+            // Maintain cursor during press
+            button.setOnMousePressed(e -> {
+                button.setCursor(customCursor);
+            });
+            
+            button.setOnMouseReleased(e -> {
+                button.setCursor(customCursor);
+            });
+        }
+        
+        // Handle Canvas separately to maintain custom cursor during interactions
+        if (node instanceof javafx.scene.canvas.Canvas) {
+            javafx.scene.canvas.Canvas canvas = (javafx.scene.canvas.Canvas) node;
+            canvas.setCursor(customCursor);
+            
+            // Ensure cursor stays custom during all mouse events
+            canvas.setOnMouseEntered(e -> canvas.setCursor(customCursor));
+            canvas.setOnMouseMoved(e -> {
+                if (canvas.getCursor() != customCursor) {
+                    canvas.setCursor(customCursor);
+                }
+            });
+        }
+        
+        // Recursively apply to children if it's a parent node
+        if (node instanceof javafx.scene.Parent) {
+            javafx.scene.Parent parent = (javafx.scene.Parent) node;
+            for (javafx.scene.Node child : parent.getChildrenUnmodifiable()) {
+                enforceCustomCursorOnNode(child);
+            }
+        }
+    }
+
+    /**
+     * Sets up periodic cursor enforcement to catch any cursor overrides.
+     * Call this once per scene to maintain custom cursor.
+     */
+    public static void startCursorEnforcement(javafx.scene.Scene scene) {
+        ImageCursor customCursor = getCustomCursor();
+        if (customCursor == null || scene == null) return;
+        
+        // Create a timeline that periodically checks and restores the custom cursor
+        javafx.animation.Timeline cursorEnforcer = new javafx.animation.Timeline(
+            new javafx.animation.KeyFrame(javafx.util.Duration.millis(100), e -> {
+                if (scene.getCursor() != customCursor) {
+                    scene.setCursor(customCursor);
+                }
+                
+                // Also check focused node
+                if (scene.getFocusOwner() != null && scene.getFocusOwner().getCursor() != customCursor) {
+                    scene.getFocusOwner().setCursor(customCursor);
+                }
+            })
+        );
+        cursorEnforcer.setCycleCount(javafx.animation.Animation.INDEFINITE);
+        cursorEnforcer.play();
+    }
 }

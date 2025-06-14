@@ -54,6 +54,11 @@ public class GameController {
     private long waveStartTime = 0;
     private boolean isSpawningEnemies = false;
 
+    // Grace period for first wave
+    private static final long GRACE_PERIOD_MS = 4000; // 4 seconds
+    private boolean gracePeriodActive = false;
+    private Timeline gracePeriodTimer;
+
     // Game speed control
     private boolean speedAccelerated = false;
     private static final double SPEED_MULTIPLIER = 2.0;
@@ -106,9 +111,24 @@ public class GameController {
     public void startGame() {
         // gameLoop.start(); // GameScreen handles AnimationTimer start/stop via its own
         // pause
-        if (currentWave == 0) { // Auto-start first wave
-            startNextWave();
+        if (currentWave == 0) { // Auto-start first wave with grace period
+            startFirstWaveWithGracePeriod();
         }
+    }
+
+    /**
+     * Starts the first wave after a 4-second grace period.
+     */
+    private void startFirstWaveWithGracePeriod() {
+        gracePeriodActive = true;
+        System.out.println("Starting grace period: 4 seconds to build towers before first wave...");
+        
+        gracePeriodTimer = new Timeline(new KeyFrame(Duration.millis(GRACE_PERIOD_MS), e -> {
+            gracePeriodActive = false;
+            System.out.println("Grace period ended. Starting first wave!");
+            startNextWave();
+        }));
+        gracePeriodTimer.play();
     }
 
     /**
@@ -118,6 +138,9 @@ public class GameController {
         // gameLoop.stop(); // GameScreen handles AnimationTimer
         if (waveTimer != null) {
             waveTimer.stop();
+        }
+        if (gracePeriodTimer != null) {
+            gracePeriodTimer.stop();
         }
     }
 
@@ -136,6 +159,9 @@ public class GameController {
                 waveTimerProgressOnPause = waveTimer.getCurrentTime();
                 waveTimer.pause();
             }
+            if (gracePeriodTimer != null && gracePeriodTimer.getStatus() == Animation.Status.RUNNING) {
+                gracePeriodTimer.pause();
+            }
         } else {
             if (waveTimer != null && waveTimer.getStatus() == Animation.Status.PAUSED) {
                 if (waveTimerProgressOnPause != null) {
@@ -144,11 +170,32 @@ public class GameController {
                     waveTimer.play(); // Should ideally not happen if paused correctly
                 }
             }
+            if (gracePeriodTimer != null && gracePeriodTimer.getStatus() == Animation.Status.PAUSED) {
+                gracePeriodTimer.play();
+            }
         }
     }
 
     public boolean isPaused() {
         return isPaused;
+    }
+
+    /**
+     * Check if the game is in the grace period.
+     *
+     * @return true if in grace period, false otherwise
+     */
+    public boolean isInGracePeriod() {
+        return gracePeriodActive;
+    }
+
+    /**
+     * Get the total number of waves from game settings.
+     *
+     * @return total number of waves
+     */
+    public int getTotalWaves() {
+        return GameSettings.getInstance().getTotalWaves();
     }
 
     /**
@@ -465,6 +512,14 @@ public class GameController {
     public void startNextWave() {
         // Enhanced debugging for enemy path issues
         System.out.println("startNextWave called - attempting to start wave " + (currentWave + 1));
+
+        // Check if we've reached the maximum waves
+        if (currentWave >= getTotalWaves()) {
+            System.out.println("All waves completed! Player has won the game!");
+            gameOver = true;
+            stopGame();
+            return;
+        }
 
         // Check if path exists
         if (gameMap.getEnemyPath() == null) {

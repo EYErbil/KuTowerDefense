@@ -95,7 +95,7 @@ public class MainMenuScreen extends VBox {
     }
 
     /**
-     * Helper method to transition to a new scene with a fade effect.
+     * Helper method to transition to a new scene with a fade effect while maintaining fullscreen.
      * 
      * @param newScene The scene to transition to.
      */
@@ -116,8 +116,26 @@ public class MainMenuScreen extends VBox {
                 newScene.setCursor(customCursor);
             }
 
-            primaryStage.setScene(newScene);
-            primaryStage.setFullScreen(true);
+            // IMPROVED FIX: Use Platform.runLater to ensure smooth fullscreen transition
+            javafx.application.Platform.runLater(() -> {
+                // Temporarily disable fullscreen exit hint to prevent flashing
+                String originalHint = primaryStage.getFullScreenExitHint();
+                primaryStage.setFullScreenExitHint("");
+                
+                // Set scene without fullscreen first (this prevents the flash)
+                primaryStage.setFullScreen(false);
+                primaryStage.setScene(newScene);
+                
+                // Enforce custom cursor on the new scene and start periodic enforcement
+                UIAssets.enforceCustomCursor(newScene);
+                UIAssets.startCursorEnforcement(newScene);
+                
+                // Immediately re-enable fullscreen in the next frame
+                javafx.application.Platform.runLater(() -> {
+                    primaryStage.setFullScreen(true);
+                    primaryStage.setFullScreenExitHint(originalHint);
+                });
+            });
 
             if (newScene.getRoot() != null) {
                 FadeTransition fadeIn = new FadeTransition(Duration.millis(300), newScene.getRoot());
@@ -134,8 +152,9 @@ public class MainMenuScreen extends VBox {
      */
     private void startNewGame() {
         MapSelectionScreen mapSelection = new MapSelectionScreen(primaryStage);
-        double w = primaryStage.getScene() != null ? primaryStage.getScene().getWidth() : primaryStage.getWidth();
-        double h = primaryStage.getScene() != null ? primaryStage.getScene().getHeight() : primaryStage.getHeight();
+        // Use screen dimensions to match fullscreen size
+        double w = javafx.stage.Screen.getPrimary().getBounds().getWidth();
+        double h = javafx.stage.Screen.getPrimary().getBounds().getHeight();
         Scene mapSelectionScene = new Scene(mapSelection, w, h);
         transitionToScene(mapSelectionScene);
     }
@@ -145,8 +164,9 @@ public class MainMenuScreen extends VBox {
      */
     private void openMapEditor() {
         MapEditorScreen mapEditor = new MapEditorScreen(primaryStage);
-        double w = primaryStage.getScene() != null ? primaryStage.getScene().getWidth() : primaryStage.getWidth();
-        double h = primaryStage.getScene() != null ? primaryStage.getScene().getHeight() : primaryStage.getHeight();
+        // Use screen dimensions to match fullscreen size
+        double w = javafx.stage.Screen.getPrimary().getBounds().getWidth();
+        double h = javafx.stage.Screen.getPrimary().getBounds().getHeight();
         Scene mapEditorScene = new Scene(mapEditor, w, h);
         transitionToScene(mapEditorScene);
     }
@@ -156,8 +176,9 @@ public class MainMenuScreen extends VBox {
      */
     private void openOptions() {
         OptionsScreen options = new OptionsScreen(primaryStage);
-        double w = primaryStage.getScene() != null ? primaryStage.getScene().getWidth() : primaryStage.getWidth();
-        double h = primaryStage.getScene() != null ? primaryStage.getScene().getHeight() : primaryStage.getHeight();
+        // Use screen dimensions to match fullscreen size
+        double w = javafx.stage.Screen.getPrimary().getBounds().getWidth();
+        double h = javafx.stage.Screen.getPrimary().getBounds().getHeight();
         Scene optionsScene = new Scene(options, w, h);
         transitionToScene(optionsScene);
     }
