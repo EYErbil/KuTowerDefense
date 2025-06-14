@@ -57,6 +57,7 @@ public class UIAssets {
             loadImage("Ribbon_Red", basePath + "Ribbon_Red_3Slides.png");
             loadImage("Ribbon_Yellow", basePath + "Ribbon_Yellow_3Slides.png");
             loadImage("KUTowerButtons", basePath + "kutowerbuttons4.png");
+            loadImage("WizardButton", basePath + "wiz.png");
             loadImage("01", basePath + "01.png");
 
             // Effect sprite sheets
@@ -383,6 +384,48 @@ public class UIAssets {
             // Fallback if the sprite sheet isn't loaded
             button.setText("?"); // Placeholder for missing icon
             System.err.println("KUTowerButtons spritesheet not found for icon button.");
+        }
+
+        if (tooltipText != null && !tooltipText.isEmpty()) {
+            button.setTooltip(new javafx.scene.control.Tooltip(tooltipText));
+        }
+
+        return button;
+    }
+    
+    /**
+     * Creates a button with a standalone image (not from sprite sheet).
+     *
+     * @param tooltipText     Text for the button's tooltip.
+     * @param imageName       Name of the image in the cache (e.g., "WizardButton").
+     * @param iconDisplaySize The desired display size (width and height) for the icon on the button.
+     * @return A new Button configured with the specified image and tooltip.
+     */
+    public static Button createStandaloneIconButton(String tooltipText, String imageName, double iconDisplaySize) {
+        Button button = new Button();
+        Image buttonImage = getImage(imageName);
+
+        if (buttonImage != null) {
+            ImageView iconView = new ImageView(buttonImage);
+            iconView.setFitWidth(iconDisplaySize);
+            iconView.setFitHeight(iconDisplaySize);
+            iconView.setPreserveRatio(true);
+            iconView.setSmooth(true);
+
+            button.setGraphic(iconView);
+            button.getStyleClass().add("icon-button"); // For CSS styling
+            
+            // Revert to custom cursor on exit if it was changed by something else
+            button.setOnMouseExited(e -> {
+                if (button.getScene() != null && button.getScene().getCursor() != UIAssets.getCustomCursor()) {
+                    button.getScene().setCursor(UIAssets.getCustomCursor());
+                }
+            });
+
+        } else {
+            // Fallback if the image isn't loaded
+            button.setText("?"); // Placeholder for missing icon
+            System.err.println("Standalone image '" + imageName + "' not found for icon button.");
         }
 
         if (tooltipText != null && !tooltipText.isEmpty()) {

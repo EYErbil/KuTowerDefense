@@ -361,15 +361,7 @@ public class GameMap implements Serializable {
                 }
             }
         }
-        if (enemyPath != null) {
-            var pts = enemyPath.getPoints();
-            gc.setStroke(Color.YELLOW);
-            gc.setLineWidth(2);
-            gc.setGlobalAlpha(0.35);
-            for (int i = 0; i < pts.size() - 1; i++)
-                gc.strokeLine(pts.get(i).getX(), pts.get(i).getY(), pts.get(i + 1).getX(), pts.get(i + 1).getY());
-            gc.setGlobalAlpha(1);
-        }
+        // Path rendering removed - now handled by flash system in GameController
         generatePath();
     }
 

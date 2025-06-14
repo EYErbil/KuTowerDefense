@@ -30,6 +30,8 @@ import javafx.util.Duration;
 import javafx.animation.Animation;
 import com.ku.towerdefense.model.wave.Wave;
 import com.ku.towerdefense.model.wave.WaveConfig;
+import com.ku.towerdefense.powerup.PowerUpManager;
+import com.ku.towerdefense.powerup.PowerUpType;
 
 /**
  * Main controller for the game, handling the game loop, entities, and game
@@ -62,6 +64,15 @@ public class GameController {
     // Game speed control
     private boolean speedAccelerated = false;
     private static final double SPEED_MULTIPLIER = 2.0;
+    
+    // Path flash system
+    private boolean pathFlashActive = false;
+    private long pathFlashStartTime = 0;
+    private static final long PATH_FLASH_DURATION = 3000; // 3 seconds
+    private double pathFlashAlpha = 0.0;
+    
+    // Power-up system
+    private PowerUpManager powerUpManager;
 
     // Listener for wave events
     private WaveCompletedListener onWaveCompletedListener;
@@ -85,6 +96,9 @@ public class GameController {
         this.playerLives = GameSettings.getInstance().getStartingLives();
         this.currentWave = 0;
         this.gameOver = false;
+        
+        // Initialize power-up system
+        this.powerUpManager = new PowerUpManager(this);
 
         // Initialize game loop
         gameLoop = new AnimationTimer() {
@@ -420,6 +434,12 @@ public class GameController {
             }
             return false;
         });
+        
+        // Update path flash animation
+        updatePathFlash();
+        
+        // Update power-up effects
+        powerUpManager.update(currentDeltaTime);
 
         // Check if wave is completed and all enemies are spawned
         // AND if waveTimer is not already running (to prevent multiple timers)
@@ -482,6 +502,9 @@ public class GameController {
         for (DroppedGold bag : activeGoldBags) {
             bag.render(gc);
         }
+        
+        // Render path flash (if active)
+        renderPathFlash(gc);
 
         // Additional UI rendering can be handled elsewhere
     }
@@ -587,6 +610,12 @@ public class GameController {
         // Increment wave counter
         currentWave++;
         System.out.println("Starting wave " + currentWave);
+        
+        // Update power-up manager with new wave
+        powerUpManager.setCurrentWave(currentWave);
+        
+        // ✨ TRIGGER PATH FLASH - Show players the enemy route!
+        startPathFlash();
 
         // Calculate enemy numbers
         int num = GameSettings.getInstance().getEnemiesPerGroup() * (1 + currentWave / 3); // Example scaling
@@ -1070,5 +1099,76 @@ public class GameController {
      */
     public void setGracePeriodActive(boolean gracePeriodActive) {
         this.gracePeriodActive = gracePeriodActive;
+    }
+    
+    // ===== PATH FLASH SYSTEM =====
+    
+    /**
+     * Start the path flash animation to show players the enemy route
+     */
+    private void startPathFlash() {
+        pathFlashActive = true;
+        pathFlashStartTime = System.currentTimeMillis();
+        pathFlashAlpha = 1.0;
+        System.out.println("🌟 Path flash started! Showing enemy route for " + (PATH_FLASH_DURATION / 1000) + " seconds");
+    }
+    
+    /**
+     * Update the path flash animation
+     */
+    private void updatePathFlash() {
+        if (!pathFlashActive) return;
+        
+        long currentTime = System.currentTimeMillis();
+        long elapsed = currentTime - pathFlashStartTime;
+        
+        if (elapsed >= PATH_FLASH_DURATION) {
+            // Flash duration complete
+            pathFlashActive = false;
+            pathFlashAlpha = 0.0;
+            System.out.println("✨ Path flash ended - route hidden");
+        } else {
+            // Calculate pulsing alpha (creates a breathing effect)
+            double progress = (double) elapsed / PATH_FLASH_DURATION;
+            double pulseSpeed = 4.0; // How fast the pulse is
+            double basePulse = Math.sin(progress * pulseSpeed * Math.PI) * 0.3 + 0.7; // 0.4 to 1.0
+            
+            // Fade out over time
+            double fadeOut = 1.0 - (progress * 0.3); // Gradually reduce intensity
+            
+            pathFlashAlpha = basePulse * fadeOut;
+        }
+    }
+    
+    /**
+     * Render the path flash if active (currently disabled - no visual path shown)
+     */
+    public void renderPathFlash(GraphicsContext gc) {
+        // Path flash rendering disabled since there's only one path
+        // System infrastructure kept for potential future use
+        return;
+    }
+    
+    // ===== POWER-UP SYSTEM =====
+    
+    /**
+     * Get the power-up manager
+     */
+    public PowerUpManager getPowerUpManager() {
+        return powerUpManager;
+    }
+    
+    /**
+     * Activate a power-up (called from UI)
+     */
+    public boolean activatePowerUp(PowerUpType type) {
+        return powerUpManager.activatePowerUp(type);
+    }
+    
+    /**
+     * Check if a power-up can be used
+     */
+    public boolean canUsePowerUp(PowerUpType type) {
+        return powerUpManager.canUsePowerUp(type);
     }
 }

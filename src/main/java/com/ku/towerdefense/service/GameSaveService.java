@@ -432,6 +432,9 @@ public class GameSaveService {
         }
         saveData.gracePeriodActive = gameController.isInGracePeriod();
         
+        // Path flash state (optional - could be reset on load)
+        // saveData.pathFlashActive = gameController.isPathFlashActive(); // Not critical for save/load
+        
         // Map information
         GameMap gameMap = gameController.getGameMap();
         saveData.mapWidth = gameMap.getWidth();

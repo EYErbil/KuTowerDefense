@@ -6,6 +6,7 @@ import com.ku.towerdefense.model.entity.ArtilleryTower;
 import com.ku.towerdefense.model.entity.MageTower;
 import com.ku.towerdefense.model.entity.Tower;
 import com.ku.towerdefense.model.entity.DroppedGold;
+import com.ku.towerdefense.powerup.PowerUpType;
 import com.ku.towerdefense.model.map.Tile;
 import com.ku.towerdefense.model.map.TileType;
 import com.ku.towerdefense.ui.MainMenuScreen;
@@ -112,6 +113,7 @@ public class GameScreen extends BorderPane {
     private Button playButton;
     private Button fastForwardButton;
     private Button menuButton;
+    private Button freezeButton;
     private static final String TIME_CONTROL_SELECTED_STYLE_CLASS = "time-control-selected";
 
     // Property to track the visual width of the map on screen
@@ -568,6 +570,13 @@ public class GameScreen extends BorderPane {
             showGameSettingsPopup();
             e.consume();
         });
+        
+        // Create freeze power-up button using wizard image
+        freezeButton = UIAssets.createStandaloneIconButton("Freeze All Enemies", "WizardButton", controlButtonIconSize);
+        freezeButton.setOnAction(e -> {
+            activateFreezeEffect();
+            e.consume();
+        });
 
         // Memory tracker toggle button
         Button memoryTrackerButton = UIAssets.createIconButton("Memory Tracker", UIAssets.ICON_BUILD_COL,
@@ -583,7 +592,7 @@ public class GameScreen extends BorderPane {
 
         // Remove HBox for timeControls, add buttons directly to VBox for vertical
         // layout
-        controlButtonsPane.getChildren().addAll(pauseButton, playButton, fastForwardButton, menuButton, memoryTrackerButton);
+        controlButtonsPane.getChildren().addAll(pauseButton, playButton, fastForwardButton, menuButton, freezeButton, memoryTrackerButton);
         uiOverlayPane.getChildren().addAll(controlButtonsPane, memoryTracker);
 
         // Position controlButtonsPane at top-right, conditionally centered in right
@@ -864,6 +873,9 @@ public class GameScreen extends BorderPane {
         }
         // Pause/Speed button text/icon updates are now handled by
         // updateTimeControlStates()
+        
+        // Update freeze button availability
+        updateFreezeButtonStyle();
     }
 
     /**
@@ -1352,7 +1364,7 @@ public class GameScreen extends BorderPane {
         try {
             URL woodUrl = getClass().getResource("/Asset_pack/Background/wood.jpg");
             if (woodUrl != null) {
-                sidePanel.setStyle(
+        sidePanel.setStyle(
                     "-fx-background-image: url('" + woodUrl.toExternalForm() + "');" +
                     "-fx-background-repeat: repeat;" +
                     "-fx-background-size: 200px 200px;" +
@@ -1528,15 +1540,15 @@ public class GameScreen extends BorderPane {
         // Add hover effects similar to music buttons
         button.setOnMouseEntered(e -> {
             button.setStyle(
-                "-fx-background-color: linear-gradient(to bottom, " + hoverColor + ", derive(" + hoverColor + ", -20%));" +
+            "-fx-background-color: linear-gradient(to bottom, " + hoverColor + ", derive(" + hoverColor + ", -20%));" +
                 "-fx-text-fill: #FFFACD;" + // Light goldenrod like music buttons
                 "-fx-font-family: 'Serif';" +
                 "-fx-font-size: 18px;" +
-                "-fx-font-weight: bold;" +
-                "-fx-background-radius: 8px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-background-radius: 8px;" +
                 "-fx-border-color: derive(" + hoverColor + ", -30%);" +
                 "-fx-border-width: 3px;" +
-                "-fx-border-radius: 8px;" +
+            "-fx-border-radius: 8px;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.8), 6, 0, 1, 3);" +
                 "-fx-scale-x: 1.03; -fx-scale-y: 1.03;"
             );
@@ -1544,17 +1556,17 @@ public class GameScreen extends BorderPane {
         
         button.setOnMouseExited(e -> {
             button.setStyle(
-                "-fx-background-color: linear-gradient(to bottom, " + baseColor + ", derive(" + baseColor + ", -20%));" +
+            "-fx-background-color: linear-gradient(to bottom, " + baseColor + ", derive(" + baseColor + ", -20%));" +
                 "-fx-text-fill: #F5DEB3;" +
                 "-fx-font-family: 'Serif';" +
                 "-fx-font-size: 18px;" +
-                "-fx-font-weight: bold;" +
-                "-fx-background-radius: 8px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-background-radius: 8px;" +
                 "-fx-border-color: derive(" + baseColor + ", -30%);" +
                 "-fx-border-width: 3px;" +
-                "-fx-border-radius: 8px;" +
+            "-fx-border-radius: 8px;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.7), 4, 0, 1, 2);" +
-                "-fx-scale-x: 1.0; -fx-scale-y: 1.0;"
+            "-fx-scale-x: 1.0; -fx-scale-y: 1.0;"
             );
         });
         
@@ -1962,6 +1974,85 @@ public class GameScreen extends BorderPane {
             if (renderTimer != null) {
                 renderTimer.setStatusMessage("❌ Could not open load dialog!");
             }
+        }
+    }
+    
+    // ===== POWER-UP SYSTEM UI =====
+    
+    /**
+     * Activate the freeze effect power-up
+     */
+    private void activateFreezeEffect() {
+        PowerUpType freezeType = PowerUpType.FREEZE_ENEMIES;
+        
+        if (!gameController.canUsePowerUp(freezeType)) {
+            // Show why it can't be used
+            String reason = "";
+            if (gameController.getPowerUpManager().isOnCooldown(freezeType)) {
+                int wavesRemaining = gameController.getPowerUpManager().getCooldownWavesRemaining(freezeType);
+                reason = "Cooldown: " + wavesRemaining + " waves remaining";
+            } else if (gameController.getPlayerGold() < freezeType.getCost()) {
+                reason = "Need " + freezeType.getCost() + " gold (have " + gameController.getPlayerGold() + ")";
+            } else if (gameController.getEnemies().isEmpty()) {
+                reason = "No enemies to freeze";
+            }
+            
+            renderTimer.setStatusMessage("❄️ Cannot freeze: " + reason);
+            return;
+        }
+        
+        // Activate the power-up
+        boolean success = gameController.activatePowerUp(freezeType);
+        if (success) {
+            renderTimer.setStatusMessage("🧊 FREEZE ACTIVATED! All enemies frozen for 5 seconds!");
+        } else {
+            renderTimer.setStatusMessage("❄️ Freeze failed to activate");
+        }
+        
+        // Update button appearance
+        updateFreezeButtonStyle();
+    }
+    
+    /**
+     * Update the freeze button's appearance based on availability
+     */
+    private void updateFreezeButtonStyle() {
+        if (freezeButton == null) return;
+        
+        PowerUpType freezeType = PowerUpType.FREEZE_ENEMIES;
+        boolean canUse = gameController.canUsePowerUp(freezeType);
+        
+        if (canUse) {
+            // Available - normal appearance with full opacity
+            freezeButton.setOpacity(1.0);
+            freezeButton.setDisable(false);
+            
+            // Update tooltip
+            String tooltip = "🧙‍♂️ " + freezeType.getDisplayName() + "\n" +
+                           "Cost: " + freezeType.getCost() + " gold\n" +
+                           freezeType.getDescription();
+            freezeButton.setTooltip(new javafx.scene.control.Tooltip(tooltip));
+            
+        } else {
+            // Not available - grayed out with reduced opacity
+            freezeButton.setOpacity(0.5);
+            freezeButton.setDisable(true);
+            
+            // Update tooltip with reason why it's not available
+            String reason = "";
+            if (gameController.getPowerUpManager().isOnCooldown(freezeType)) {
+                int wavesRemaining = gameController.getPowerUpManager().getCooldownWavesRemaining(freezeType);
+                reason = "Cooldown: " + wavesRemaining + " waves remaining";
+            } else if (gameController.getPlayerGold() < freezeType.getCost()) {
+                reason = "Need " + freezeType.getCost() + " gold";
+            } else if (gameController.getEnemies().isEmpty()) {
+                reason = "No enemies to freeze";
+            }
+            
+            String tooltip = "🧙‍♂️ " + freezeType.getDisplayName() + " (UNAVAILABLE)\n" +
+                           "Cost: " + freezeType.getCost() + " gold\n" +
+                           reason;
+            freezeButton.setTooltip(new javafx.scene.control.Tooltip(tooltip));
         }
     }
 }
