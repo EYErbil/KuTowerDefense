@@ -216,9 +216,17 @@ public abstract class Tower extends Entity implements Serializable {
      * Reinitialize after deserialization to reload images
      */
     public void reinitializeAfterLoad() {
-        // If we have an image file, try to reload the image
+        // CRITICAL: Update imageFile to match the tower's current level
+        // This ensures level 2 towers show the correct upgraded texture
+        if (level == MAX_TOWER_LEVEL) {
+            this.imageFile = getUpgradedImageName();
+        } else {
+            this.imageFile = getBaseImageName();
+        }
+        
+        // Now load the correct image for the tower's level
         if (this.imageFile != null && !this.imageFile.isEmpty()) {
-            loadImage(); // This will load based on current imageFile (which might be upgraded)
+            loadImage(); // This will load the correct image for the current level
         }
     }
 

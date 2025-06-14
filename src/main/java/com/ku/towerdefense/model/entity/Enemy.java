@@ -465,7 +465,7 @@ public abstract class Enemy extends Entity implements Serializable {
         renderHealthBar(gc);
 
         // Render status icons very close to the enemy
-        double iconX = this.x + this.width - 16; // Position much closer, more overlap
+        double iconX = this.x + this.width - 48; // Position much closer, more overlap
         double iconY = this.y - 2; // Position almost touching enemy
         double iconSize = 16; // Back to original size
         int iconOffset = 0;
@@ -688,6 +688,13 @@ public abstract class Enemy extends Entity implements Serializable {
 
     public double getPathProgress() {
         return pathProgress;
+    }
+    
+    /**
+     * Set the path progress (for save/load system)
+     */
+    public void setPathProgress(double pathProgress) {
+        this.pathProgress = Math.max(0.0, Math.min(1.0, pathProgress));
     }
 
     public void setImageFile(String imageFile) {

@@ -489,6 +489,27 @@ public class GameController {
     public void setPlayerGold(int i) {
         this.playerGold=i;
     }
+    
+    /**
+     * Set the player's lives (for save/load system)
+     */
+    public void setPlayerLives(int lives) {
+        this.playerLives = lives;
+    }
+    
+    /**
+     * Set the current wave (for save/load system)
+     */
+    public void setCurrentWave(int wave) {
+        this.currentWave = wave;
+    }
+    
+    /**
+     * Set the game over state (for save/load system)
+     */
+    public void setGameOver(boolean gameOver) {
+        this.gameOver = gameOver;
+    }
 
     /**
      * Interface for wave completed event
@@ -998,5 +1019,56 @@ public class GameController {
     // Getter for GameScreen to check gold bags for clicks
     public List<DroppedGold> getActiveGoldBags() {
         return activeGoldBags;
+    }
+    
+    // ===== SAVE/LOAD SYSTEM SUPPORT METHODS =====
+    
+    /**
+     * Get whether the game is currently between waves
+     */
+    public boolean isBetweenWaves() {
+        return betweenWaves;
+    }
+    
+    /**
+     * Set whether the game is between waves (for save/load)
+     */
+    public void setBetweenWaves(boolean betweenWaves) {
+        this.betweenWaves = betweenWaves;
+    }
+    
+    /**
+     * Get the wave start time
+     */
+    public long getWaveStartTime() {
+        return waveStartTime;
+    }
+    
+    /**
+     * Set the wave start time (for save/load)
+     */
+    public void setWaveStartTime(long waveStartTime) {
+        this.waveStartTime = waveStartTime;
+    }
+    
+    /**
+     * Get whether enemies are currently spawning
+     */
+    public boolean isSpawningEnemies() {
+        return isSpawningEnemies;
+    }
+    
+    /**
+     * Set whether enemies are spawning (for save/load)
+     */
+    public void setSpawningEnemies(boolean isSpawningEnemies) {
+        this.isSpawningEnemies = isSpawningEnemies;
+    }
+    
+    /**
+     * Set grace period active state (for save/load)
+     */
+    public void setGracePeriodActive(boolean gracePeriodActive) {
+        this.gracePeriodActive = gracePeriodActive;
     }
 }

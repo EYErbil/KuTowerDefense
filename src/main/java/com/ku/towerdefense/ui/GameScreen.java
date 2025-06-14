@@ -9,6 +9,7 @@ import com.ku.towerdefense.model.entity.DroppedGold;
 import com.ku.towerdefense.model.map.Tile;
 import com.ku.towerdefense.model.map.TileType;
 import com.ku.towerdefense.ui.MainMenuScreen;
+import com.ku.towerdefense.service.GameSaveService;
 import com.ku.towerdefense.Main;
 
 import javafx.animation.AnimationTimer;
@@ -1424,6 +1425,9 @@ public class GameScreen extends BorderPane {
             e.consume();
         });
 
+        // Save/Load section
+        VBox saveLoadSection = createSaveLoadSection();
+        
         // Medieval music selection scroll
         VBox musicSection = createMedievalMusicSection();
 
@@ -1447,10 +1451,12 @@ public class GameScreen extends BorderPane {
         spacer1.setPrefHeight(25);
         javafx.scene.layout.Region spacer2 = new javafx.scene.layout.Region();
         spacer2.setPrefHeight(25);
+        javafx.scene.layout.Region spacer2b = new javafx.scene.layout.Region();
+        spacer2b.setPrefHeight(25);
         javafx.scene.layout.Region spacer3 = new javafx.scene.layout.Region();
         spacer3.setPrefHeight(25);
 
-        sidePanel.getChildren().addAll(titleBanner, spacer1, resumeButton, spacer2, musicSection, spacer3, mainMenuButton);
+        sidePanel.getChildren().addAll(titleBanner, spacer1, resumeButton, spacer2, saveLoadSection, spacer2b, musicSection, spacer3, mainMenuButton);
 
         // Position panel off-screen initially (slide from right)
         sidePanel.setLayoutX(uiOverlayPane.getWidth());
@@ -1482,8 +1488,29 @@ public class GameScreen extends BorderPane {
         button.setPrefHeight(55);
         
         // Create beautiful medieval button styling similar to Bard's Melodies
-        String baseColor = color.equals("blue") ? "#4682B4" : "#8B4513"; // Steel blue or saddle brown
-        String hoverColor = color.equals("blue") ? "#5A9BD4" : "#A0522D"; // Lighter variants
+        String baseColor, hoverColor;
+        switch (color) {
+            case "blue":
+                baseColor = "#4682B4"; // Steel blue
+                hoverColor = "#5A9BD4";
+                break;
+            case "green":
+                baseColor = "#228B22"; // Forest green
+                hoverColor = "#32CD32";
+                break;
+            case "purple":
+                baseColor = "#8B008B"; // Dark magenta
+                hoverColor = "#BA55D3";
+                break;
+            case "red":
+                baseColor = "#DC143C"; // Crimson
+                hoverColor = "#FF6347";
+                break;
+            default:
+                baseColor = "#8B4513"; // Saddle brown
+                hoverColor = "#A0522D";
+                break;
+        }
         
         button.setStyle(
             "-fx-background-color: linear-gradient(to bottom, " + baseColor + ", derive(" + baseColor + ", -20%));" +
@@ -1532,6 +1559,75 @@ public class GameScreen extends BorderPane {
         });
         
         return button;
+    }
+    
+    /**
+     * Create the save/load section with medieval styling
+     */
+    private VBox createSaveLoadSection() {
+        VBox saveLoadSection = new VBox(12);
+        saveLoadSection.setAlignment(Pos.CENTER);
+        saveLoadSection.setPrefWidth(280);
+        
+        // Save/Load banner with green ribbon
+        StackPane saveLoadBanner = new StackPane();
+        saveLoadBanner.setPrefWidth(260);
+        saveLoadBanner.setPrefHeight(50);
+        
+        try {
+            Image blueRibbon = UIAssets.getImage("Ribbon_Blue_3Slides");
+            if (blueRibbon != null) {
+                ImageView saveLoadRibbonBg = new ImageView(blueRibbon);
+                saveLoadRibbonBg.setFitWidth(260);
+                saveLoadRibbonBg.setFitHeight(50);
+                saveLoadRibbonBg.setPreserveRatio(false);
+                saveLoadBanner.getChildren().add(saveLoadRibbonBg);
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading blue ribbon: " + e.getMessage());
+        }
+        
+        Label saveLoadTitle = new Label("💾 ROYAL ARCHIVES 💾");
+        saveLoadTitle.setStyle(
+            "-fx-font-family: 'Serif';" +
+            "-fx-font-size: 18px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-text-fill: #F5DEB3;" +
+            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.8), 2, 0, 1, 1);"
+        );
+        saveLoadBanner.getChildren().add(saveLoadTitle);
+        
+        // Save/Load buttons container
+        VBox buttonContainer = new VBox(8);
+        buttonContainer.setAlignment(Pos.CENTER);
+        buttonContainer.setPadding(new Insets(15));
+        buttonContainer.setStyle(
+            "-fx-background-color: rgba(139, 69, 19, 0.3);" +
+            "-fx-background-radius: 8px;" +
+            "-fx-border-color: #8B4513;" +
+            "-fx-border-width: 2px;" +
+            "-fx-border-radius: 8px;" +
+            "-fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.5), 5, 0, 0, 2);"
+        );
+        
+        // Save Game button
+        Button saveButton = createMedievalButton("💾 Save Kingdom", "green");
+        saveButton.setOnAction(e -> {
+            showSaveGameDialog();
+            e.consume();
+        });
+        
+        // Load Game button
+        Button loadButton = createMedievalButton("📜 Load Kingdom", "purple");
+        loadButton.setOnAction(e -> {
+            showLoadGameDialog();
+            e.consume();
+        });
+        
+        buttonContainer.getChildren().addAll(saveButton, loadButton);
+        saveLoadSection.getChildren().addAll(saveLoadBanner, buttonContainer);
+        
+        return saveLoadSection;
     }
     
     /**
@@ -1609,6 +1705,8 @@ public class GameScreen extends BorderPane {
         );
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        
+        // Wood-colored scrollbar styling will be added via CSS later
         
         musicSection.getChildren().addAll(musicBanner, scrollPane);
         return musicSection;
@@ -1732,6 +1830,137 @@ public class GameScreen extends BorderPane {
             memoryTracker.stop();
             if (renderTimer != null) {
                 renderTimer.setStatusMessage("🔧 Memory Tracker Disabled");
+            }
+        }
+    }
+    
+    /**
+     * Show save game dialog with medieval styling
+     */
+    private void showSaveGameDialog() {
+        try {
+            javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog("My Kingdom");
+            dialog.setTitle("💾 Save Your Kingdom");
+            dialog.setHeaderText("📜 Chronicle Your Victory");
+            dialog.setContentText("Enter a name for your save:");
+            
+            // Apply medieval styling to dialog
+            dialog.getDialogPane().setStyle(
+                "-fx-background-color: linear-gradient(to bottom, #F5DEB3, #DEB887);" +
+                "-fx-border-color: #8B4513; -fx-border-width: 3px;"
+            );
+            
+            java.util.Optional<String> result = dialog.showAndWait();
+            result.ifPresent(saveName -> {
+                if (saveName != null && !saveName.trim().isEmpty()) {
+                    try {
+                        GameSaveService saveService = GameSaveService.getInstance();
+                        boolean success = saveService.saveGame(gameController, saveName.trim());
+                        
+                        if (success) {
+                            if (renderTimer != null) {
+                                renderTimer.setStatusMessage("💾 Kingdom saved successfully!");
+                            }
+                        } else {
+                            if (renderTimer != null) {
+                                renderTimer.setStatusMessage("❌ Failed to save kingdom!");
+                            }
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error during save: " + e.getMessage());
+                        if (renderTimer != null) {
+                            renderTimer.setStatusMessage("❌ Save error: " + e.getMessage());
+                        }
+                    }
+                }
+            });
+        } catch (Exception e) {
+            System.err.println("Error showing save dialog: " + e.getMessage());
+            if (renderTimer != null) {
+                renderTimer.setStatusMessage("❌ Could not open save dialog!");
+            }
+        }
+    }
+    
+    /**
+     * Show load game dialog with available saves
+     */
+    private void showLoadGameDialog() {
+        try {
+            GameSaveService saveService = GameSaveService.getInstance();
+            List<GameSaveService.SaveFileInfo> saves = saveService.getAvailableSaves();
+        
+        if (saves.isEmpty()) {
+            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
+            alert.setTitle("📜 Royal Archives");
+            alert.setHeaderText("No Saved Kingdoms Found");
+            alert.setContentText("The royal archives are empty. Save your current kingdom first!");
+            
+            // Apply medieval styling
+            alert.getDialogPane().setStyle(
+                "-fx-background-color: linear-gradient(to bottom, #F5DEB3, #DEB887);" +
+                "-fx-border-color: #8B4513; -fx-border-width: 3px;"
+            );
+            
+            alert.showAndWait();
+            return;
+        }
+        
+        // Create choice dialog with save files
+        javafx.scene.control.ChoiceDialog<GameSaveService.SaveFileInfo> dialog = 
+            new javafx.scene.control.ChoiceDialog<>(saves.get(0), saves);
+        
+        dialog.setTitle("📜 Load Your Kingdom");
+        dialog.setHeaderText("🏰 Choose a Saved Kingdom");
+        dialog.setContentText("Select a save file:");
+        
+        // Apply medieval styling
+        dialog.getDialogPane().setStyle(
+            "-fx-background-color: linear-gradient(to bottom, #F5DEB3, #DEB887);" +
+            "-fx-border-color: #8B4513; -fx-border-width: 3px;"
+        );
+        
+        // Custom converter to show save info nicely
+        javafx.scene.control.ComboBox<GameSaveService.SaveFileInfo> comboBox = 
+            (javafx.scene.control.ComboBox<GameSaveService.SaveFileInfo>) dialog.getDialogPane().lookup(".combo-box");
+        if (comboBox != null) {
+            comboBox.setConverter(new javafx.util.StringConverter<GameSaveService.SaveFileInfo>() {
+                @Override
+                public String toString(GameSaveService.SaveFileInfo saveInfo) {
+                    if (saveInfo == null) return "";
+                    return String.format("%s - Wave %d (%s)", 
+                        saveInfo.saveName, saveInfo.currentWave, saveInfo.getFormattedTime());
+                }
+                
+                @Override
+                public GameSaveService.SaveFileInfo fromString(String string) {
+                    return null; // Not needed for this use case
+                }
+            });
+        }
+        
+        java.util.Optional<GameSaveService.SaveFileInfo> result = dialog.showAndWait();
+        result.ifPresent(saveInfo -> {
+            if (saveInfo != null && saveInfo.isValid) {
+                boolean success = saveService.loadGame(gameController, saveInfo.filename);
+                
+                if (success) {
+                    if (renderTimer != null) {
+                        renderTimer.setStatusMessage("📜 Kingdom loaded successfully!");
+                    }
+                    // Close the menu after successful load
+                    clearActivePopup();
+                } else {
+                    if (renderTimer != null) {
+                        renderTimer.setStatusMessage("❌ Failed to load kingdom!");
+                    }
+                }
+            }
+        });
+        } catch (Exception e) {
+            System.err.println("Error showing load dialog: " + e.getMessage());
+            if (renderTimer != null) {
+                renderTimer.setStatusMessage("❌ Could not open load dialog!");
             }
         }
     }
