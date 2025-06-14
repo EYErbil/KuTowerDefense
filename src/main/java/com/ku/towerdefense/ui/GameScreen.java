@@ -571,8 +571,36 @@ public class GameScreen extends BorderPane {
             e.consume();
         });
         
-        // Create freeze power-up button using wizard image
-        freezeButton = UIAssets.createStandaloneIconButton("Freeze All Enemies", "WizardButton", controlButtonIconSize);
+        // Create freeze power-up button using wizard image with magical effects
+        freezeButton = UIAssets.createStandaloneIconButton("Allmighty Wizard Hakan Hoca - Freeze All Enemies", "WizardButton", controlButtonIconSize);
+        
+        // Remove the icon-button class and add a unique wizard-button class
+        freezeButton.getStyleClass().remove("icon-button");
+        freezeButton.getStyleClass().add("wizard-button");
+        
+        // Ensure button size matches other control buttons exactly
+        freezeButton.setPrefSize(controlButtonIconSize, controlButtonIconSize);
+        freezeButton.setMinSize(controlButtonIconSize, controlButtonIconSize);
+        freezeButton.setMaxSize(controlButtonIconSize, controlButtonIconSize);
+        
+        // Style to blend with woody background texture - create hybrid effect
+        freezeButton.setStyle(
+            "-fx-background-color: #8B4513;" + // Saddle brown to match wood texture
+            "-fx-background-image: url('/Asset_pack/Background/wood.jpg');" +
+            "-fx-background-repeat: repeat;" +
+            "-fx-background-position: center;" +
+            "-fx-background-size: cover;" +
+            "-fx-border-color: #654321;" + // Darker brown border
+            "-fx-border-width: 1px;" +
+            "-fx-border-radius: 8px;" +
+            "-fx-background-radius: 8px;" +
+            "-fx-padding: 2px;" + // Small padding to create wood frame effect
+            "-fx-effect: innershadow(gaussian, rgba(0,0,0,0.3), 3, 0, 1, 1);" // Subtle depth
+        );
+        
+        // Add magical hover and click effects
+        addMagicalEffectsToWizardButton(freezeButton);
+        
         freezeButton.setOnAction(e -> {
             activateFreezeEffect();
             e.consume();
@@ -2004,13 +2032,238 @@ public class GameScreen extends BorderPane {
         // Activate the power-up
         boolean success = gameController.activatePowerUp(freezeType);
         if (success) {
-            renderTimer.setStatusMessage("🧊 FREEZE ACTIVATED! All enemies frozen for 5 seconds!");
+            // EPIC ACTIVATION ANIMATION!
+            createMagicalActivationEffect();
+            renderTimer.setStatusMessage("🧙‍♂️✨ ALLMIGHTY WIZARD HAKAN HOCA ACTIVATED! ❄️🧊 All enemies frozen for 5 seconds! 🧊❄️");
         } else {
             renderTimer.setStatusMessage("❄️ Freeze failed to activate");
         }
         
         // Update button appearance
         updateFreezeButtonStyle();
+    }
+    
+    /**
+     * Create spectacular magical activation effect
+     */
+    private void createMagicalActivationEffect() {
+        if (freezeButton == null) return;
+        
+        // Create multiple layered effects for epic activation
+        
+        // 1. Intense white flash
+        javafx.scene.effect.DropShadow flashEffect = new javafx.scene.effect.DropShadow();
+        flashEffect.setColor(javafx.scene.paint.Color.WHITE);
+        flashEffect.setRadius(50);
+        flashEffect.setSpread(1.0);
+        
+        // 2. Blue magical explosion
+        javafx.scene.effect.DropShadow magicalExplosion = new javafx.scene.effect.DropShadow();
+        magicalExplosion.setColor(javafx.scene.paint.Color.LIGHTBLUE);
+        magicalExplosion.setRadius(40);
+        magicalExplosion.setSpread(0.8);
+        
+        // 3. Cyan afterglow
+        javafx.scene.effect.DropShadow afterglow = new javafx.scene.effect.DropShadow();
+        afterglow.setColor(javafx.scene.paint.Color.CYAN);
+        afterglow.setRadius(20);
+        afterglow.setSpread(0.5);
+        
+        // Animation sequence
+        javafx.animation.Timeline activationSequence = new javafx.animation.Timeline();
+        
+        // Phase 1: Intense flash (0-200ms)
+        activationSequence.getKeyFrames().addAll(
+            new javafx.animation.KeyFrame(javafx.util.Duration.ZERO, e -> {
+                freezeButton.setEffect(flashEffect);
+                freezeButton.setScaleX(1.3);
+                freezeButton.setScaleY(1.3);
+            }),
+            
+            // Phase 2: Magical explosion (200-600ms)
+            new javafx.animation.KeyFrame(javafx.util.Duration.millis(200), e -> {
+                freezeButton.setEffect(magicalExplosion);
+                freezeButton.setScaleX(1.2);
+                freezeButton.setScaleY(1.2);
+            }),
+            
+            // Phase 3: Afterglow (600-1000ms)
+            new javafx.animation.KeyFrame(javafx.util.Duration.millis(600), e -> {
+                freezeButton.setEffect(afterglow);
+                freezeButton.setScaleX(1.1);
+                freezeButton.setScaleY(1.1);
+            }),
+            
+            // Phase 4: Return to normal (1000ms)
+            new javafx.animation.KeyFrame(javafx.util.Duration.millis(1000), e -> {
+                // Restore original magical glow
+                javafx.scene.effect.DropShadow normalGlow = new javafx.scene.effect.DropShadow();
+                normalGlow.setColor(javafx.scene.paint.Color.CYAN);
+                normalGlow.setRadius(15);
+                normalGlow.setSpread(0.3);
+                freezeButton.setEffect(normalGlow);
+                freezeButton.setScaleX(1.0);
+                freezeButton.setScaleY(1.0);
+            })
+        );
+        
+        activationSequence.play();
+        
+        // Add screen-wide magical effect (optional - creates a brief blue tint)
+        if (uiOverlayPane != null) {
+            javafx.scene.shape.Rectangle screenFlash = new javafx.scene.shape.Rectangle();
+            screenFlash.setWidth(uiOverlayPane.getWidth());
+            screenFlash.setHeight(uiOverlayPane.getHeight());
+            screenFlash.setFill(javafx.scene.paint.Color.LIGHTBLUE);
+            screenFlash.setOpacity(0.0);
+            screenFlash.setMouseTransparent(true);
+            
+            uiOverlayPane.getChildren().add(screenFlash);
+            
+            // Flash animation
+            javafx.animation.Timeline screenFlashAnimation = new javafx.animation.Timeline(
+                new javafx.animation.KeyFrame(javafx.util.Duration.ZERO, 
+                    new javafx.animation.KeyValue(screenFlash.opacityProperty(), 0.0)),
+                new javafx.animation.KeyFrame(javafx.util.Duration.millis(100), 
+                    new javafx.animation.KeyValue(screenFlash.opacityProperty(), 0.3)),
+                new javafx.animation.KeyFrame(javafx.util.Duration.millis(300), 
+                    new javafx.animation.KeyValue(screenFlash.opacityProperty(), 0.0))
+            );
+            
+            screenFlashAnimation.setOnFinished(e -> uiOverlayPane.getChildren().remove(screenFlash));
+            screenFlashAnimation.play();
+        }
+    }
+    
+    /**
+     * Add magical visual effects to the wizard button
+     */
+    private void addMagicalEffectsToWizardButton(Button wizardButton) {
+        // Store the original tooltip to preserve it
+        javafx.scene.control.Tooltip originalTooltip = wizardButton.getTooltip();
+        
+        // Create magical glow effect
+        javafx.scene.effect.DropShadow magicalGlow = new javafx.scene.effect.DropShadow();
+        magicalGlow.setColor(javafx.scene.paint.Color.CYAN);
+        magicalGlow.setRadius(15);
+        magicalGlow.setSpread(0.3);
+        
+        // Create pulsing animation for the glow
+        javafx.animation.Timeline pulseAnimation = new javafx.animation.Timeline(
+            new javafx.animation.KeyFrame(javafx.util.Duration.ZERO, 
+                new javafx.animation.KeyValue(magicalGlow.radiusProperty(), 10)),
+            new javafx.animation.KeyFrame(javafx.util.Duration.seconds(1), 
+                new javafx.animation.KeyValue(magicalGlow.radiusProperty(), 20)),
+            new javafx.animation.KeyFrame(javafx.util.Duration.seconds(2), 
+                new javafx.animation.KeyValue(magicalGlow.radiusProperty(), 10))
+        );
+        pulseAnimation.setCycleCount(javafx.animation.Timeline.INDEFINITE);
+        
+        // Store original event handlers to avoid conflicts
+        javafx.event.EventHandler<? super javafx.scene.input.MouseEvent> originalEntered = wizardButton.getOnMouseEntered();
+        javafx.event.EventHandler<? super javafx.scene.input.MouseEvent> originalExited = wizardButton.getOnMouseExited();
+        javafx.event.EventHandler<? super javafx.scene.input.MouseEvent> originalPressed = wizardButton.getOnMousePressed();
+        javafx.event.EventHandler<? super javafx.scene.input.MouseEvent> originalReleased = wizardButton.getOnMouseReleased();
+        
+        // Hover effects - enhance existing behavior
+        wizardButton.setOnMouseEntered(e -> {
+            // Call original handler first if it exists
+            if (originalEntered != null) {
+                originalEntered.handle(e);
+            }
+            
+            if (!wizardButton.isDisabled()) {
+                // Bright magical glow on hover
+                magicalGlow.setColor(javafx.scene.paint.Color.LIGHTBLUE);
+                magicalGlow.setRadius(25);
+                wizardButton.setEffect(magicalGlow);
+                pulseAnimation.play();
+                
+                // Scale up slightly
+                javafx.animation.ScaleTransition scaleUp = new javafx.animation.ScaleTransition(
+                    javafx.util.Duration.millis(200), wizardButton);
+                scaleUp.setToX(1.1);
+                scaleUp.setToY(1.1);
+                scaleUp.play();
+            }
+            
+            // Ensure tooltip is preserved
+            if (originalTooltip != null && wizardButton.getTooltip() == null) {
+                wizardButton.setTooltip(originalTooltip);
+            }
+        });
+        
+        wizardButton.setOnMouseExited(e -> {
+            // Call original handler first if it exists
+            if (originalExited != null) {
+                originalExited.handle(e);
+            }
+            
+            // Return to normal
+            pulseAnimation.stop();
+            magicalGlow.setColor(javafx.scene.paint.Color.CYAN);
+            magicalGlow.setRadius(15);
+            
+            javafx.animation.ScaleTransition scaleDown = new javafx.animation.ScaleTransition(
+                javafx.util.Duration.millis(200), wizardButton);
+            scaleDown.setToX(1.0);
+            scaleDown.setToY(1.0);
+            scaleDown.play();
+        });
+        
+        // Click effect
+        wizardButton.setOnMousePressed(e -> {
+            // Call original handler first if it exists
+            if (originalPressed != null) {
+                originalPressed.handle(e);
+            }
+            
+            if (!wizardButton.isDisabled()) {
+                // Intense flash effect
+                javafx.scene.effect.DropShadow flashEffect = new javafx.scene.effect.DropShadow();
+                flashEffect.setColor(javafx.scene.paint.Color.WHITE);
+                flashEffect.setRadius(30);
+                flashEffect.setSpread(0.8);
+                wizardButton.setEffect(flashEffect);
+                
+                // Quick scale down
+                javafx.animation.ScaleTransition clickScale = new javafx.animation.ScaleTransition(
+                    javafx.util.Duration.millis(100), wizardButton);
+                clickScale.setToX(0.95);
+                clickScale.setToY(0.95);
+                clickScale.play();
+            }
+        });
+        
+        wizardButton.setOnMouseReleased(e -> {
+            // Call original handler first if it exists
+            if (originalReleased != null) {
+                originalReleased.handle(e);
+            }
+            
+            // Return to hover state
+            if (wizardButton.isHover() && !wizardButton.isDisabled()) {
+                magicalGlow.setColor(javafx.scene.paint.Color.LIGHTBLUE);
+                magicalGlow.setRadius(25);
+                wizardButton.setEffect(magicalGlow);
+            } else {
+                wizardButton.setEffect(magicalGlow);
+            }
+            
+            javafx.animation.ScaleTransition releaseScale = new javafx.animation.ScaleTransition(
+                javafx.util.Duration.millis(100), wizardButton);
+            releaseScale.setToX(wizardButton.isHover() ? 1.1 : 1.0);
+            releaseScale.setToY(wizardButton.isHover() ? 1.1 : 1.0);
+            releaseScale.play();
+        });
+        
+        // Set initial subtle glow
+        wizardButton.setEffect(magicalGlow);
+        
+        // Ensure the original tooltip is preserved
+        if (originalTooltip != null) {
+            wizardButton.setTooltip(originalTooltip);
+        }
     }
     
     /**
@@ -2022,36 +2275,58 @@ public class GameScreen extends BorderPane {
         PowerUpType freezeType = PowerUpType.FREEZE_ENEMIES;
         boolean canUse = gameController.canUsePowerUp(freezeType);
         
+        // Get the current magical glow effect
+        javafx.scene.effect.DropShadow currentEffect = null;
+        if (freezeButton.getEffect() instanceof javafx.scene.effect.DropShadow) {
+            currentEffect = (javafx.scene.effect.DropShadow) freezeButton.getEffect();
+        }
+        
         if (canUse) {
-            // Available - normal appearance with full opacity
+            // Available - enhanced magical appearance with woody background
             freezeButton.setOpacity(1.0);
             freezeButton.setDisable(false);
             
+            // Enhance the magical glow for available state - brighter to show through wood
+            if (currentEffect != null) {
+                currentEffect.setColor(javafx.scene.paint.Color.LIGHTBLUE);
+                currentEffect.setRadius(20);
+                currentEffect.setSpread(0.6);
+            }
+            
             // Update tooltip
-            String tooltip = "🧙‍♂️ " + freezeType.getDisplayName() + "\n" +
-                           "Cost: " + freezeType.getCost() + " gold\n" +
-                           freezeType.getDescription();
+            String tooltip = "🧙‍♂️ Allmighty Wizard Hakan Hoca\n" +
+                           "✨ " + freezeType.getDisplayName() + "\n" +
+                           "💰 Cost: " + freezeType.getCost() + " gold\n" +
+                           "❄️ " + freezeType.getDescription();
             freezeButton.setTooltip(new javafx.scene.control.Tooltip(tooltip));
             
         } else {
-            // Not available - grayed out with reduced opacity
-            freezeButton.setOpacity(0.5);
+            // Not available - dimmed appearance with darker wood
+            freezeButton.setOpacity(0.6);
             freezeButton.setDisable(true);
+            
+            // Dim the magical glow and make wood darker
+            if (currentEffect != null) {
+                currentEffect.setColor(javafx.scene.paint.Color.DARKGRAY);
+                currentEffect.setRadius(10);
+                currentEffect.setSpread(0.2);
+            }
             
             // Update tooltip with reason why it's not available
             String reason = "";
             if (gameController.getPowerUpManager().isOnCooldown(freezeType)) {
                 int wavesRemaining = gameController.getPowerUpManager().getCooldownWavesRemaining(freezeType);
-                reason = "Cooldown: " + wavesRemaining + " waves remaining";
+                reason = "⏳ Cooldown: " + wavesRemaining + " waves remaining";
             } else if (gameController.getPlayerGold() < freezeType.getCost()) {
-                reason = "Need " + freezeType.getCost() + " gold";
+                reason = "💰 Need " + freezeType.getCost() + " gold (have " + gameController.getPlayerGold() + ")";
             } else if (gameController.getEnemies().isEmpty()) {
-                reason = "No enemies to freeze";
+                reason = "👻 No enemies to freeze";
             }
             
-            String tooltip = "🧙‍♂️ " + freezeType.getDisplayName() + " (UNAVAILABLE)\n" +
-                           "Cost: " + freezeType.getCost() + " gold\n" +
-                           reason;
+            String tooltip = "🧙‍♂️ Allmighty Wizard Hakan Hoca (UNAVAILABLE)\n" +
+                           "✨ " + freezeType.getDisplayName() + "\n" +
+                           "💰 Cost: " + freezeType.getCost() + " gold\n" +
+                           "❌ " + reason;
             freezeButton.setTooltip(new javafx.scene.control.Tooltip(tooltip));
         }
     }

@@ -413,7 +413,16 @@ public class UIAssets {
             iconView.setSmooth(true);
 
             button.setGraphic(iconView);
-            button.getStyleClass().add("icon-button"); // For CSS styling
+            button.getStyleClass().add("icon-button"); // For CSS styling - this handles transparent background
+            
+            // Remove the inline styling - let CSS handle it
+            // The .icon-button CSS class already sets:
+            // -fx-background-color: transparent;
+            // -fx-padding: 0px;
+            // -fx-border-color: transparent;
+            // -fx-border-width: 0;
+            // -fx-background-insets: 0;
+            // -fx-background-radius: 0;
             
             // Revert to custom cursor on exit if it was changed by something else
             button.setOnMouseExited(e -> {
