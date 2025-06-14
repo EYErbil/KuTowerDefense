@@ -4,6 +4,7 @@ import com.ku.towerdefense.util.GameSettings;
 
 import java.io.File;
 import java.io.Serializable;
+import javafx.scene.paint.Color;
 
 /**
  * Mage tower shoots magical spells at enemies.
@@ -55,6 +56,16 @@ public class MageTower extends Tower implements Serializable {
                 this.damage, DamageType.MAGIC, PROJECTILE_SPEED, this);
         projectile.setImageFile(currentProjectileImage);
         projectile.setImpactEffect(Projectile.ImpactEffect.FIRE);
+        
+        // Set different colors based on tower level
+        if (this.level == 2) {
+            // Level 2: Bright blue magical energy
+            projectile.setColor(Color.DODGERBLUE);
+        } else {
+            // Level 1: Traditional purple magic
+            projectile.setColor(Color.PURPLE);
+        }
+        
         return projectile;
     }
 

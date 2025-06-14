@@ -52,6 +52,10 @@ public class ArcherTower extends Tower implements Serializable {
                 this.damage, DamageType.ARROW, PROJECTILE_SPEED, this); // Added this as sourceTower
         projectile.setImageFile(PROJECTILE_IMAGE_FILE); // Set image for projectile if applicable
         projectile.setImpactEffect(Projectile.ImpactEffect.NONE);
+        
+        // Set a more realistic arrow color (forest green for fletching)
+        projectile.setColor(javafx.scene.paint.Color.FORESTGREEN);
+        
         return projectile;
     }
 

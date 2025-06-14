@@ -55,6 +55,10 @@ public class ArtilleryTower extends Tower implements Serializable {
         projectile.setImpactEffect(Projectile.ImpactEffect.EXPLOSION);
         projectile.setHasAoeEffect(true);
         projectile.setAoeRange(AOE_RANGE);
+        
+        // Set a more realistic cannonball color (dark iron)
+        projectile.setColor(javafx.scene.paint.Color.DARKSLATEGRAY);
+        
         return projectile;
     }
 
