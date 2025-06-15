@@ -1154,236 +1154,33 @@ public class GameScreen extends BorderPane {
      */
     private void showGameOverScreen() {
         Platform.runLater(() -> {
-            clearActivePopup();
+            // Stop all game activities
+            stop();
 
-            // Determine if player won or lost
-            boolean playerWon = gameController.getCurrentWave() >= gameController.getTotalWaves();
-            int finalWave = gameController.getCurrentWave();
-            int totalWaves = gameController.getTotalWaves();
-            int finalGold = gameController.getPlayerGold();
-            int finalLives = gameController.getPlayerLives();
+            // Create the dedicated game over screen
+            GameOverScreen gameOverScreen = new GameOverScreen(primaryStage, gameController);
 
-            // Create game over overlay with animated background
-            StackPane gameOverPane = new StackPane();
-            gameOverPane.setStyle("-fx-background-color: radial-gradient(center 50% 50%, radius 80%, " +
-                    "rgba(0, 0, 0, 0.95), rgba(20, 20, 40, 0.98));");
-            gameOverPane.prefWidthProperty().bind(gameCanvas.widthProperty());
-            gameOverPane.prefHeightProperty().bind(gameCanvas.heightProperty());
+            // Get screen dimensions for fullscreen
+            double w = javafx.stage.Screen.getPrimary().getBounds().getWidth();
+            double h = javafx.stage.Screen.getPrimary().getBounds().getHeight();
+            Scene gameOverScene = new Scene(gameOverScreen, w, h);
 
-            VBox contentBox = new VBox(25);
-            contentBox.setAlignment(Pos.CENTER);
-            contentBox.setMaxWidth(500);
-            contentBox.setPadding(new Insets(50));
+            // Apply CSS styling
+            try {
+                String css = getClass().getResource("/css/style.css").toExternalForm();
+                gameOverScene.getStylesheets().add(css);
+            } catch (Exception e) {
+                System.err.println("Could not load stylesheet for game over screen: " + e.getMessage());
+            }
 
-            // Enhanced gradient background based on win/loss
-            String primaryColor = playerWon ? "#2e7d32" : "#c62828";
-            String secondaryColor = playerWon ? "#4caf50" : "#f44336";
-            String accentColor = playerWon ? "#81c784" : "#ef5350";
+            // Apply custom cursor
+            ImageCursor customCursor = UIAssets.getCustomCursor();
+            if (customCursor != null) {
+                gameOverScene.setCursor(customCursor);
+            }
 
-            contentBox.setStyle(
-                    "-fx-background-color: linear-gradient(to bottom, " +
-                            "rgba(30, 30, 30, 0.98), rgba(10, 10, 10, 0.99));" +
-                            "-fx-background-radius: 20px; " +
-                            "-fx-border-color: linear-gradient(to bottom, " + primaryColor + ", " + secondaryColor
-                            + "); " +
-                            "-fx-border-width: 4px; " +
-                            "-fx-border-radius: 20px; " +
-                            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.9), 25, 0, 0, 8);");
-
-            // Animated title with larger, more dramatic text
-            Label titleLabel = new Label(playerWon ? "🏆 VICTORY ACHIEVED! 🏆" : "⚔️ DEFEAT ⚔️");
-            titleLabel.setStyle(
-                    "-fx-font-size: 42px; " +
-                            "-fx-font-weight: bold; " +
-                            "-fx-text-fill: linear-gradient(to right, " + secondaryColor + ", " + accentColor + ", "
-                            + secondaryColor + "); " +
-                            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.9), 5, 0, 2, 2);");
-            titleLabel.setWrapText(true);
-            titleLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
-
-            // Enhanced status message with better typography
-            Label statusLabel = new Label(
-                    playerWon ? "🎊 Outstanding! You have successfully defended the kingdom against all enemies! 🎊"
-                            : "💔 The kingdom has fallen to the enemy forces. Rally your defenses and try again! 💔");
-            statusLabel.setStyle(
-                    "-fx-font-size: 18px; " +
-                            "-fx-text-fill: #e0e0e0; " +
-                            "-fx-text-alignment: center; " +
-                            "-fx-line-spacing: 2px;");
-            statusLabel.setWrapText(true);
-            statusLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
-            statusLabel.setMaxWidth(450);
-
-            // Enhanced statistics box with better visual hierarchy
-            VBox statsBox = new VBox(15);
-            statsBox.setAlignment(Pos.CENTER);
-            statsBox.setStyle(
-                    "-fx-background-color: linear-gradient(to bottom, " +
-                            "rgba(40, 40, 60, 0.8), rgba(20, 20, 40, 0.9));" +
-                            "-fx-background-radius: 12px; " +
-                            "-fx-border-color: rgba(100, 150, 200, 0.5); " +
-                            "-fx-border-width: 2px; " +
-                            "-fx-border-radius: 12px; " +
-                            "-fx-padding: 25px; " +
-                            "-fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.5), 5, 0, 0, 2);");
-
-            // Statistics title
-            Label statsTitle = new Label("📊 FINAL STATISTICS 📊");
-            statsTitle.setStyle(
-                    "-fx-font-size: 20px; " +
-                            "-fx-font-weight: bold; " +
-                            "-fx-text-fill: #ffd700; " +
-                            "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.7), 2, 0, 1, 1);");
-
-            // Individual stat items with icons and better formatting
-            HBox waveStatsBox = createStatItem("🌊", "Waves Completed", finalWave + "/" + totalWaves,
-                    playerWon ? "#4caf50" : "#ff9800");
-            HBox goldStatsBox = createStatItem("💰", "Final Gold", String.valueOf(finalGold), "#ffd700");
-            HBox livesStatsBox = createStatItem("❤️", "Lives Remaining", String.valueOf(finalLives),
-                    finalLives > 0 ? "#4caf50" : "#f44336");
-
-            statsBox.getChildren().addAll(statsTitle, waveStatsBox, goldStatsBox, livesStatsBox);
-
-            // Enhanced buttons with better styling and spacing
-            HBox buttonBox = new HBox(20);
-            buttonBox.setAlignment(Pos.CENTER);
-            buttonBox.setPadding(new Insets(10, 0, 0, 0));
-
-            Button playAgainButton = createEnhancedGameOverButton("🔄 Play Again", "#1976d2", "#2196f3");
-            playAgainButton.setOnAction(e -> returnToMainMenu());
-
-            Button mainMenuButton = createEnhancedGameOverButton("🏠 Main Menu", "#f57c00", "#ff9800");
-            mainMenuButton.setOnAction(e -> returnToMainMenu());
-
-            buttonBox.getChildren().addAll(playAgainButton, mainMenuButton);
-
-            contentBox.getChildren().addAll(titleLabel, statusLabel, statsBox, buttonBox);
-            gameOverPane.getChildren().add(contentBox);
-
-            // Add overlay to the UI
-            uiOverlayPane.getChildren().add(gameOverPane);
-
-            // Enhanced animation sequence
-            gameOverPane.setOpacity(0.0);
-            contentBox.setScaleX(0.7);
-            contentBox.setScaleY(0.7);
-
-            // Fade in background
-            FadeTransition backgroundFade = new FadeTransition(Duration.millis(800), gameOverPane);
-            backgroundFade.setFromValue(0.0);
-            backgroundFade.setToValue(1.0);
-
-            // Scale and fade content
-            ScaleTransition scaleUp = new ScaleTransition(Duration.millis(600), contentBox);
-            scaleUp.setFromX(0.7);
-            scaleUp.setFromY(0.7);
-            scaleUp.setToX(1.0);
-            scaleUp.setToY(1.0);
-            scaleUp.setInterpolator(Interpolator.EASE_OUT);
-
-            // Sequence the animations
-            ParallelTransition showAnimation = new ParallelTransition(backgroundFade, scaleUp);
-            showAnimation.setDelay(Duration.millis(100));
-            showAnimation.play();
-        });
-    }
-
-    /**
-     * Create a styled stat item for the game over screen.
-     */
-    private HBox createStatItem(String icon, String label, String value, String valueColor) {
-        HBox statBox = new HBox(10);
-        statBox.setAlignment(Pos.CENTER_LEFT);
-
-        Label iconLabel = new Label(icon);
-        iconLabel.setStyle("-fx-font-size: 18px;");
-
-        Label labelText = new Label(label + ":");
-        labelText.setStyle("-fx-font-size: 16px; -fx-text-fill: #cccccc; -fx-font-weight: normal;");
-
-        Label valueText = new Label(value);
-        valueText.setStyle("-fx-font-size: 16px; -fx-text-fill: " + valueColor + "; -fx-font-weight: bold;");
-
-        statBox.getChildren().addAll(iconLabel, labelText, valueText);
-        return statBox;
-    }
-
-    /**
-     * Create enhanced buttons for the game over screen.
-     */
-    private Button createEnhancedGameOverButton(String text, String baseColor, String hoverColor) {
-        Button button = new Button(text);
-        button.setPrefWidth(180);
-        button.setPrefHeight(50);
-        button.setStyle(
-                "-fx-background-color: linear-gradient(to bottom, " + baseColor + ", derive(" + baseColor + ", -15%));"
-                        +
-                        "-fx-text-fill: white;" +
-                        "-fx-font-size: 16px;" +
-                        "-fx-font-weight: bold;" +
-                        "-fx-background-radius: 12px;" +
-                        "-fx-border-radius: 12px;" +
-                        "-fx-border-color: derive(" + baseColor + ", 20%);" +
-                        "-fx-border-width: 2px;" +
-                        "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.6), 8, 0, 0, 4);");
-
-        button.setOnMouseEntered(e -> button.setStyle(
-                "-fx-background-color: linear-gradient(to bottom, " + hoverColor + ", derive(" + hoverColor
-                        + ", -15%));" +
-                        "-fx-text-fill: white;" +
-                        "-fx-font-size: 16px;" +
-                        "-fx-font-weight: bold;" +
-                        "-fx-background-radius: 12px;" +
-                        "-fx-border-radius: 12px;" +
-                        "-fx-border-color: derive(" + hoverColor + ", 20%);" +
-                        "-fx-border-width: 2px;" +
-                        "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.8), 12, 0, 0, 6);" +
-                        "-fx-scale-x: 1.05; -fx-scale-y: 1.05;"));
-
-        button.setOnMouseExited(e -> button.setStyle(
-                "-fx-background-color: linear-gradient(to bottom, " + baseColor + ", derive(" + baseColor + ", -15%));"
-                        +
-                        "-fx-text-fill: white;" +
-                        "-fx-font-size: 16px;" +
-                        "-fx-font-weight: bold;" +
-                        "-fx-background-radius: 12px;" +
-                        "-fx-border-radius: 12px;" +
-                        "-fx-border-color: derive(" + baseColor + ", 20%);" +
-                        "-fx-border-width: 2px;" +
-                        "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.6), 8, 0, 0, 4);" +
-                        "-fx-scale-x: 1.0; -fx-scale-y: 1.0;"));
-
-        return button;
-    }
-
-    /**
-     * Enhanced return to main menu with proper cleanup and transition.
-     */
-    private void returnToMainMenu() {
-        stop(); // Stop all timers and game
-
-        // Enhanced transition to main menu
-        MainMenuScreen mainMenu = new MainMenuScreen(primaryStage);
-        double targetWidth = primaryStage.getScene() != null ? primaryStage.getScene().getWidth()
-                : primaryStage.getWidth();
-        double targetHeight = primaryStage.getScene() != null ? primaryStage.getScene().getHeight()
-                : primaryStage.getHeight();
-        Scene scene = new Scene(mainMenu, targetWidth, targetHeight);
-
-        // IMPORTANT: Add the CSS stylesheet to prevent white screen
-        scene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
-
-        // Apply custom cursor
-        ImageCursor customCursor = UIAssets.getCustomCursor();
-        if (customCursor != null) {
-            scene.setCursor(customCursor);
-        }
-
-        // Enhanced transition
-        primaryStage.setFullScreen(false);
-        primaryStage.setScene(scene);
-
-        Platform.runLater(() -> {
+            // Transition to the game over screen
+            primaryStage.setScene(gameOverScene);
             primaryStage.setFullScreen(true);
         });
     }
