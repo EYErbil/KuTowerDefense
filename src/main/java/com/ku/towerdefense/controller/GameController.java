@@ -478,17 +478,17 @@ public class GameController {
         // Render map
         gameMap.render(gc);
 
-        // Render enemies
-        for (Enemy enemy : enemies) {
-            enemy.render(gc);
-        }
-
-        // Render towers
+        // Render towers first so they are in the background
         for (Tower tower : towers) {
             tower.render(gc);
         }
 
-        // Render projectiles
+        // Render enemies on top of towers
+        for (Enemy enemy : enemies) {
+            enemy.render(gc);
+        }
+
+        // Render projectiles on top of everything
         for (Projectile projectile : projectiles) {
             projectile.render(gc);
         }
