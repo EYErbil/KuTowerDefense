@@ -37,6 +37,7 @@ public class FreezeEffect implements PowerUpEffect {
             frozenEnemies.add(enemy);
             originalSpeeds.add(enemy.getSpeed());
             enemy.setSpeed(0.0); // Freeze by setting speed to 0
+            enemy.setFrozen(true); // Mark as frozen to prevent speed override
         }
         
         active = true;
@@ -77,6 +78,7 @@ public class FreezeEffect implements PowerUpEffect {
             // Only unfreeze if the enemy still exists (wasn't killed while frozen)
             if (enemy != null) {
                 enemy.setSpeed(originalSpeed);
+                enemy.setFrozen(false); // Mark as unfrozen
             }
         }
         

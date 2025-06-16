@@ -623,19 +623,17 @@ public class GameScreen extends BorderPane {
         // Remove freeze button from controlButtonsPane
         controlButtonsPane.getChildren().addAll(pauseButton, playButton, fastForwardButton, menuButton,
                 memoryTrackerButton);
-        uiOverlayPane.getChildren().addAll(controlButtonsPane, memoryTracker);
 
         // Create a new VBox for the left side controls
         VBox leftControlsPane = new VBox(20); // Increased spacing to 20 pixels
         leftControlsPane.setAlignment(Pos.TOP_LEFT);
-        leftControlsPane.setPadding(new Insets(250, 0, 0, 40)); // Increased top padding to 100 to position below game
-                                                                // info
+        leftControlsPane.setPadding(new Insets(450, 0, 0, 40)); // Moved further down to avoid memory tracker collision
 
         // Add freeze button to left controls
         leftControlsPane.getChildren().add(freezeButton);
 
-        // Add left controls to the overlay
-        uiOverlayPane.getChildren().add(leftControlsPane);
+        // Add components to overlay in correct order (memory tracker on top)
+        uiOverlayPane.getChildren().addAll(controlButtonsPane, leftControlsPane, memoryTracker);
 
         // Position controlButtonsPane at top-right
         BooleanBinding mapIsNarrowerThanScreen = visualMapWidthProperty().lessThan(uiOverlayPane.widthProperty());

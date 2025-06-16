@@ -521,9 +521,9 @@ public class GameSaveService {
             for (EnemySaveData enemyData : saveData.enemies) {
                 Enemy enemy = createEnemyFromSaveData(enemyData);
                 if (enemy != null) {
-                    // Set the path from the game map BEFORE adding to controller
+                    // Use the special method that doesn't reset position for loaded enemies
                     if (gameMap.getEnemyPath() != null) {
-                        enemy.setPath(gameMap.getEnemyPath());
+                        enemy.setPathForLoadedEnemy(gameMap.getEnemyPath());
                     }
                     gameController.getEnemies().add(enemy);
                 }

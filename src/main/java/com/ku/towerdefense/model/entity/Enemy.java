@@ -73,6 +73,7 @@ public abstract class Enemy extends Entity implements Serializable {
     protected double slowTimer = 0; // seconds
     protected double slowFactor = 1.0; // e.g., 0.8 for 20% slow (speed * factor)
     protected boolean isKnightSpeedBoosted = false; // For combat synergy thunder icon
+    protected boolean isFrozen = false; // For freeze powerup
     // --- End Status Effect Fields ---
 
     // protected Image image; // Replaced by spriteInfo
@@ -406,17 +407,26 @@ public abstract class Enemy extends Entity implements Serializable {
     public void setPath(GamePath path) {
         this.path = path;
         this.totalPathDistance = path.calculateTotalLength();
-        this.pathProgress = 0.0;
-        this.distanceTraveled = 0;
+        
+        // Only reset progress and position if this is a new enemy (pathProgress is 0)
+        // This preserves saved enemy positions during load
+        if (this.pathProgress <= 0.0) {
+            this.pathProgress = 0.0;
+            this.distanceTraveled = 0;
 
-        // Set the initial position to the start of the path
-        double[] startPos = path.getPositionAt(0);
-        if (startPos != null) {
-            this.x = startPos[0] - width / 2;
-            this.y = startPos[1] - height / 2;
-            System.out.println("Enemy path set, starting at (" + x + "," + y + ")");
+            // Set the initial position to the start of the path
+            double[] startPos = path.getPositionAt(0);
+            if (startPos != null) {
+                this.x = startPos[0] - width / 2;
+                this.y = startPos[1] - height / 2;
+                System.out.println("Enemy path set, starting at (" + x + "," + y + ")");
+            } else {
+                System.err.println("Failed to get start position from path!");
+            }
         } else {
-            System.err.println("Failed to get start position from path!");
+            // Enemy already has progress (loaded from save), just calculate distance
+            this.distanceTraveled = this.totalPathDistance * this.pathProgress;
+            System.out.println("Enemy path restored, continuing at progress " + this.pathProgress + " (" + x + "," + y + ")");
         }
     }
 
@@ -697,6 +707,18 @@ public abstract class Enemy extends Entity implements Serializable {
         this.pathProgress = Math.max(0.0, Math.min(1.0, pathProgress));
     }
 
+    /**
+     * Set path reference without resetting position (for save/load system)
+     * Use this when loading enemies that already have saved positions and progress
+     */
+    public void setPathForLoadedEnemy(GamePath path) {
+        this.path = path;
+        this.totalPathDistance = path.calculateTotalLength();
+        // Recalculate distance traveled based on current progress
+        this.distanceTraveled = this.totalPathDistance * this.pathProgress;
+        System.out.println("Path set for loaded enemy at progress " + this.pathProgress + " (" + x + "," + y + ")");
+    }
+
     public void setImageFile(String imageFile) {
         this.imageFile = imageFile;
     }
@@ -730,6 +752,22 @@ public abstract class Enemy extends Entity implements Serializable {
     // For Knight synergy visual
     public void setKnightSpeedBoosted(boolean boosted) {
         this.isKnightSpeedBoosted = boosted;
+    }
+
+    /**
+     * Set the frozen state of this enemy
+     * @param frozen true if enemy should be frozen (speed = 0), false otherwise
+     */
+    public void setFrozen(boolean frozen) {
+        this.isFrozen = frozen;
+    }
+
+    /**
+     * Check if this enemy is currently frozen
+     * @return true if frozen, false otherwise
+     */
+    public boolean isFrozen() {
+        return isFrozen;
     }
 
     public void teleportTo(double newX, double newY) {

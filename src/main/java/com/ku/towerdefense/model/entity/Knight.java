@@ -36,31 +36,34 @@ public class Knight extends Enemy implements Serializable {
 
     @Override
     public boolean update(double deltaTime, List<Enemy> allEnemies) {
-        boolean currentlyBoosted = false;
-        double closestGoblinDist = Double.MAX_VALUE;
+        // Don't modify speed if frozen - respect the freeze powerup
+        if (!isFrozen()) {
+            boolean currentlyBoosted = false;
+            double closestGoblinDist = Double.MAX_VALUE;
 
-        for (Enemy other : allEnemies) {
-            if (other instanceof Goblin && other != this && other.getCurrentHealth() > 0) {
-                double dist = this.distanceTo(other);
-                if (dist < closestGoblinDist) {
-                    closestGoblinDist = dist;
+            for (Enemy other : allEnemies) {
+                if (other instanceof Goblin && other != this && other.getCurrentHealth() > 0) {
+                    double dist = this.distanceTo(other);
+                    if (dist < closestGoblinDist) {
+                        closestGoblinDist = dist;
+                    }
                 }
             }
-        }
 
-        // GameMap.TILE_SIZE might be better sourced from GameMap instance if available,
-        // or a global constant
-        // For now, assuming a known tile width like 64.0
-        double tileWidthThreshold = GameMap.TILE_SIZE; // Or a hardcoded 64.0 if GameMap.TILE_SIZE is not
-                                                       // static/accessible
+            // GameMap.TILE_SIZE might be better sourced from GameMap instance if available,
+            // or a global constant
+            // For now, assuming a known tile width like 64.0
+            double tileWidthThreshold = GameMap.TILE_SIZE; // Or a hardcoded 64.0 if GameMap.TILE_SIZE is not
+                                                           // static/accessible
 
-        if (closestGoblinDist < tileWidthThreshold) {
-            this.speed = (this.originalSpeed + Goblin.PUBLIC_STATIC_FINAL_BASE_SPEED) / 2.0;
-            currentlyBoosted = true;
-        } else {
-            this.speed = this.originalSpeed;
+            if (closestGoblinDist < tileWidthThreshold) {
+                this.speed = (this.originalSpeed + Goblin.PUBLIC_STATIC_FINAL_BASE_SPEED) / 2.0;
+                currentlyBoosted = true;
+            } else {
+                this.speed = this.originalSpeed;
+            }
+            setKnightSpeedBoosted(currentlyBoosted); // Update visual flag in Enemy class
         }
-        setKnightSpeedBoosted(currentlyBoosted); // Update visual flag in Enemy class
 
         // The actual movement and status effect application (like slow) is done in
         // super.update
