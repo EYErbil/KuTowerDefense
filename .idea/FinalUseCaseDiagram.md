@@ -42,7 +42,7 @@ graph TD
     UC8 --> UC9
     Player --> UC10
     Player --> UC11
-    Player --> UC12
+    UC8 --> UC12
     
     UC3 --> UC13
     
