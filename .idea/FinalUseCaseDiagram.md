@@ -1,7 +1,7 @@
 ```mermaid
 graph TD
     %% This is just a title node (invisible)
-    title["KU Tower Defense - Phase I Use Case Diagram"]
+    title["KU Tower Defense - Use Case Diagram"]
     style title fill:none,stroke:none
 
     %% Actors
