@@ -5,7 +5,7 @@ graph TD
     style title fill:none,stroke:none
 
     %% Actors
-    Player(["/‾\\<br> | <br>/ \\<br><br>Player"]):::actor
+    Player(["/‾\\<br>|<br>/ \\<br><br>Player"]):::actor
     GameSystem(["Game System<br>(Actor)"]):::actor
 
     %% Main Use Cases (elliptical style)
