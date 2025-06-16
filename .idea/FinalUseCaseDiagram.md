@@ -23,6 +23,9 @@ graph TD
     UC12["View Tower Range"]:::usecase
     UC13["Configure Game Options"]:::usecase
     UC14["Game Over"]:::usecase
+    UC15["Collect Dropped Gold"]:::usecase
+    UC16["Upgrade Tower"]:::usecase
+    
 
     %% Relationship lines
     Player --> UC1
@@ -36,7 +39,7 @@ graph TD
     UC1 --> UC7
     
     Player --> UC8
-    Player --> UC9
+    UC8 --> UC9
     Player --> UC10
     Player --> UC11
     Player --> UC12
@@ -44,6 +47,8 @@ graph TD
     UC3 --> UC13
     
     GameSystem --> UC14
+    Player --> UC15
+    UC8 --> UC16
 
     %% "include" relationships
     place_path["Place Path Tiles"]:::include
