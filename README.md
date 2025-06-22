@@ -14,7 +14,7 @@ KuTowerDefense is a classic Tower Defense game where players strategically place
 - **Language:** Java
 - **Framework:** JavaFX
 - **Testing:** JUnit
-- **Build Tool:** Maven (if applicable)
+- **Build Tool:** Maven
 
 ## 🚀 Getting Started
 
@@ -22,5 +22,6 @@ KuTowerDefense is a classic Tower Defense game where players strategically place
 Make sure you have:
 - Java 11+ installed
 - IDE like IntelliJ or Eclipse (optional but recommended)
+- Just run pom.xml with Maven
   
 ## More Updates to come!
