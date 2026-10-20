@@ -1,0 +1,24 @@
+name: Foundation
+on: [push, pull_request]
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            10.0.400
+            8.0.x
+      - name: Install pinned Godot and restore locked dependencies
+        run: ./scripts/dev.ps1 setup
+      - name: Build and test
+        run: ./scripts/dev.ps1 test
+      - name: Engine integration
+        run: ./scripts/dev.ps1 smoke
+      - name: Export Windows build
+        run: ./scripts/dev.ps1 export
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Emberwatch-Windows
+          path: .artifacts/windows/

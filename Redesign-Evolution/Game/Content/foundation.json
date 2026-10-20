@@ -1,0 +1,141 @@
+{
+  "formatVersion": 2,
+  "id": "emberwatch-foundation-v1",
+  "startingGold": 180,
+  "startingLives": 12,
+  "map": {
+    "id": "emberwatch",
+    "title": "Emberwatch",
+    "width": 15,
+    "height": 10,
+    "tileSize": 64,
+    "route": [
+      {
+        "x": 0,
+        "y": 5
+      },
+      {
+        "x": 3,
+        "y": 5
+      },
+      {
+        "x": 3,
+        "y": 2
+      },
+      {
+        "x": 8,
+        "y": 2
+      },
+      {
+        "x": 8,
+        "y": 7
+      },
+      {
+        "x": 12,
+        "y": 7
+      },
+      {
+        "x": 12,
+        "y": 4
+      },
+      {
+        "x": 14,
+        "y": 4
+      }
+    ],
+    "foundations": [
+      {
+        "x": 2,
+        "y": 4
+      },
+      {
+        "x": 4,
+        "y": 3
+      },
+      {
+        "x": 6,
+        "y": 3
+      },
+      {
+        "x": 7,
+        "y": 1
+      },
+      {
+        "x": 9,
+        "y": 4
+      },
+      {
+        "x": 7,
+        "y": 6
+      },
+      {
+        "x": 11,
+        "y": 6
+      },
+      {
+        "x": 13,
+        "y": 5
+      }
+    ]
+  },
+  "waves": [
+    {
+      "title": "First watch",
+      "briefing": "Cover several stretches of road.",
+      "groups": [
+        {
+          "enemyId": "runner",
+          "count": 8,
+          "intervalTicks": 60
+        }
+      ]
+    },
+    {
+      "title": "First watch",
+      "briefing": "Cover several stretches of road.",
+      "groups": [
+        {
+          "enemyId": "runner",
+          "count": 12,
+          "intervalTicks": 48
+        }
+      ]
+    },
+    {
+      "title": "First watch",
+      "briefing": "Cover several stretches of road.",
+      "groups": [
+        {
+          "enemyId": "runner",
+          "count": 16,
+          "intervalTicks": 36
+        }
+      ]
+    }
+  ],
+  "towers": [
+    {
+      "id": "boltworks",
+      "cost": 60,
+      "damage": 18,
+      "range": 190,
+      "cooldownTicks": 42,
+      "projectileSpeed": 480,
+      "splashRadius": 0,
+      "name": "Boltworks",
+      "description": "Fast bolts. Reliable road coverage.",
+      "attack": "Bolt",
+      "damageKind": "Impact"
+    }
+  ],
+  "enemies": [
+    {
+      "id": "runner",
+      "health": 44,
+      "speed": 48,
+      "bounty": 10,
+      "leakDamage": 1,
+      "name": "Runner"
+    }
+  ]
+}
