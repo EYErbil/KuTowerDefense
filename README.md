@@ -17,11 +17,13 @@ Exports: `.artifacts/windows/`. The exported executable includes its runtime; no
 
 `dev.cmd` invokes the repository script with a process-local execution policy; it does not change the machine's PowerShell policy. `smoke`, `sim`, `benchmark` and `capture` are additional developer commands. Export also runs the packaged game's integration check. Distribute the entire export directory, including its `.pck` and runtime folder.
 
-Current slice: **Emberwatch**, one map, six mixed waves, three tower families and three enemy roles. Boltworks covers the road, Prism beams bypass Bulwark armor, and Crucible shells damage groups. Wardens protect nearby allies; select a tower and switch to Support targeting to focus them.
+Current slice: **Emberwatch**, one map, six mixed waves, three tower families, six exclusive specializations and three enemy roles. Rime Lens prepares **Shatter** for impact towers; Pitchbow oils enemies for Sun Lens **Ignition**. Ballista pins, Breach Mortar fractures armor, and Echo Mortar adds a delayed second explosion. Wardens protect nearby allies; Support targeting focuses their escort.
 
-Click a tower card then a foundation; select towers to inspect, change priorities or sell. B/P/C selects Boltworks/Prism/Crucible, T cycles targeting, N starts the next wave, Space pauses, 1/2/4 sets speed, Escape cancels, M mutes and R restarts after a result. Essential actions have visible controls. Read the forecast before starting each wave. Reactions/circuits/upgrades/saves are planned, not implemented here.
+Click a tower card then a foundation; select towers to inspect, evolve, change priorities or sell. B/P/C selects Boltworks/Prism/Crucible, U opens the two path choices, T cycles targeting (including Primed to favor prepared reactions), N starts the next wave, Space pauses, 1/2/4 sets speed, Escape closes/cancels, M mutes and R restarts after a result. Opening a path panel pauses combat; choosing or closing leaves it paused until you resume. Essential actions have visible controls. Read the forecast before starting each wave. Circuits, relics, bosses, saves and full-length runs remain planned.
 
 Content lives in `Game/Content/emberwatch.json` (format 2, validated catalogs and spawn groups). The original three-wave slice remains in `foundation.json` as a regression fixture. After building, run `dotnet Redesign-Evolution/SimRunner/bin/Debug/net8.0/Redesign.SimRunner.dll --foundation` to reproduce it; add `--no-build` for the no-defense scenario. `dev.cmd benchmark` writes a reference-scan/grid comparison to `.artifacts/spatial-benchmark.json`; these are headless timings, not graphics frame rates.
+
+`dotnet Redesign-Evolution/SimRunner/bin/Debug/net8.0/Redesign.SimRunner.dll --evolution` runs the six-path showcase through ordinary commands and reports reaction damage, setup/trigger credit and a reproducible checksum. The default `sim` retains the base-tower strategy for comparison. Neither scripted win is a final balance claim.
 
 ## Project
 

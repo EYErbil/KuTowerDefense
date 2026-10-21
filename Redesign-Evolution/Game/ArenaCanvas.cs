@@ -33,10 +33,12 @@ public partial class ArenaCanvas : Control
         {
             hover = FoundationAt(motion.Position);
             var enemy = Game.Run.Enemies.FirstOrDefault(enemy => V(enemy.Position).DistanceSquaredTo(motion.Position) < 24 * 24);
-            TooltipText = enemy is null ? "" : $"{enemy.Definition.Name}: {enemy.Health}/{enemy.Definition.Health} health, {enemy.Definition.Armor} armor.\n" +
+            TooltipText = enemy is null ? "" : $"{enemy.Definition.Name}: {enemy.Health}/{enemy.Definition.Health} health, {enemy.EffectiveArmor} armor, {enemy.SlowPercent}% slow.\n" +
                 (enemy.Definition.ShieldRadius > 0
                     ? $"Protects nearby allies from {enemy.Definition.ShieldPercent}% damage. Wardens cannot shield each other."
                     : enemy.ShieldPercent > 0 ? $"Warded: {enemy.ShieldPercent}% less damage. Defeat the nearby escort." : $"Breach costs {enemy.Definition.LeakDamage} citadel lives.");
+            if (enemy is not null) foreach (var status in enemy.Statuses)
+                TooltipText += $"\n{status.Definition.Name} x{status.Count}: next stack expires in {(status.Stacks.Min(s => s.ExpiresAt) - Game.Run.Tick) / 60d:0.0}s.";
         }
         if (e is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left } click)
         {
@@ -53,7 +55,7 @@ public partial class ArenaCanvas : Control
     }
     public void Receive(GameEvent e)
     {
-        if (e.Kind is EventKind.Hit or EventKind.Killed or EventKind.Leaked or EventKind.Built or EventKind.Fired or EventKind.Blast)
+        if (e.Kind is EventKind.Hit or EventKind.Killed or EventKind.Leaked or EventKind.Built or EventKind.Fired or EventKind.Blast or EventKind.Reaction or EventKind.Upgraded)
         { if (effects.Count == 160) effects.RemoveAt(0); effects.Add(new(e)); }
     }
     public void ClearEffects() { effects.Clear(); hover = -1; }
@@ -89,6 +91,7 @@ public partial class ArenaCanvas : Control
             DrawRect(new(p.X - 16 + hash % 9, p.Y - 12, 18, 9), new Color("91805e"));
             DrawRect(new(p.X + 3, p.Y + 8, 14, 6), new Color("776a4e"));
         }
+        TerrainEffects();
         DrawString(font, new(8, 292), "INBOUND", HorizontalAlignment.Left, -1, 12, GameRoot.Gold);
         DrawLine(new(10, 307), new(44, 307), GameRoot.Gold, 2);
         DrawLine(new(36, 301), new(44, 307), GameRoot.Gold, 2);
@@ -118,7 +121,7 @@ public partial class ArenaCanvas : Control
         }
         if (range is Vector2 center)
         {
-            var color = AttackColor(rangeSpec.Attack);
+            var color = AttackColor(rangeSpec.Attack, rangeSpec.DamageKind);
             DrawCircle(center, (float)rangeSpec.Range, new Color(color, .065f));
             DrawArc(center, (float)rangeSpec.Range, 0, Mathf.Tau, 96, new Color(color, .42f), 1, true);
         }
@@ -140,7 +143,7 @@ public partial class ArenaCanvas : Control
         {
             var p = V(shot.PreviousPosition).Lerp(V(shot.Position), (float)Game.Alpha);
             var direction = V(shot.Position - shot.PreviousPosition).Normalized();
-            var color = AttackColor(shot.Definition.Attack);
+            var color = AttackColor(shot.Definition.Attack, shot.Definition.DamageKind);
             DrawLine(p - direction * 15, p, new Color(color, .25f), 5);
             if (shot.Definition.Attack == AttackKind.Shell)
             { DrawCircle(p, 5, new("563d34")); DrawCircle(p, 3, color); }
@@ -195,6 +198,7 @@ public partial class ArenaCanvas : Control
             DrawArc(p, 22, 0, Mathf.Tau, 6, new("d2baf0"), 2);
             DrawString(font, p + new Vector2(-5, -39), "+", HorizontalAlignment.Left, -1, 14, new("e0cef7"));
         }
+        EnemyStatuses(enemy, p);
     }
 
     private void Tower(TowerState tower)
@@ -233,6 +237,7 @@ public partial class ArenaCanvas : Control
             DrawLine(top - side * 15 + dir * 7, top - dir * 3, new("d2d1a4"), 1);
             DrawLine(top + side * 15 + dir * 7, top - dir * 3, new("d2d1a4"), 1);
         }
+        BranchSilhouette(tower, top, dir, side);
         if (tower.Id == Game.SelectedTower) DrawArc(p, 29, 0, Mathf.Tau, 40, GameRoot.Mint, 2);
     }
     private void Castle(Vector2 p)
@@ -254,8 +259,20 @@ public partial class ArenaCanvas : Control
     private void Effect(VisualEffect effect)
     {
         var p = V(effect.Event.Position); var fade = 1 - effect.Age / .85f;
-        var color = effect.Event.Kind == EventKind.Leaked ? GameRoot.Red : AttackColor(effect.Event.Attack);
-        if (effect.Event.Kind == EventKind.Fired && effect.Event.Attack == AttackKind.Beam)
+        var color = effect.Event.Kind == EventKind.Leaked ? GameRoot.Red : effect.Event.EffectId == "echo" ? new Color("c3acf3") : AttackColor(effect.Event.Attack, effect.Event.DamageKind);
+        if (effect.Event.Kind == EventKind.Reaction)
+        {
+            var radius = 12 + Math.Min(effect.Event.Amount, 75) * Math.Min(1, effect.Age / .4f);
+            DrawArc(p, radius, 0, Mathf.Tau, effect.Event.DamageKind == DamageKind.Frost ? 6 : 32, new Color(color, fade * .8f), 2);
+            for (var i = 0; i < 8; i++)
+            {
+                var d = Vector2.FromAngle(i * Mathf.Tau / 8);
+                DrawLine(p + d * radius * .4f, p + d * radius * .85f, new Color(color, fade), 3);
+            }
+            var name = Game.Content.Combat?.Reactions.FirstOrDefault(r => r.Id == effect.Event.EffectId)?.Name ?? "REACTION";
+            DrawString(font, p + new Vector2(-32, -42 - effect.Age * 22), name.ToUpperInvariant(), HorizontalAlignment.Left, -1, 13, new Color(color, fade));
+        }
+        else if (effect.Event.Kind == EventKind.Fired && effect.Event.Attack == AttackKind.Beam)
         {
             if (effect.Age > .18f || effect.Event.Destination is not { } destination) return;
             var end = V(destination); var start = p + new Vector2(0, -18);
@@ -278,7 +295,7 @@ public partial class ArenaCanvas : Control
             }
             DrawString(font, p + new Vector2(-10, -25 - effect.Age * 25), $"+{effect.Event.Amount}", HorizontalAlignment.Left, -1, 14, new Color(color, fade));
         }
-        else if (effect.Event.Kind == EventKind.Built)
+        else if (effect.Event.Kind is EventKind.Built or EventKind.Upgraded)
             DrawArc(p, 20 + effect.Age * 28, 0, Mathf.Tau, 32, new Color(GameRoot.Mint, fade), 2);
         else if (effect.Age < .22f)
         {
@@ -305,8 +322,9 @@ public partial class ArenaCanvas : Control
     }
     private void DrawEllipseShadow(Vector2 p, float radius) => DrawRect(new(p.X - radius, p.Y - 4, radius * 2, 9), new Color(0, .05f, .06f, .25f));
     internal static Vector2 V(Redesign.Core.Point p) => new((float)p.X, (float)p.Y);
-    private static Color AttackColor(AttackKind attack) => attack switch
+    private static Color AttackColor(AttackKind attack, DamageKind kind = DamageKind.Impact) => kind switch
     {
-        AttackKind.Beam => new("95dfeb"), AttackKind.Shell => new("eeaa76"), _ => GameRoot.Gold
+        DamageKind.Frost => new("b4e7ff"), DamageKind.Fire => new("ffae64"),
+        _ => attack switch { AttackKind.Beam => new("95dfeb"), AttackKind.Shell => new("eeaa76"), _ => GameRoot.Gold }
     };
 }

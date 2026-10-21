@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "id": "emberwatch-roster-v2",
+  "id": "emberwatch-evolution-v3",
   "startingGold": 245,
   "startingLives": 12,
   "map": {
@@ -262,5 +262,184 @@
       "shieldRadius": 100,
       "shieldPercent": 40
     }
-  ]
+  ],
+  "combat": {
+    "statuses": [
+      {
+        "id": "chill",
+        "name": "Chill",
+        "maxStacks": 3,
+        "durationTicks": 180,
+        "slowPercentPerStack": 15
+      },
+      {
+        "id": "oil",
+        "name": "Oil",
+        "maxStacks": 1,
+        "durationTicks": 240
+      },
+      {
+        "id": "pin",
+        "name": "Pin",
+        "maxStacks": 1,
+        "durationTicks": 30,
+        "slowPercentPerStack": 80
+      },
+      {
+        "id": "fracture",
+        "name": "Fracture",
+        "maxStacks": 2,
+        "durationTicks": 180,
+        "armorReductionPerStack": 6
+      }
+    ],
+    "reactions": [
+      {
+        "id": "shatter",
+        "name": "Shatter",
+        "statusId": "chill",
+        "requiredStacks": 2,
+        "trigger": "Impact",
+        "effect": "Burst",
+        "damage": 24,
+        "radius": 64,
+        "damageKind": "Frost",
+        "cooldownTicks": 60
+      },
+      {
+        "id": "ignition",
+        "name": "Ignition",
+        "statusId": "oil",
+        "requiredStacks": 1,
+        "trigger": "Fire",
+        "effect": "BurningGround",
+        "damage": 6,
+        "radius": 72,
+        "damageKind": "Fire",
+        "cooldownTicks": 120,
+        "durationTicks": 180,
+        "intervalTicks": 30,
+        "maxAreas": 6
+      }
+    ],
+    "branches": [
+      {
+        "towerId": "boltworks",
+        "cost": 110,
+        "upgrade": {
+          "id": "ballista",
+          "cost": 60,
+          "damage": 38,
+          "range": 245,
+          "cooldownTicks": 78,
+          "projectileSpeed": 650,
+          "splashRadius": 0,
+          "name": "Pinning Ballista",
+          "description": "Heavy bolts pin for 0.5s. Longer reach, slower firing.",
+          "attack": "Bolt",
+          "damageKind": "Impact",
+          "onHit": {
+            "statusId": "pin"
+          }
+        }
+      },
+      {
+        "towerId": "boltworks",
+        "cost": 70,
+        "upgrade": {
+          "id": "pitchbow",
+          "cost": 60,
+          "damage": 8,
+          "range": 195,
+          "cooldownTicks": 32,
+          "projectileSpeed": 480,
+          "splashRadius": 0,
+          "name": "Pitchbow",
+          "description": "Low-damage bolts coat foes in oil. Pair with a Sun Lens.",
+          "attack": "Bolt",
+          "damageKind": "Impact",
+          "onHit": {
+            "statusId": "oil"
+          }
+        }
+      },
+      {
+        "towerId": "prism",
+        "cost": 80,
+        "upgrade": {
+          "id": "rime",
+          "name": "Rime Lens",
+          "description": "Chills and slows. Two chill stacks + impact cause Shatter.",
+          "cost": 85,
+          "damage": 10,
+          "range": 180,
+          "cooldownTicks": 36,
+          "projectileSpeed": 880,
+          "attack": "Beam",
+          "damageKind": "Frost",
+          "onHit": {
+            "statusId": "chill"
+          }
+        }
+      },
+      {
+        "towerId": "prism",
+        "cost": 100,
+        "upgrade": {
+          "id": "sun",
+          "name": "Sun Lens",
+          "description": "Fire beams ignite oiled foes into burning ground.",
+          "cost": 85,
+          "damage": 24,
+          "range": 200,
+          "cooldownTicks": 64,
+          "projectileSpeed": 880,
+          "attack": "Beam",
+          "damageKind": "Fire"
+        }
+      },
+      {
+        "towerId": "crucible",
+        "cost": 110,
+        "upgrade": {
+          "id": "breach",
+          "name": "Breach Mortar",
+          "description": "Shells fracture armor across the blast. Supports physical towers.",
+          "cost": 100,
+          "damage": 34,
+          "range": 220,
+          "cooldownTicks": 102,
+          "projectileSpeed": 270,
+          "splashRadius": 82,
+          "attack": "Shell",
+          "damageKind": "Impact",
+          "onHit": {
+            "statusId": "fracture"
+          }
+        }
+      },
+      {
+        "towerId": "crucible",
+        "cost": 120,
+        "upgrade": {
+          "id": "echo",
+          "name": "Echo Mortar",
+          "description": "A marked second impact lands after 0.5s. Lower direct damage.",
+          "cost": 100,
+          "damage": 28,
+          "range": 235,
+          "cooldownTicks": 108,
+          "projectileSpeed": 270,
+          "splashRadius": 76,
+          "attack": "Shell",
+          "damageKind": "Impact",
+          "echo": {
+            "delayTicks": 30,
+            "damage": 16,
+            "radius": 76
+          }
+        }
+      }
+    ]
+  }
 }

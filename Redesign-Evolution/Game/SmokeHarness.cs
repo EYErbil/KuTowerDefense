@@ -1,5 +1,6 @@
 using Godot;
 using Redesign.Core;
+using Redesign.Infrastructure;
 
 namespace Redesign.Game;
 
@@ -20,8 +21,14 @@ public partial class SmokeHarness : Node
                     Require(Game.Run.Towers.Count == 3 && Game.Run.Gold == 0, "placement bindings");
                     Require(Game.Run.Towers.Select(t => t.Definition.Id).Distinct().Count() == 3, "all build cards");
                     Require(Game.Run.Towers.Single(t => t.Definition.Id == "prism").Priority == TargetPriority.Support, "priority button");
+                    Game.EvolveButton.EmitSignal(Button.SignalName.Pressed);
+                    Require(Game.EvolutionPanel.Visible && Game.BranchButtons.Length == 2 && Game.BranchButtons.All(b => b.Disabled), "unaffordable paths remain inspectable");
+                    Game.CloseEvolutionButton.EmitSignal(Button.SignalName.Pressed);
                     Game.StartButton.EmitSignal(Button.SignalName.Pressed);
-                    Game.PauseButton.EmitSignal(Button.SignalName.Pressed);
+                    Game.EvolveButton.EmitSignal(Button.SignalName.Pressed);
+                    Require(Game.Run.IsPaused && Game.EvolutionPanel.Visible, "path selection pauses combat");
+                    Game.CloseEvolutionButton.EmitSignal(Button.SignalName.Pressed);
+                    Require(Game.Run.IsPaused && !Game.EvolutionPanel.Visible, "closing paths keeps tactical pause");
                     pausedChecksum = Game.Run.Checksum(); break;
                 case 1:
                     Require(Game.Run.Checksum() == pausedChecksum, "pause across engine frames");
@@ -44,7 +51,7 @@ public partial class SmokeHarness : Node
                     ClickFoundation(1, "boltworks"); Require(Game.Run.Towers.Count == 1, "rebuild sold foundation");
                     Game.Restart();
                     Require(Game.Run.Towers.Count == 0 && Game.Run.Tick == 0, "clean roster reset");
-                    GD.Print("SMOKE PASS: three tower cards, priority, start, pause, speed, six-wave victory, defeat, sell/rebuild, repeated restart");
+                    GD.Print("SMOKE PASS: build cards, four priorities, path affordability, modal pause/close, six exclusive upgrades, Shatter/Ignition, six-wave victory, defeat, sell/rebuild, repeated restart");
                     GetTree().Quit(0); break;
             }
         }
@@ -69,16 +76,40 @@ public partial class SmokeHarness : Node
         {
             if (Game.Run.Phase == RunPhase.Planning)
             {
-                var plan = new (int Foundation, string Tower)[]
-                    { (1, "boltworks"), (2, "prism"), (4, "crucible"), (5, "crucible"), (6, "prism"), (0, "boltworks"), (7, "boltworks"), (3, "prism") };
-                if (build) foreach (var (foundation, type) in plan)
-                    if (!Game.Run.Towers.Any(t => t.Foundation == foundation) && Game.Run.Gold >= Game.Content.Towers.First(t => t.Id == type).Cost)
-                        ClickFoundation(foundation, type);
+                if (build) foreach (var command in EvolutionShowcase.PlanningCommands(Game.Run)) ApplyThroughInterface(command);
                 Game.StartButton.EmitSignal(Button.SignalName.Pressed);
             }
             Game.Run.Step(); Game.Run.DrainEvents();
         }
         Require(budget > 0, "no stalled waves");
+        if (build)
+        {
+            Require(Game.Run.Towers.Select(t => t.BranchId).Distinct().Count() == 6 && Game.Run.Towers.All(t => t.BranchId is not null), "all six branch purchases");
+            Require(Game.Run.Reactions.All(r => r.Triggers > 0 && r.Damage > 0), "both reactions contribute in actual combat");
+        }
+    }
+
+    private void ApplyThroughInterface(GameCommand command)
+    {
+        if (command is PlaceTower place) { ClickFoundation(place.Foundation, place.TowerId!); return; }
+        var towerId = command is UpgradeTower upgrade ? upgrade.TowerId : ((SetTargetPriority)command).TowerId;
+        var tower = Game.Run.Towers.Single(t => t.Id == towerId);
+        Game.Board.EmitSignal(Control.SignalName.GuiInput, new InputEventMouseButton
+        { ButtonIndex = MouseButton.Left, Pressed = true, Position = ArenaCanvas.V(tower.Position) });
+        if (command is UpgradeTower evolution)
+        {
+            Game.EvolveButton.EmitSignal(Button.SignalName.Pressed);
+            var index = Array.FindIndex(Game.BranchChoices, b => b.Upgrade.Id == evolution.BranchId);
+            Require(Game.EvolutionPanel.Visible && index >= 0 && !Game.BranchButtons[index].Disabled, "branch is affordable and selectable");
+            Game.BranchButtons[index].EmitSignal(Button.SignalName.Pressed);
+            Require(!Game.EvolutionPanel.Visible && tower.BranchId == evolution.BranchId && !Game.EvolveButton.Visible, "exclusive upgrade closes panel");
+        }
+        else if (command is SetTargetPriority targeting)
+        {
+            var attempts = 4;
+            while (tower.Priority != targeting.Priority && attempts-- > 0) Game.PriorityButton.EmitSignal(Button.SignalName.Pressed);
+            Require(tower.Priority == targeting.Priority, "all priorities reachable");
+        }
     }
     private static void Require(bool condition, string scenario) { if (!condition) throw new InvalidOperationException(scenario); }
 }

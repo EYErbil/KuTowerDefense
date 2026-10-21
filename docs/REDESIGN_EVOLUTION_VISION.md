@@ -21,7 +21,7 @@ Target PC strategy players seeking understandable decisions, satisfying combat a
 
 Choose map/doctrine → forecast threats → build/connect → defend → choose relic/contract → specialize → defeat act encounter → inspect results and unlock progression.
 
-The complete MVP targets three tower families with two branches each, two reactions, six enemy archetypes, one two-phase boss, eighteen waves in three acts, two authored maps with seeded variation and twelve relics. The first delivery established one map, one tower, one enemy and three waves. The current Phase 1 slice expands that foundation to three distinct towers, three enemy roles and six teaching waves; reactions and circuits remain the next major milestone.
+The complete MVP targets three tower families with two branches each, two reactions, six enemy archetypes, one two-phase boss, eighteen waves in three acts, two authored maps with seeded variation and twelve relics. The first delivery established one map, one tower, one enemy and three waves. The current Phase 2 slice has three tower families, all six exclusive specializations, Shatter/Ignition, three enemy roles and six teaching waves. Resonance Circuits are the next milestone; their signature gameplay is not implemented yet.
 
 ## Signature
 
@@ -49,4 +49,4 @@ Each optional prototype gets at most three focused engineering days before a kee
 
 ## Quality gates
 
-An enjoyable foundation precedes progression. The signature slice needs at least two useful layouts before adding reactions. The complete loop needs three strategy families before more content. External playtests require reliable saves, readable controls, measured performance and recorded provenance.
+An enjoyable foundation precedes progression. The signature slice needs at least two useful reaction/circuit layouts before expanding the interaction catalog. The complete loop needs three strategy families before more content. External playtests require reliable saves, readable controls, measured performance and recorded provenance.

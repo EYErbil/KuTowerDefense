@@ -54,22 +54,40 @@ public partial class GameRoot : Control
             if (args.Contains("--smoke")) AddChild(new SmokeHarness { Game = this });
             if (args.Contains("--demo"))
             {
-                Run.Apply(new PlaceTower(1, "boltworks"));
-                Run.Apply(new PlaceTower(2, "prism"));
-                Run.Apply(new PlaceTower(4, "crucible"));
-                // Reach the first escorted wave through ordinary commands for a representative capture.
+                // Reach the first reaction-enabled escorted wave through ordinary player commands.
                 while (Run.Phase == RunPhase.Planning && Run.WaveNumber < 4)
                 {
+                    foreach (var command in EvolutionShowcase.PlanningCommands(Run))
+                    {
+                        var result = Run.Apply(command);
+                        if (!result.Success) throw new InvalidOperationException(result.Message);
+                    }
                     Run.Apply(new StartWave());
                     if (Run.WaveNumber == 4) break;
                     var budget = 20000;
                     while (Run.Phase == RunPhase.Wave && budget-- > 0) { Run.Step(); Run.DrainEvents(); }
                 }
-                var prism = Run.Towers.First(t => t.Definition.Id == "prism");
-                Run.Apply(new SetTargetPriority(prism.Id, TargetPriority.Support));
-                SelectedTower = prism.Id;
-                for (var i = 0; i < 360; i++) Run.Step();
+                SelectedTower = Run.Towers.First(t => t.BranchId == "rime").Id;
+                // Capture an actual ignition, with a bounded fallback if balance changes later.
+                for (var i = 0; i < 1200; i++)
+                {
+                    Run.Step();
+                    var events = Run.DrainEvents();
+                    if (Run.BurningAreas.Count > 0 && Run.Enemies.Any(e => e.Definition.ShieldRadius > 0) && Run.Enemies.Any(e => e.Statuses.Count > 0))
+                    {
+                        // Only show this instant's effects, not a backlog from fast-forwarding the showcase.
+                        foreach (var e in events) Board.Receive(e);
+                        break;
+                    }
+                }
+                Run.Apply(new Pause(true));
                 Run.DrainEvents();
+                Message("Rime prepares Shatter. Pitchbow prepares Ignition. Use Primed targeting on a finisher to consume the setup.");
+            }
+            if (args.Contains("--paths-demo"))
+            {
+                SelectedTower = Run.Apply(new PlaceTower(2, "prism")).EntityId;
+                OpenEvolution();
             }
             RefreshInterface();
         }
@@ -117,8 +135,10 @@ public partial class GameRoot : Control
         detailBody = AddLabel(this, "", new(1052, 530), new(336, 72), 15, Muted);
         detailBody.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         PriorityButton = AddButton(this, "TARGET: FIRST  [T]", new(1052, 612), new(336, 36), CyclePriority);
-        PriorityButton.TooltipText = "First: nearest the gate. Strongest: highest current health. Support: Wardens first, then nearest the gate.";
-        SellButton = AddButton(this, "SELL", new(1052, 658), new(336, 36), SellSelected);
+        PriorityButton.TooltipText = "First: nearest the gate. Strongest: highest current health. Support: Wardens first. Primed: enemies ready for this tower's reaction, then nearest the gate.";
+        EvolveButton = AddButton(this, "EVOLVE  [U]", new(1052, 658), new(162, 36), OpenEvolution);
+        SellButton = AddButton(this, "SELL", new(1224, 658), new(164, 36), SellSelected);
+        SellButton.AddThemeFontSizeOverride("font_size", 14);
         StartButton = AddButton(this, "START WAVE  [N]", new(1052, 720), new(336, 58), StartNextWave, true);
         soundButton = AddButton(this, "SOUND ON  [M]", new(1052, 793), new(336, 28), ToggleSound);
         notice = AddLabel(this, "Choose a tower card, then a marked foundation. Read the forecast before starting.", new(40, 848), new(1360, 34), 16, Text);
@@ -131,6 +151,7 @@ public partial class GameRoot : Control
         resultTitle = AddLabel(result, "", new(40, 78), new(680, 66), 43, Text);
         resultBody = AddLabel(result, "", new(40, 164), new(680, 105), 20, Muted);
         RestartButton = AddButton(result, "DEFEND AGAIN  [R]", new(40, 290), new(680, 54), Restart, true);
+        BuildEvolutionInterface();
     }
 
     public override void _Process(double delta)
@@ -192,12 +213,15 @@ public partial class GameRoot : Control
         for (var i = 0; i < SpeedButtons.Length; i++) SpeedButtons[i].Modulate = Speed == (1 << i) ? Mint : Colors.White;
         var tower = Run.Towers.FirstOrDefault(t => t.Id == SelectedTower);
         SellButton.Visible = PriorityButton.Visible = tower is not null && !ended;
+        EvolveButton.Visible = tower is { BranchId: null } && !ended &&
+            (Content.Combat?.Branches.Any(b => b.TowerId == tower.FamilyId) ?? false);
         if (tower is not null)
         {
             var spec = tower.Definition;
             detailTitle.Text = $"{spec.Name.ToUpperInvariant()} #{tower.Id}";
-            detailBody.Text = $"{spec.Damage} {spec.DamageKind.ToString().ToLowerInvariant()}  /  {spec.CooldownTicks / 60d:0.00}s  /  range {spec.Range:0}\n{tower.DamageDealt} damage dealt  ·  {tower.Kills} stopped\n{PriorityDescription(tower.Priority)}";
-            SellButton.Text = $"SELL  /  +{tower.SellValue} GOLD";
+            detailBody.Text = $"{spec.Damage} {spec.DamageKind.ToString().ToLowerInvariant()}  /  {spec.CooldownTicks / 60d:0.00}s  /  range {spec.Range:0}\n{tower.DamageDealt} damage dealt  /  {tower.Kills} stopped\n{tower.ReactionsPrepared} prepared  /  {tower.ReactionsTriggered} triggered";
+            SellButton.Text = $"SELL +{tower.SellValue} G";
+            SellButton.TooltipText = $"Recover 70% of all {tower.Cost} gold invested in this tower.";
             PriorityButton.Text = $"TARGET: {tower.Priority.ToString().ToUpperInvariant()}  [T]";
         }
         else
@@ -206,6 +230,7 @@ public partial class GameRoot : Control
             detailBody.Text = Building
                 ? $"{BuildDefinition.Damage} {BuildDefinition.DamageKind.ToString().ToLowerInvariant()}  /  {BuildDefinition.CooldownTicks / 60d:0.00}s  /  range {BuildDefinition.Range:0}\nHover a foundation to preview range.\nEscape cancels placement."
                 : "Boltworks covers the road. Prism defeats armor. Crucible breaks groups.\nSelect a tower to set its target priority.";
+            if (!Building) detailBody.Text = "Chill twice + impact = Shatter.\nOil + fire = Ignition.\nSelect a tower to evolve its role [U].";
         }
         ResultPanel.Visible = ended;
         if (ended)
@@ -213,24 +238,20 @@ public partial class GameRoot : Control
             resultTitle.Text = Run.Phase == RunPhase.Victory ? "THE FRONTIER HOLDS." : "THE CITADEL HAS FALLEN.";
             resultTitle.AddThemeColorOverride("font_color", Run.Phase == RunPhase.Victory ? Mint : Red);
             resultBody.Text = $"{Run.Kills} stopped    /    {Run.Leaks} breached    /    {Run.Lives} lives remain\n{Run.DamageDealt} damage dealt    ·    {Run.GoldEarned} gold earned\n{Run.WaveNumber} waves faced    ·    {Run.Tick / 60d:0.0}s simulated";
+            resultBody.Text += "\n" + string.Join("  /  ", Run.Reactions.Select(r => $"{r.Triggers} {r.Definition.Name}")) + $"  /  {Run.ReactionDamage} reaction damage";
         }
     }
 
-    private static string PriorityDescription(TargetPriority priority) => priority switch
-    {
-        TargetPriority.Strongest => "Focus the highest current health.",
-        TargetPriority.Support => "Focus Wardens; otherwise nearest the gate.",
-        _ => "Focus the enemy nearest the gate."
-    };
-
     public void ChooseBuild(int type = 0)
     {
+        if (EvolutionPanel.Visible) return;
         if (Run.Phase is RunPhase.Victory or RunPhase.Defeat || type < 0 || type >= Content.Towers.Length) return;
         BuildType = type; Building = true; SelectedTower = 0;
         Message($"{BuildDefinition.Name}: {BuildDefinition.Description} Choose a foundation."); RefreshInterface();
     }
     public void SelectFoundation(int index)
     {
+        if (EvolutionPanel.Visible) return;
         if (Run.Phase is RunPhase.Victory or RunPhase.Defeat) return;
         var tower = Run.Towers.FirstOrDefault(t => t.Foundation == index);
         if (tower is not null) { SelectedTower = tower.Id; Building = false; Message("Tower selected. Its range is shown on the battlefield."); }
@@ -247,7 +268,7 @@ public partial class GameRoot : Control
     {
         var tower = Run.Towers.FirstOrDefault(t => t.Id == SelectedTower);
         if (tower is null) return;
-        Message(Run.Apply(new SetTargetPriority(tower.Id, (TargetPriority)(((int)tower.Priority + 1) % 3))).Message);
+        Message(Run.Apply(new SetTargetPriority(tower.Id, (TargetPriority)(((int)tower.Priority + 1) % Enum.GetValues<TargetPriority>().Length))).Message);
         RefreshInterface();
     }
     private void StartNextWave() { Message(Run.Apply(new StartWave()).Message); RefreshInterface(); }
@@ -257,18 +278,26 @@ public partial class GameRoot : Control
     private void Message(string text) => notice.Text = text;
     public void Restart()
     {
+        EvolutionPanel.Visible = false;
         Run = new Simulation(Content, 42); clock = new(); Speed = 1; Building = false; SelectedTower = 0; BuildType = 0;
         Board.ClearEffects(); audio.StopAll(); Message("A fresh defense. Read the forecast and choose your tower mix."); RefreshInterface();
     }
     public override void _UnhandledKeyInput(InputEvent @event)
     {
         if (!loaded || @event is not InputEventKey { Pressed: true, Echo: false } key) return;
+        if (EvolutionPanel.Visible)
+        {
+            if (key.PhysicalKeycode == Key.Escape) CloseEvolution();
+            if (key.PhysicalKeycode == Key.M) ToggleSound();
+            GetViewport().SetInputAsHandled(); return;
+        }
         switch (key.PhysicalKeycode)
         {
             case Key.B: ChooseBuild(0); break;
             case Key.P: ChooseBuild(1); break;
             case Key.C: ChooseBuild(2); break;
             case Key.T: CyclePriority(); break;
+            case Key.U: OpenEvolution(); break;
             case Key.N: StartNextWave(); break;
             case Key.Space: TogglePause(); break;
             case Key.Key1: SetSpeed(1); break;

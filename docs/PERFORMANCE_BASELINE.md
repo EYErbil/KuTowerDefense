@@ -1,6 +1,25 @@
 # Simulation performance baseline
 
-Measured 2026-10-20 for RE1-04/05. Reproduce with `.\dev.cmd benchmark`. Machine-reported runtime: .NET 8.0.0, Windows 10.0.19045, `Intel64 Family 6 Model 140 Stepping 1, GenuineIntel`. Debug build, no debugger. This does not measure the exported runtime, rendered frame time or GPU performance.
+## Current Phase 2 measurement
+
+Rechecked 2026-10-20 after RE2-01/02/03. Same 64-tower, 1,001–2,500-enemy workload and runtime described below. `.\dev.cmd benchmark` reproduces this current measurement. All six runs agree on checksum `43eb99888f7ede025a0fe41730f7a16de7dca8752ea274e57509184571fc0af4`.
+
+| Round | Query method | Mean ms/tick | Median ms/tick | p95 ms/tick | Allocated bytes/tick |
+|---|---|---:|---:|---:|---:|
+| 1 | Reference scan | 3.928 | 3.871 | 5.740 | 4,930 |
+| 1 | Spatial grid | 0.977 | 0.970 | 1.493 | 4,989 |
+| 2 | Spatial grid | 1.006 | 0.997 | 1.775 | 4,989 |
+| 2 | Reference scan | 3.951 | 3.927 | 5.796 | 4,930 |
+| 3 | Reference scan | 4.054 | 4.033 | 5.848 | 4,930 |
+| 3 | Spatial grid | 0.942 | 0.917 | 1.466 | 4,989 |
+
+The first Phase 2 check exposed 61,005 allocated bytes/tick in the grid mode. A captured stack-expiry predicate allocated once per enemy even when it had no status. Bounded loops removed that closure and captured lookup predicates, reducing this workload to 4,989 bytes/tick with identical checksums. Before/after raw reports are `.artifacts/phase2-benchmark-before.json` and `.artifacts/spatial-benchmark.json`. Remaining allocations include status containers on newly spawned enemies and larger event arrays. Timing varies with host load; this is not a regression threshold.
+
+This measures the overhead of the new kernel on the existing dense targeting/splash scenario, **not** heavy active status/field density. An additional 1,800-tick mixed-reaction stress test compares all events and periodic digests between grid and reference scans, including Shatter, six-field cap/replacement, Ignition overlap, Primed, nested splash and delayed Echo. It is correctness coverage, not a rendered performance claim.
+
+## Historical Phase 1 measurement and method
+
+Measured 2026-10-20 for RE1-04/05. Machine-reported runtime: .NET 8.0.0, Windows 10.0.19045, `Intel64 Family 6 Model 140 Stepping 1, GenuineIntel`. Debug build, no debugger. This does not measure the exported runtime, rendered frame time or GPU performance.
 
 The stress scenario has 64 towers on a 64×32 map, a cached serpentine route and one spawn per tick. Towers deal 1 damage, with radius-60 splash, range 190, 30-tick intervals and projectile speed 480. Enemies have 100,000 health and speed 120, so they remain alive throughout measurement. This isolates dense targeting/splash; it is not a balance scenario or a mass-Warden test.
 
@@ -17,7 +36,7 @@ Each run warms up for 1,000 ticks, then measures 1,500 ticks, growing from 1,001
 | 3 | Reference scan | 4.112 | 4.127 | 6.143 | 4,138 |
 | 3 | Spatial grid | 0.885 | 0.870 | 1.349 | 4,197 |
 
-Raw report: `.artifacts/spatial-benchmark.json`. Timing is diagnostic, never a flaky test gate. Results justify the bounded grid and retained bucket/query capacity; they do not justify pooling every object or claim the future graphics/stress budget is met. Allocations include event arrays and new entities/projectiles.
+The table retains the historical Phase 1 figures; the raw report path now holds the current measurement above. Timing is diagnostic, never a flaky test gate. Results justify the bounded grid and retained bucket/query capacity; they do not justify pooling every object or claim the future graphics/stress budget is met. Allocations include event arrays and new entities/projectiles.
 
 Correctness checks are independent of timing:
 

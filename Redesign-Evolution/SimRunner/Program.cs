@@ -5,6 +5,7 @@ using Redesign.Infrastructure;
 if (args.Contains("--benchmark")) return CombatBenchmark.Run();
 var lose = args.Contains("--no-build");
 var foundation = args.Contains("--foundation");
+var evolution = args.Contains("--evolution") && !foundation;
 var definition = ContentLoader.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, foundation ? "foundation.json" : "emberwatch.json")));
 var sim = new Simulation(definition, 42);
 var plan = new (int Foundation, string Tower)[]
@@ -20,7 +21,15 @@ while (sim.Phase is RunPhase.Planning or RunPhase.Wave && budget-- > 0)
     {
         if (!lose)
         {
-            if (foundation) for (var i = 0; i < definition.Map.Foundations.Length; i++) sim.Apply(new PlaceTower(i));
+            if (evolution)
+            {
+                foreach (var command in EvolutionShowcase.PlanningCommands(sim))
+                {
+                    var result = sim.Apply(command);
+                    if (!result.Success) throw new InvalidOperationException($"Showcase wave {sim.WaveNumber + 1}: {command}: {result.Message}");
+                }
+            }
+            else if (foundation) for (var i = 0; i < definition.Map.Foundations.Length; i++) sim.Apply(new PlaceTower(i));
             else foreach (var (index, type) in plan)
             {
                 var result = sim.Apply(new PlaceTower(index, type));
@@ -31,5 +40,8 @@ while (sim.Phase is RunPhase.Planning or RunPhase.Wave && budget-- > 0)
     }
     sim.Step(); sim.DrainEvents();
 }
-Console.WriteLine(JsonSerializer.Serialize(new { sim.Phase, sim.Tick, sim.Kills, sim.Leaks, sim.Gold, sim.Lives, Checksum = sim.Checksum() }));
+Console.WriteLine(JsonSerializer.Serialize(new { sim.Phase, sim.Tick, sim.Kills, sim.Leaks, sim.Gold, sim.Lives, sim.ReactionDamage,
+    Reactions = sim.Reactions.Select(r => new { r.Definition.Id, r.Triggers, r.Damage }),
+    Towers = evolution ? sim.Towers.Select(t => new { t.Definition.Id, t.DamageDealt, t.ReactionsPrepared, t.ReactionsTriggered }) : null,
+    Checksum = sim.Checksum() }));
 return budget <= 0 || sim.Phase != (lose ? RunPhase.Defeat : RunPhase.Victory) ? 1 : 0;

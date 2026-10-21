@@ -22,13 +22,13 @@ Milestone / Slice A: six-wave foundation implemented and automatically verified.
 
 ## Phase 2 — Signature gameplay
 
-- [ ] **RE2-01 Effect/branch/reaction definitions** | P0 | deps RE1-05 | M | MVP | AC: extend the implemented roster/spawn catalogs so effects, exclusive branches and reactions are tunable without tower-code edits; invalid values/IDs/references produce actionable errors.
-- [ ] **RE2-02 Reactions** | P0 | deps RE2-01 | L | MVP | AC: Shatter/Ignition consumption, stacking, attribution and trigger limits tested.
-- [ ] **RE2-03 Specialization** | P1 | deps RE2-02 | L | MVP | AC: six exclusive branches change mechanics/visual identity and preserve choices.
+- [x] **RE2-01 Effect/branch/reaction definitions** | P0 | deps RE1-05 | M | MVP | AC: extend the implemented roster/spawn catalogs so effects, exclusive branches and reactions are tunable without tower-code edits; invalid values/IDs/references produce actionable errors.
+- [x] **RE2-02 Reactions** | P0 | deps RE2-01 | L | MVP | AC: Shatter/Ignition consumption, stacking, attribution and trigger limits tested.
+- [x] **RE2-03 Specialization** | P1 | deps RE2-02 | L | MVP | AC: six exclusive branches change mechanics/visual identity and preserve choices.
 - [ ] **RE2-04 Circuits** | P0 | deps RE2-03 | L | MVP | AC: valid links, charge, empowered attacks/removal/UI; no cycles or recursive generation.
 - [ ] **RE2-05 Terrain/counterplay** | P1 | deps RE2-04 | M | MVP | AC: overlays and telegraphed Sapper disruption create counterable decisions without invalid routes.
 
-Milestone / Slice B: six-wave encounter combines specializations, reactions and circuits.
+Milestone / Slice B: six-wave encounter combines specializations, reactions and circuits. Reactions/specializations now form a playable intermediate slice; the milestone remains open until Circuits and counterplay are verified.
 
 ## Phase 3 — Depth and replayability
 
@@ -61,6 +61,6 @@ Milestone / Slice D: reproducible tested release candidate.
 
 ## Order and creative experiments
 
-Completed: RE0-02 → RE0-03 → RE1-01 → RE1-02 → RE1-03 → RE1-04 → RE1-05. Next: RE2-01 → RE2-02 → RE2-03 → RE2-04 → RE2-05. Keep the six-wave export playable and the three-wave fixture passing at each step. RE3-03 can proceed after RE2-05; RE5-01 can overlap presentation work.
+Completed: RE0-02 → RE0-03 → RE1-01 → RE1-02 → RE1-03 → RE1-04 → RE1-05 → RE2-01 → RE2-02 → RE2-03. Next: RE2-04 → RE2-05. Keep the six-wave export playable and the three-wave fixture passing at each step. RE3-03 can proceed after RE2-05; RE5-01 can overlap presentation work.
 
 Battlefield Memory, Evacuation Couriers and Echo Blueprints are not hidden release requirements. Limit first prototypes to three focused engineering days; retain only observable new decisions surviving readability/playtest review. Document discarded findings.

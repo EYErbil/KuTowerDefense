@@ -12,13 +12,13 @@ public readonly record struct Point(double X, double Y)
 }
 
 public enum AttackKind { Bolt, Beam, Shell }
-public enum DamageKind { Impact, Energy }
-public enum TargetPriority { First, Strongest, Support }
+public enum DamageKind { Impact, Energy, Frost, Fire }
+public enum TargetPriority { First, Strongest, Support, Primed }
 
 public sealed record TowerDefinition(string Id, int Cost, int Damage, double Range,
     int CooldownTicks, double ProjectileSpeed, double SplashRadius = 0,
     AttackKind Attack = AttackKind.Bolt, DamageKind DamageKind = DamageKind.Impact,
-    string Name = "", string Description = "");
+    string Name = "", string Description = "", StatusApplication? OnHit = null, EchoDefinition? Echo = null);
 public sealed record EnemyDefinition(string Id, int Health, double Speed, int Bounty, int LeakDamage,
     int Armor = 0, double ShieldRadius = 0, int ShieldPercent = 0, string Name = "");
 public sealed record SpawnGroup(string EnemyId, int Count, int IntervalTicks, int DelayTicks = 0);
@@ -30,13 +30,15 @@ public sealed record MapDefinition(string Id, string Title, int Width, int Heigh
 }
 
 public sealed record GameDefinition(int FormatVersion, string Id, int StartingGold, int StartingLives,
-    MapDefinition Map, TowerDefinition[] Towers, EnemyDefinition[] Enemies, WaveDefinition[] Waves)
+    MapDefinition Map, TowerDefinition[] Towers, EnemyDefinition[] Enemies, WaveDefinition[] Waves,
+    CombatDefinition? Combat = null)
 {
     public GameDefinition Copy() => this with
     {
         Map = Map with { Route = [.. Map.Route], Foundations = [.. Map.Foundations] },
         Towers = [.. Towers], Enemies = [.. Enemies],
-        Waves = Waves.Select(w => w with { Groups = [.. w.Groups] }).ToArray()
+        Waves = Waves.Select(w => w with { Groups = [.. w.Groups] }).ToArray(),
+        Combat = Combat?.Copy()
     };
 
     public void Validate()
@@ -81,6 +83,7 @@ public sealed record GameDefinition(int FormatVersion, string Id, int StartingGo
             Require(tower.Attack != AttackKind.Beam || tower.SplashRadius == 0, $"tower '{tower.Id}': beams cannot splash");
         }
         Require(Towers.Select(t => t.Id).Distinct(StringComparer.Ordinal).Count() == Towers.Length, "duplicate tower id");
+        CombatContent.Validate(this);
         foreach (var enemy in Enemies)
         {
             Require(enemy is not null, "null enemy");

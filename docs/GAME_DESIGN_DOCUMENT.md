@@ -1,12 +1,14 @@
 # REDESIGN: EVOLUTION — Game design
 
-Version 0.2, 2026-10-20. Distinguish the implemented foundation from the planned MVP. Numbers are starting balance hypotheses, not inherited assignment requirements.
+Version 0.3, 2026-10-20. Phase 2 reactions and specializations are implemented; Circuits and the full run remain planned. Numbers are starting balance hypotheses, not inherited assignment requirements.
 
 ## Implemented foundation: Emberwatch
 
 One authored battlefield, winding route, citadel, eight foundations, three towers and three enemy roles. Start with 245 gold and 12 lives. Six waves teach coverage, armor, dense packs, then escort shields before combining threats. The preview states exact composition and a counter before the player starts. Content uses validated format-2 JSON catalogs and overlapping spawn groups.
 
-Select a tower card and click an empty foundation. Invalid placement spends nothing. Click a tower to inspect range/damage/kills, change target priority or sell; refund is 70% of actual cost. First targets greatest path progress, Strongest targets highest current health, Support targets shield generators before other enemies. Progress then lowest entity ID break ties. Untimed planning, explicit wave starts; building/selling/targeting permitted during combat and pause. All gameplay time stops when paused. Victory requires clearing six waves with lives remaining. Both outcomes show totals and offer a clean restart.
+Select a tower card and click an empty foundation. Invalid placement spends nothing. Click a tower to inspect range/damage/kills, evolve, change target priority or sell; refund is 70% of its total investment, rounded down. First targets greatest path progress, Strongest targets highest current health, Support targets shield generators, and Primed targets enemies with enough existing status stacks and a ready reaction matching this tower's damage kind. Progress then lowest entity ID break ties. Primed falls back to First when no reaction is ready; projectile travel can still change the situation before impact.
+
+Untimed planning, explicit wave starts; building/selling/targeting/upgrading work during combat and pause. Evolve [U] opens exclusive path cards and pauses combat. Closing or choosing leaves the battle paused until the player resumes. Unaffordable paths remain inspectable. All gameplay time stops when paused. Victory requires clearing six waves with lives remaining. Both outcomes show totals, reaction counts/damage and a clean restart.
 
 | Tower | Cost | Damage | Range | Interval | Behavior |
 |---|---:|---:|---:|---:|---|
@@ -33,29 +35,54 @@ Armor is applied first, then the strongest active escort reduction, rounded down
 
 These are short teaching waves, not the eventual 25–40-minute run. The 180-gold, one-tower, 8/12/16-Runner fixture remains runnable as `foundation.json`, with its original movement/stats/timing. Its content format was upgraded along with the new simulation; legacy formats are not supported. Do not display nonfunctional upgrade/circuit/save buttons.
 
-## Full run
+## Full run — planned
 
 18 waves, three acts, relic selections and optional contracts at authored boundaries, final two-phase boss. Forecast two waves and explain new threats. Use encounter budgets and documented composition constraints. No hidden adaptive hard counters. Countermarch Contracts explicitly exchange additional forecast threats for known rewards. Map variation, offers and contracts use a run seed.
 
 Currency creates opportunity costs between towers, branches and links. Avoid mandatory click-to-collect income. Two authored maps receive validated variations. Godot editor authoring comes first; a player map editor is optional.
 
-## Towers
+## Tower evolution — implemented
 
 | Family | Base role | Branch A | Branch B |
 |---|---|---|---|
-| Boltworks | Precision impact | Pinning Ballista: bounded displacement/precision | Pitchbow: lower damage, oil |
+| Boltworks | Precision impact | Pinning Ballista: brief pin/precision | Pitchbow: lower damage, oil |
 | Prism | Elemental preparation | Rime Lens: chill/Shatter setup | Sun Lens: fire/Ignition |
-| Crucible | Area coverage | Breach Mortar: armor fracture | Echo Mortar: delayed impacts/resonance timing |
+| Crucible | Area coverage | Breach Mortar: armor fracture | Echo Mortar: delayed second impact |
 
-Branches are exclusive choices changing attacks, silhouette, timing, effects and placement incentives. Definitions support extensible trees without an inherited two-level hard limit.
+One permanent specialization per tower in this slice. Purchase is atomic: reject invalid families, unknown paths, insufficient funds, sold towers and second choices without mutation. Preserve cooldown, priority, statistics and source ID; projectiles already in flight retain their original attack definition. Selling refunds 70% of base plus branch cost. No respec or additional tier is implemented; expand depth only after testing Circuits. All branch attacks and status references are data, not tower subclasses.
 
-## Reactions and terrain
+| Path | Additional cost | Damage / interval | Range | Mechanical change |
+|---|---:|---|---:|---|
+| Pinning Ballista | 110 | 38 impact / 78 ticks | 245 | Bolt speed 650; pin slows 80% for 30 ticks; slower fire and longer reach |
+| Pitchbow | 70 | 8 impact / 32 ticks | 195 | One oil stack per hit; sacrifices direct damage to prepare Ignition |
+| Rime Lens | 80 | 10 frost / 36 ticks | 180 | One chill per hit; trades Prism damage for slowing and Shatter setup |
+| Sun Lens | 100 | 24 fire / 64 ticks | 200 | Consumes oil for Ignition; without preparation it gains reach but loses one base damage |
+| Breach Mortar | 110 | 34 impact / 102 ticks | 220 | Splash radius 82; fracture on primary and secondary hits, before damage |
+| Echo Mortar | 120 | 28 impact / 108 ticks | 235 | Splash radius 76; one 16-impact, radius-76 echo after 30 ticks at the impact point |
 
-Status definitions specify duration, stacking, cap, source and removal. Reaction definitions match damage tags/statuses outside tower code. Shatter consumes sufficient chill on impact for a bounded burst. Ignition consumes oil on fire damage and creates a temporary burning area. Define overlap caps; a consumed stack cannot trigger twice. Temporary oil/burning/frozen overlays use simulation ticks. Freeform walls, flooding and water/electricity are deferred.
+All non-impact damage bypasses armor; escorts still reduce it. Mortars retain half damage to secondary targets. Echoes damage every enemy in their radius equally, retain credit after sale, and cannot apply statuses, react or create more echoes. Pin is a bounded slow, not displacement: it preserves route progress and cannot fully immobilize an enemy. Branch silhouettes, frost/fire beams, status letters/counts, ignition ground and echo countdown rings expose the mechanical changes. Exact effect values are also available in path-card tooltips.
 
-Attribute damage/reactions to sources. Limit reaction depth and prohibit infinite generation. No effect may bypass cooldown/cap rules.
+## Reactions and terrain — implemented rules
 
-## Resonance Circuits — Phase 2
+| Status | Stack cap | Lifetime per stack | Effect |
+|---|---:|---:|---|
+| Chill | 3 | 180 ticks / 3 seconds | 15% slow per stack; two stacks can be shattered |
+| Oil | 1 | 240 ticks / 4 seconds | Prepared for Ignition; no passive damage |
+| Pin | 1 | 30 ticks / 0.5 seconds | 80% slow |
+| Fracture | 2 | 180 ticks / 3 seconds | Remove 6 armor per stack, minimum zero |
+
+Each stack owns its source ID and expiry. At capacity a new application replaces the oldest stack; consuming a reaction removes the oldest required stacks. Stacks expire before movement at `ExpiresAt <= Tick`. Different slows use the strongest effect, never their sum; the validator caps any status at 80%. Fracture adds armor reduction. Pause freezes all expiry, cooldown and delayed-effect timers.
+
+- **Shatter:** an ordinary impact hit consumes two pre-existing chill stacks, then deals its normal hit and a 24-frost burst in radius 64. Per-enemy Shatter cooldown: 60 ticks. It still bursts if the ordinary hit kills the prepared enemy.
+- **Ignition:** an ordinary fire hit consumes one oil stack, then creates burning ground at the enemy's position. Radius 72; 6 fire damage immediately and every 30 ticks for 180 ticks, with no pulse on the expiry tick. Per-enemy reaction cooldown: 120 ticks. Maximum six fields globally; creating another replaces the oldest. Each enemy has one damage cadence per reaction, so even staggered overlapping fields cannot multiply burn frequency. Entering a field takes damage on its next eligible pulse.
+
+Reactions inspect/consume existing setup before the incoming attack applies its own status. Thus an attack cannot generate and consume a new stack at once. Reaction damage and echoes never enter the reaction pipeline. Primary/splash hits can independently trigger eligible enemies; a consumed stack cannot be spent twice. Separate query buffers protect splash iteration from nested bursts. Natural hit ordering is deterministic, not simultaneous in the mathematical sense.
+
+Credit actual reaction damage and kills to the triggering tower, including after its sale. Credit one preparation to each distinct tower contributing consumed stacks and one trigger to the finisher. A tower's damage total already includes its reaction damage: do not add it twice. An oldest eligible overlapping field owns the burn damage. Reaction statistics survive wave clears; fields and pending echoes clear when the wave ends. No persistence to disk exists yet.
+
+Ignition is the first temporary terrain interaction. Frozen ground, freeform walls, flooding and water/electricity are deferred. Oil currently belongs to an enemy, not a ground surface. Enemy disruption and broader terrain counterplay remain RE2-05.
+
+## Resonance Circuits — next Phase 2 milestone, not implemented
 
 Directed links: four-tile maximum, 25 gold initial cost, one outgoing/two incoming ports. Reject cycles/invalid endpoints before spending. Rewire between waves without another fee; no investment refund for rewiring. Removing towers removes their links.
 
