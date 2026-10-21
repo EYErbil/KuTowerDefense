@@ -1,6 +1,16 @@
 ﻿# REDESIGN: EVOLUTION
 
-A new PC tower defense game about elemental reactions and connected defenses. Active implementation: Godot 4.7.2 .NET with independent C# simulation. Course requirements and legacy formats are retired.
+A PC tower defense game about an arcane frontier, tower specialization and elemental reactions. Active implementation: Godot 4.7.2 .NET with independent C# simulation. Course requirements and legacy formats are retired.
+
+## Continuing the project? Start here
+
+**Read [the agent handoff](docs/AGENT_HANDOFF.md).** It contains the current state, exact next task, code entry points, verification commands and a ready-to-paste continuation prompt. Root [AGENTS.md](AGENTS.md) directs repository-aware agents to the same handoff.
+
+As of 2026-10-21, the twelve-wave expedition is implemented at `3748e0d` on `Ege-redevelop`. The latest session is **documentation only**: the owner is handing implementation to a colleague. The last recorded baseline is 76 passing tests and a verified Windows package; verify it again when beginning code changes.
+
+The accepted next direction is **road warriors → stronger animation → a second battlefield and persistent map unlocks → mastery/challenges and results graphs**. Begin with **FR-01 Road squad kernel**, then **FR-02 Animated squad slice** on Emberwatch. These systems are not implemented yet. The [frontier design and task checklist](docs/FRONTIER_CAMPAIGN_PROPOSAL.md) provides the rules and acceptance criteria; Circuits are deferred for reassessment after this work.
+
+Check Git status before editing and preserve local changes. Handoff/research documents are currently uncommitted: include them when transferring work to another checkout. No gameplay implementation was started by this handoff session.
 
 ## Play and develop
 

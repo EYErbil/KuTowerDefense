@@ -1,12 +1,22 @@
 ﻿# Development progress
 
-Updated 2026-10-21. Branch `Ege-redevelop`. This continuation began clean at `0da2b22` (`logic polish`); its changes are uncommitted. No branch switch, history rewrite, commit, push or remote operation was performed. Unrelated files, dependencies and lockfiles were preserved.
+Updated 2026-10-21. Branch `Ege-redevelop`. The expedition continuation began at `0da2b22`; it is now present in commit `3748e0d`. The subsequent research session began clean at `3748e0d` and changes documentation only. No branch switch, history rewrite, commit, push or remote operation was performed by that research session. Unrelated files, dependencies and lockfiles were preserved.
+
+**Continuing agent: read [AGENT_HANDOFF.md](AGENT_HANDOFF.md) first.** The owner accepted the frontier/squad direction and explicitly assigned implementation to a colleague. This handoff session changes documentation only; it does not begin FR-01 or rerun the game checks below.
+
+## Latest direction and handoff
+
+The player requested competitor research, maps unlocked through progression, road warriors, improved animation/graphics and a longer challenge/reward chase. [FRONTIER_CAMPAIGN_PROPOSAL.md](FRONTIER_CAMPAIGN_PROPOSAL.md) records first-party research and the accepted direction: one animated squad on Emberwatch, then a second battlefield with persistent destination unlocks, followed by mastery/challenges and results graphs. FR-00 is complete; FR-01–FR-07 are planned and unimplemented. Balance values, later regions and signature experiments remain provisional. No troop/profile/map-unlock system or new artwork was implemented in the research or handoff sessions.
+
+The handoff adds a README entry point, root `AGENTS.md`, and `AGENT_HANDOFF.md` with the first patch scope, code locations, commands, risks and a continuation prompt. The proposal, roadmap and this ledger now share the same priority order. Research/handoff changes remain local and uncommitted; include them when passing the work to a separate checkout. No implementation, dependency change, build, test run, commit or push was performed by the handoff session.
+
+Documentation verification: all 27 local Markdown links across the six changed handoff/research files resolve; Git whitespace checks pass. Only Markdown files changed. These checks do not revalidate the playable build.
 
 ## Current delivery
 
 **Phase 2: expedition intervention, EX-01 through EX-04 complete.** Player feedback identified repetition, weak rewards and superficial difficulty. The active game now loads `expedition.json`: twelve waves/four stages, three earned drafts from seven relics, optional Overruns, Menders, Raiders, armored Captains and a guarded/rallying/enraged Bellwarden. Starting economy, branch payoff and formations were retuned. Godot presentation and the independent C# simulation are retained.
 
-The self-contained Windows package and fresh extraction passed integration checks; packaged reward/boss captures were inspected. **EX-05 human playtest/decision gate is next.** Resonance Circuits remain planned and unimplemented. This is an expedition prototype, not a finished commercial game or validated 25–40-minute run.
+The self-contained Windows package and fresh extraction passed integration checks; packaged reward/boss captures were inspected. **The assigned implementer's next slice is FR-01 → FR-02 on Emberwatch.** EX-05 human observations remain a parallel evaluation gate. Resonance Circuits are unimplemented and deferred for reassessment after the squad/map work. This is an expedition prototype, not a finished commercial game or validated 25–40-minute run. The verification below belongs to the preceding implementation delivery and was not rerun for this documentation handoff.
 
 ## Completed work
 
@@ -62,15 +72,16 @@ Full comparison: [EXPEDITION_REWORK.md](EXPEDITION_REWORK.md). Standard witnesse
 
 Winning combat takes about 5.5–7.5 minutes at 1×, plus untimed human planning. One map, seven relics and fixed formations limit replayability. Profiles, save/resume, Circuits, Sapper disruption, a second map, accessibility/settings and final art remain open. Procedural art/audio remains prototype quality. Do not pad waves or add permanent bonuses to compensate for weak decisions.
 
-No implementation blocker. Delivery checks are complete. Human observations are the next design input, not a permission requirement for routine fixes or already authorized work.
+No implementation blocker was recorded in the preceding delivery. Verify the baseline when starting code changes. Human observations remain necessary design evidence; their absence does not block bounded prototypes. The current session stops at documentation because the owner assigned implementation to their colleague.
 
 ## Exact next work
 
-1. **EX-05:** record at least three human runs. Note first-relic time, saved/regretted purchases, unclear deaths, repeated/ignored relic choices, priority changes and declined contracts. Tune frost dominance, reward diversity and contract value from evidence; retain useful fire/physical alternatives and meaningful losses.
-2. After EX-05, **RE2-04:** implement validated directed links (four-tile range, one outgoing/two incoming, reject cycles/self/duplicates/invalid endpoints), between-wave rewiring and removal on sale. Document upgrade/link persistence. Add one-hop reaction charge, cap three, limit generation to once per source per 60 ticks; no recursive empowered generation.
-3. Define useful empowered payloads for every branch, distinguishing them from Split Lens/Barbed Relay/Echo Spindle. These relics occupy part of the earlier circuit concept; revise the signature if it adds no distinct decision. Prove two useful layouts under the expedition economy before expanding it.
-4. **RE2-05/RE3-03:** telegraphed disruption and a second authored map once the loop merits them. Additional content and longer runs must create new decisions. Keep the expedition playable and prior regressions passing; update this ledger after each verified slice.
-5. Do not switch branches, rewrite history or push. Preserve unrelated files. No further approval is required for the already authorized milestones.
+1. **FR-01:** inspect/preserve local changes and verify the existing baseline, then implement one Garrison/three Shieldguards in Core. Define finite enemy engagements, melee/death/release rules, reachable rally/retreat and planning recovery; protect determinism and the earlier no-troop fixtures. The handoff specifies the first reviewable patch and unresolved tuning choices.
+2. **FR-02:** connect selection/rally controls, reach preview, readable unit animation and boss counter telegraphs. Inspect rendering at different speeds and pause. Compare useful Garrison and no-Garrison strategies before broadening the roster.
+3. **FR-03 → FR-04:** introduce the mission catalog and distinct Stoneford battlefield, then the frontier UI and versioned persistent unlocks. Verify clear → unlock → application restart, recovery and duplicate-award prevention. Profile progress is separate from mid-wave saves.
+4. **FR-05 / FR-06 → FR-07:** add one alternative doctrine/challenge and reconciled local result graphs; evaluate the combined slice before expanding content. Full acceptance criteria and dependencies live in the frontier checklist.
+5. **EX-05 alongside these slices:** record at least three human runs. Note first-relic time, saved/regretted purchases, unclear deaths, repeated/ignored relic choices, priority changes and declined contracts. Tune frost dominance and rewards from evidence. Reassess Circuits/Resolve after squad/map evaluation; neither is the next implementation task.
+6. Keep the expedition playable and prior regressions passing; update the progress, checklist and handoff after each verified slice. Stay on `Ege-redevelop`, preserve unrelated work and do not rewrite history or push. The assigned implementer can make routine decisions within this scope without another approval round.
 
 ## Original baseline evidence
 

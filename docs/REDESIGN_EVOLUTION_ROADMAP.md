@@ -2,6 +2,8 @@
 
 Approved 2026-10-19; updated 2026-10-21. P0=critical, P1=required MVP, P2=optional. Complexity S/M/L/XL is relative effort, not a calendar promise. Unchecked means pending unless stated. Completion requires evidence in DEVELOPMENT_PROGRESS.md. Player feedback reprioritized the expedition loop ahead of Circuits; [EXPEDITION_REWORK.md](EXPEDITION_REWORK.md) records that decision.
 
+**Current continuation:** the owner accepted the frontier/squad direction and assigned implementation to a colleague. Read [AGENT_HANDOFF.md](AGENT_HANDOFF.md), then follow FR-01 → FR-02 in the [frontier implementation checklist](FRONTIER_CAMPAIGN_PROPOSAL.md). This session is documentation only. The FR slices below supersede the earlier instruction to implement Circuits immediately after EX-05.
+
 ## Phase 0 — Audit, vision, retirement
 
 - [x] **RE0-01 Audit/baseline** | P0 | deps none | M | MVP | AC: source/assets/history/build/test inventory and confirmed defects recorded.
@@ -25,10 +27,10 @@ Milestone / Slice A: six-wave foundation implemented and automatically verified.
 - [x] **RE2-01 Effect/branch/reaction definitions** | P0 | deps RE1-05 | M | MVP | AC: extend the implemented roster/spawn catalogs so effects, exclusive branches and reactions are tunable without tower-code edits; invalid values/IDs/references produce actionable errors.
 - [x] **RE2-02 Reactions** | P0 | deps RE2-01 | L | MVP | AC: Shatter/Ignition consumption, stacking, attribution and trigger limits tested.
 - [x] **RE2-03 Specialization** | P1 | deps RE2-02 | L | MVP | AC: six exclusive branches change mechanics/visual identity and preserve choices.
-- [ ] **RE2-04 Circuits** | P0 | deps RE2-03, EX-05 | L | MVP | AC: valid links, charge, empowered attacks/removal/UI; no cycles or recursive generation; at least two useful layouts within the expedition economy.
-- [ ] **RE2-05 Terrain/counterplay** | P1 | deps RE2-04 | M | MVP | AC: overlays and telegraphed Sapper disruption create counterable decisions without invalid routes.
+- [ ] **RE2-04 Circuits** | P2 | deps RE2-03, EX-05, FR-07 | L | Stretch; deferred pending reassessment | AC if retained: valid links, charge, empowered attacks/removal/UI; no cycles or recursive generation; at least two useful layouts that add decisions distinct from relics and squad positioning. Record keep/change/discard before implementation.
+- [ ] **RE2-05 Terrain/counterplay** | P1 | deps FR-02, EX-05 | M | MVP | AC: overlays and telegraphed Sapper disruption create counterable decisions without invalid routes; verify tower and squad responses.
 
-Milestone / Slice B: expedition combines specializations, reactions and circuits. The playable expedition below is an intermediate delivery; the signature milestone remains open until Circuits and counterplay are verified.
+Milestone / Slice B: expedition combines specializations, reactions and useful squad positioning with readable counterplay. The playable expedition below is an intermediate delivery; FR-07 and RE2-05 supply the remaining evidence. Circuits are an optional experiment, not a prerequisite for this milestone.
 
 ## Expedition intervention — before additional systems
 
@@ -42,12 +44,12 @@ Milestone / Slice B0: an escalating expedition with earned build changes and rea
 
 ## Phase 3 — Depth and replayability
 
-- [ ] **RE3-01 Run structure** | P0 | deps RE2-05, EX-05 | L | MVP | AC: full-run pacing validated toward 25–40 minutes including planning; about twelve useful relics and varied forecast contracts reproduce by seed. Partial: twelve waves/seven relics/Overruns implemented; expand only when additional decisions justify length.
-- [ ] **RE3-02 Enemies/boss** | P1 | deps RE3-01 | L | MVP | AC: six distinct behavioral roles and two Bellwarden phases have visible tells, counters and behavior coverage within the final circuit economy. Partial: healing, rally/guard/enrage implemented; Sapper and broader encounter coverage pending.
-- [ ] **RE3-03 Maps/authoring** | P1 | deps RE2-05 | M | MVP | AC: two maps/variations validate entrances/exits/foundations and useful circuit layouts.
-- [ ] **RE3-04 Profiles** | P1 | deps RE3-01 | M | MVP | AC: challenge unlocks/alternative starting options/fresh profiles/standardized challenges; no grind needed for standard victory; permanent power bonuses require a separate balance decision.
-- [ ] **RE3-05 Saves** | P0 | deps RE3-02, RE3-04 | L | MVP | AC: mid-wave load yields identical continuation including projectiles/status/boss/circuit/RNG; corrupt saves preserve current run.
-- [ ] **RE3-06 Analytics** | P1 | deps RE3-05 | M | MVP | AC: tower efficiency/resources/defeats/reactions/wave results, with seed/content/difficulty/profile context.
+- [ ] **RE3-01 Run structure** | P0 | deps RE2-05, EX-05, FR-07 | L | MVP | AC: full-run pacing validated toward 25–40 minutes including planning; about twelve useful relics and varied forecast contracts reproduce by seed. Partial: twelve waves/seven relics/Overruns implemented; expand only when additional decisions justify length.
+- [ ] **RE3-02 Enemies/boss** | P1 | deps RE3-01 | L | MVP | AC: six distinct behavioral roles and two Bellwarden phases have visible tells, counters and behavior coverage within the tower/squad economy. Partial: healing, rally/guard/enrage implemented; Sapper and broader encounter coverage pending.
+- [ ] **RE3-03 Maps/authoring** | P1 | deps FR-03, FR-04 | M | MVP | AC: two maps/variations validate entrances/exits/foundations and useful tower/squad layouts; shared authoring checks cover both. FR-03/04 supply the initial map/unlock slice; this task completes the wider authoring gate.
+- [ ] **RE3-04 Profiles** | P1 | deps FR-04, FR-05 | M | MVP | AC: challenge unlocks/alternative starting options/fresh profiles/standardized challenges; no grind needed for standard victory; permanent power bonuses require a separate balance decision. Verify the FR profile prototype across the full content set.
+- [ ] **RE3-05 Saves** | P0 | deps RE3-02, RE3-04 | L | MVP | AC: mid-wave load yields identical continuation including projectiles/status/boss/squad engagements/RNG and every retained gameplay system; corrupt saves preserve current run. Separate from FR-04 profile persistence.
+- [ ] **RE3-06 Analytics** | P1 | deps FR-06 | M | MVP | AC: tower efficiency/resources/defeats/reactions/wave results, with seed/content/difficulty/profile context. Extend the local FR-06 summaries; mid-wave saves are not a prerequisite for result graphs.
 
 Milestone / Slice C: replayable 25–40-minute complete run.
 
@@ -71,6 +73,8 @@ Milestone / Slice D: reproducible tested release candidate.
 
 ## Order and creative experiments
 
-Completed: RE0-02 → RE0-03 → RE1-01 → RE1-02 → RE1-03 → RE1-04 → RE1-05 → RE2-01 → RE2-02 → RE2-03 → EX-01 → EX-02 → EX-03 → EX-04. Next EX-05 → RE2-04 → RE2-05. Keep the expedition export playable and prior three/six-wave fixtures passing at each step. RE3-03 can proceed after RE2-05; RE5-01 can overlap presentation work.
+Accepted direction, 2026-10-21: [Frontier campaign and road warriors](FRONTIER_CAMPAIGN_PROPOSAL.md) records first-party references, persistent map unlocks, a small controllable squad, mastery, animation and results graphs. FR-00 research is complete; FR-01 through FR-07 are planned and unimplemented. That checklist owns their identifiers, priorities, dependencies, complexity, acceptance criteria and status. The owner requested this documentation handoff before the colleague starts code changes.
 
-Battlefield Memory, Evacuation Couriers and Echo Blueprints are not hidden release requirements. Limit first prototypes to three focused engineering days; retain only observable new decisions surviving readability/playtest review. Document discarded findings.
+Completed: RE0-02 → RE0-03 → RE1-01 → RE1-02 → RE1-03 → RE1-04 → RE1-05 → RE2-01 → RE2-02 → RE2-03 → EX-01 → EX-02 → EX-03 → EX-04 → FR-00. Next playable slices: **FR-01 → FR-02** on Emberwatch; **FR-03 → FR-04** for Stoneford/persistent destinations; **FR-05 / FR-06 → FR-07** for mastery, graphs and combined evaluation. FR-03 can proceed independently once its content/HUD contract is defined, but the squad is the first assigned milestone. Collect EX-05 observations alongside development. Keep the expedition export playable and prior three/six-wave fixtures passing at each step. FR tasks deliver portions of the broader phase gates; do not mark those gates complete without their remaining acceptance evidence.
+
+Reassess Circuits after FR-07; it no longer blocks maps, profile unlocks or the signature slice. Field Standards/Resolve, Battlefield Memory, Evacuation Couriers and Echo Blueprints are experiments, not hidden release requirements. Limit first experiments to three focused engineering days; retain only observable new decisions surviving readability/playtest review. Document discarded findings. Later regions, broad squad rosters and online competition also remain outside the first handoff milestone.
