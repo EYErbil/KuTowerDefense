@@ -1,0 +1,10 @@
+<Project Sdk="Godot.NET.Sdk/4.7.2">
+  <PropertyGroup>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Core/Redesign.Core.csproj" />
+    <ProjectReference Include="../Infrastructure/Redesign.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

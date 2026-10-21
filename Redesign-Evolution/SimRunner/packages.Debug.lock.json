@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net8.0": {
+      "redesign.core": {
+        "type": "Project"
+      },
+      "redesign.infrastructure": {
+        "type": "Project",
+        "dependencies": {
+          "Redesign.Core": "[1.0.0, )"
+        }
+      }
+    },
+    "net8.0/win-x64": {}
+  }
+}

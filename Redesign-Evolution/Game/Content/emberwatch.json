@@ -1,0 +1,445 @@
+{
+  "formatVersion": 2,
+  "id": "emberwatch-evolution-v3",
+  "startingGold": 245,
+  "startingLives": 12,
+  "map": {
+    "id": "emberwatch",
+    "title": "Emberwatch",
+    "width": 15,
+    "height": 10,
+    "tileSize": 64,
+    "route": [
+      {
+        "x": 0,
+        "y": 5
+      },
+      {
+        "x": 3,
+        "y": 5
+      },
+      {
+        "x": 3,
+        "y": 2
+      },
+      {
+        "x": 8,
+        "y": 2
+      },
+      {
+        "x": 8,
+        "y": 7
+      },
+      {
+        "x": 12,
+        "y": 7
+      },
+      {
+        "x": 12,
+        "y": 4
+      },
+      {
+        "x": 14,
+        "y": 4
+      }
+    ],
+    "foundations": [
+      {
+        "x": 2,
+        "y": 4
+      },
+      {
+        "x": 4,
+        "y": 3
+      },
+      {
+        "x": 6,
+        "y": 3
+      },
+      {
+        "x": 7,
+        "y": 1
+      },
+      {
+        "x": 9,
+        "y": 4
+      },
+      {
+        "x": 7,
+        "y": 6
+      },
+      {
+        "x": 11,
+        "y": 6
+      },
+      {
+        "x": 13,
+        "y": 5
+      }
+    ]
+  },
+  "waves": [
+    {
+      "title": "First watch",
+      "briefing": "Runners test the road. Cover its bends.",
+      "groups": [
+        {
+          "enemyId": "runner",
+          "count": 8,
+          "intervalTicks": 60,
+          "delayTicks": 0
+        }
+      ]
+    },
+    {
+      "title": "Iron footsteps",
+      "briefing": "Bulwark armor blocks 9 impact. Prism bypasses it.",
+      "groups": [
+        {
+          "enemyId": "runner",
+          "count": 12,
+          "intervalTicks": 36,
+          "delayTicks": 0
+        },
+        {
+          "enemyId": "bulwark",
+          "count": 3,
+          "intervalTicks": 140,
+          "delayTicks": 140
+        }
+      ]
+    },
+    {
+      "title": "The rush",
+      "briefing": "A tight pack. Crucible splash hits nearby foes.",
+      "groups": [
+        {
+          "enemyId": "runner",
+          "count": 18,
+          "intervalTicks": 12,
+          "delayTicks": 0
+        }
+      ]
+    },
+    {
+      "title": "Under the ward",
+      "briefing": "Wardens shield allies. Try Support targeting.",
+      "groups": [
+        {
+          "enemyId": "warden",
+          "count": 2,
+          "intervalTicks": 420,
+          "delayTicks": 0
+        },
+        {
+          "enemyId": "runner",
+          "count": 16,
+          "intervalTicks": 32,
+          "delayTicks": 40
+        },
+        {
+          "enemyId": "bulwark",
+          "count": 4,
+          "intervalTicks": 140,
+          "delayTicks": 90
+        }
+      ]
+    },
+    {
+      "title": "Braided assault",
+      "briefing": "Armor, shields and speed arrive together.",
+      "groups": [
+        {
+          "enemyId": "runner",
+          "count": 28,
+          "intervalTicks": 16,
+          "delayTicks": 0
+        },
+        {
+          "enemyId": "bulwark",
+          "count": 7,
+          "intervalTicks": 90,
+          "delayTicks": 60
+        },
+        {
+          "enemyId": "warden",
+          "count": 3,
+          "intervalTicks": 200,
+          "delayTicks": 0
+        }
+      ]
+    },
+    {
+      "title": "Last light",
+      "briefing": "Break the escorts, then hold the final rush.",
+      "groups": [
+        {
+          "enemyId": "runner",
+          "count": 36,
+          "intervalTicks": 12,
+          "delayTicks": 0
+        },
+        {
+          "enemyId": "bulwark",
+          "count": 10,
+          "intervalTicks": 70,
+          "delayTicks": 20
+        },
+        {
+          "enemyId": "warden",
+          "count": 4,
+          "intervalTicks": 170,
+          "delayTicks": 0
+        }
+      ]
+    }
+  ],
+  "towers": [
+    {
+      "id": "boltworks",
+      "cost": 60,
+      "damage": 18,
+      "range": 190,
+      "cooldownTicks": 42,
+      "projectileSpeed": 480,
+      "splashRadius": 0,
+      "name": "Boltworks",
+      "description": "Fast bolts. Reliable road coverage.",
+      "attack": "Bolt",
+      "damageKind": "Impact"
+    },
+    {
+      "id": "prism",
+      "name": "Prism",
+      "description": "Instant energy beams bypass armor.",
+      "cost": 85,
+      "damage": 25,
+      "range": 175,
+      "cooldownTicks": 64,
+      "projectileSpeed": 880,
+      "attack": "Beam",
+      "damageKind": "Energy"
+    },
+    {
+      "id": "crucible",
+      "name": "Crucible",
+      "description": "Slow shells. Half damage to nearby foes.",
+      "cost": 100,
+      "damage": 36,
+      "range": 220,
+      "cooldownTicks": 96,
+      "projectileSpeed": 270,
+      "splashRadius": 76,
+      "attack": "Shell",
+      "damageKind": "Impact"
+    }
+  ],
+  "enemies": [
+    {
+      "id": "runner",
+      "health": 44,
+      "speed": 48,
+      "bounty": 10,
+      "leakDamage": 1,
+      "name": "Runner"
+    },
+    {
+      "id": "bulwark",
+      "name": "Bulwark",
+      "health": 130,
+      "speed": 32,
+      "bounty": 18,
+      "leakDamage": 2,
+      "armor": 9
+    },
+    {
+      "id": "warden",
+      "name": "Warden",
+      "health": 95,
+      "speed": 38,
+      "bounty": 22,
+      "leakDamage": 2,
+      "shieldRadius": 100,
+      "shieldPercent": 40
+    }
+  ],
+  "combat": {
+    "statuses": [
+      {
+        "id": "chill",
+        "name": "Chill",
+        "maxStacks": 3,
+        "durationTicks": 180,
+        "slowPercentPerStack": 15
+      },
+      {
+        "id": "oil",
+        "name": "Oil",
+        "maxStacks": 1,
+        "durationTicks": 240
+      },
+      {
+        "id": "pin",
+        "name": "Pin",
+        "maxStacks": 1,
+        "durationTicks": 30,
+        "slowPercentPerStack": 80
+      },
+      {
+        "id": "fracture",
+        "name": "Fracture",
+        "maxStacks": 2,
+        "durationTicks": 180,
+        "armorReductionPerStack": 6
+      }
+    ],
+    "reactions": [
+      {
+        "id": "shatter",
+        "name": "Shatter",
+        "statusId": "chill",
+        "requiredStacks": 2,
+        "trigger": "Impact",
+        "effect": "Burst",
+        "damage": 24,
+        "radius": 64,
+        "damageKind": "Frost",
+        "cooldownTicks": 60
+      },
+      {
+        "id": "ignition",
+        "name": "Ignition",
+        "statusId": "oil",
+        "requiredStacks": 1,
+        "trigger": "Fire",
+        "effect": "BurningGround",
+        "damage": 6,
+        "radius": 72,
+        "damageKind": "Fire",
+        "cooldownTicks": 120,
+        "durationTicks": 180,
+        "intervalTicks": 30,
+        "maxAreas": 6
+      }
+    ],
+    "branches": [
+      {
+        "towerId": "boltworks",
+        "cost": 110,
+        "upgrade": {
+          "id": "ballista",
+          "cost": 60,
+          "damage": 38,
+          "range": 245,
+          "cooldownTicks": 78,
+          "projectileSpeed": 650,
+          "splashRadius": 0,
+          "name": "Pinning Ballista",
+          "description": "Heavy bolts pin for 0.5s. Longer reach, slower firing.",
+          "attack": "Bolt",
+          "damageKind": "Impact",
+          "onHit": {
+            "statusId": "pin"
+          }
+        }
+      },
+      {
+        "towerId": "boltworks",
+        "cost": 70,
+        "upgrade": {
+          "id": "pitchbow",
+          "cost": 60,
+          "damage": 8,
+          "range": 195,
+          "cooldownTicks": 32,
+          "projectileSpeed": 480,
+          "splashRadius": 0,
+          "name": "Pitchbow",
+          "description": "Low-damage bolts coat foes in oil. Pair with a Sun Lens.",
+          "attack": "Bolt",
+          "damageKind": "Impact",
+          "onHit": {
+            "statusId": "oil"
+          }
+        }
+      },
+      {
+        "towerId": "prism",
+        "cost": 80,
+        "upgrade": {
+          "id": "rime",
+          "name": "Rime Lens",
+          "description": "Chills and slows. Two chill stacks + impact cause Shatter.",
+          "cost": 85,
+          "damage": 10,
+          "range": 180,
+          "cooldownTicks": 36,
+          "projectileSpeed": 880,
+          "attack": "Beam",
+          "damageKind": "Frost",
+          "onHit": {
+            "statusId": "chill"
+          }
+        }
+      },
+      {
+        "towerId": "prism",
+        "cost": 100,
+        "upgrade": {
+          "id": "sun",
+          "name": "Sun Lens",
+          "description": "Fire beams ignite oiled foes into burning ground.",
+          "cost": 85,
+          "damage": 24,
+          "range": 200,
+          "cooldownTicks": 64,
+          "projectileSpeed": 880,
+          "attack": "Beam",
+          "damageKind": "Fire"
+        }
+      },
+      {
+        "towerId": "crucible",
+        "cost": 110,
+        "upgrade": {
+          "id": "breach",
+          "name": "Breach Mortar",
+          "description": "Shells fracture armor across the blast. Supports physical towers.",
+          "cost": 100,
+          "damage": 34,
+          "range": 220,
+          "cooldownTicks": 102,
+          "projectileSpeed": 270,
+          "splashRadius": 82,
+          "attack": "Shell",
+          "damageKind": "Impact",
+          "onHit": {
+            "statusId": "fracture"
+          }
+        }
+      },
+      {
+        "towerId": "crucible",
+        "cost": 120,
+        "upgrade": {
+          "id": "echo",
+          "name": "Echo Mortar",
+          "description": "A marked second impact lands after 0.5s. Lower direct damage.",
+          "cost": 100,
+          "damage": 28,
+          "range": 235,
+          "cooldownTicks": 108,
+          "projectileSpeed": 270,
+          "splashRadius": 76,
+          "attack": "Shell",
+          "damageKind": "Impact",
+          "echo": {
+            "delayTicks": 30,
+            "damage": 16,
+            "radius": 76
+          }
+        }
+      }
+    ]
+  }
+}

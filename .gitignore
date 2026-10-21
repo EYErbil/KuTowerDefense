@@ -1,1 +1,9 @@
 target/
+.tools/
+.artifacts/
+**/bin/
+**/obj/
+**/.godot/
+**/TestResults/
+*.user
+*.suo

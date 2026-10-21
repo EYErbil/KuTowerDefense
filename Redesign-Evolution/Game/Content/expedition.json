@@ -1,0 +1,803 @@
+{
+  "formatVersion": 2,
+  "id": "emberwatch-expedition-v1",
+  "startingGold": 180,
+  "startingLives": 12,
+  "map": {
+    "id": "emberwatch",
+    "title": "Emberwatch",
+    "width": 15,
+    "height": 10,
+    "tileSize": 64,
+    "route": [
+      {
+        "x": 0,
+        "y": 5
+      },
+      {
+        "x": 3,
+        "y": 5
+      },
+      {
+        "x": 3,
+        "y": 2
+      },
+      {
+        "x": 8,
+        "y": 2
+      },
+      {
+        "x": 8,
+        "y": 7
+      },
+      {
+        "x": 12,
+        "y": 7
+      },
+      {
+        "x": 12,
+        "y": 4
+      },
+      {
+        "x": 14,
+        "y": 4
+      }
+    ],
+    "foundations": [
+      {
+        "x": 2,
+        "y": 4
+      },
+      {
+        "x": 4,
+        "y": 3
+      },
+      {
+        "x": 6,
+        "y": 3
+      },
+      {
+        "x": 7,
+        "y": 1
+      },
+      {
+        "x": 9,
+        "y": 4
+      },
+      {
+        "x": 7,
+        "y": 6
+      },
+      {
+        "x": 11,
+        "y": 6
+      },
+      {
+        "x": 13,
+        "y": 5
+      }
+    ]
+  },
+  "waves": [
+    {
+      "title": "First watch",
+      "briefing": "Start with two towers. Save for a path or wider coverage.",
+      "groups": [
+        {
+          "intervalTicks": 65,
+          "delayTicks": 0,
+          "count": 10,
+          "enemyId": "runner"
+        }
+      ],
+      "clearGold": 50,
+      "healthPercent": 100
+    },
+    {
+      "title": "Iron footsteps",
+      "briefing": "Armor arrives behind the runners. Energy or Shatter breaks it.",
+      "groups": [
+        {
+          "intervalTicks": 34,
+          "delayTicks": 0,
+          "count": 12,
+          "enemyId": "runner"
+        },
+        {
+          "intervalTicks": 160,
+          "delayTicks": 150,
+          "count": 2,
+          "enemyId": "bulwark"
+        }
+      ],
+      "clearGold": 74,
+      "healthPercent": 100
+    },
+    {
+      "title": "The iron standard",
+      "briefing": "Elite: a Captain follows the escort. A relic awaits this victory.",
+      "groups": [
+        {
+          "intervalTicks": 30,
+          "delayTicks": 0,
+          "count": 14,
+          "enemyId": "runner"
+        },
+        {
+          "intervalTicks": 140,
+          "delayTicks": 80,
+          "count": 3,
+          "enemyId": "bulwark"
+        },
+        {
+          "intervalTicks": 1,
+          "delayTicks": 360,
+          "count": 1,
+          "enemyId": "captain"
+        }
+      ],
+      "clearGold": 32,
+      "healthPercent": 100
+    },
+    {
+      "title": "Mending march",
+      "briefing": "Menders heal nearby allies. Support targeting interrupts their pulse.",
+      "groups": [
+        {
+          "intervalTicks": 240,
+          "delayTicks": 0,
+          "count": 2,
+          "enemyId": "mender"
+        },
+        {
+          "intervalTicks": 40,
+          "delayTicks": 40,
+          "count": 14,
+          "enemyId": "runner"
+        },
+        {
+          "intervalTicks": 180,
+          "delayTicks": 100,
+          "count": 3,
+          "enemyId": "bulwark"
+        }
+      ],
+      "clearGold": 24,
+      "healthPercent": 115
+    },
+    {
+      "title": "The sheltered rush",
+      "briefing": "Shields escort a dense pack. Burst damage and focus fire matter.",
+      "groups": [
+        {
+          "intervalTicks": 280,
+          "delayTicks": 0,
+          "count": 2,
+          "enemyId": "warden"
+        },
+        {
+          "intervalTicks": 18,
+          "delayTicks": 30,
+          "count": 20,
+          "enemyId": "runner"
+        },
+        {
+          "intervalTicks": 130,
+          "delayTicks": 90,
+          "count": 4,
+          "enemyId": "bulwark"
+        }
+      ],
+      "clearGold": 24,
+      "healthPercent": 115
+    },
+    {
+      "title": "Break the convoy",
+      "briefing": "Elite: healing and armor together. Win your second relic.",
+      "groups": [
+        {
+          "intervalTicks": 1,
+          "delayTicks": 280,
+          "count": 1,
+          "enemyId": "captain"
+        },
+        {
+          "intervalTicks": 220,
+          "delayTicks": 0,
+          "count": 2,
+          "enemyId": "mender"
+        },
+        {
+          "intervalTicks": 260,
+          "delayTicks": 60,
+          "count": 2,
+          "enemyId": "warden"
+        },
+        {
+          "intervalTicks": 120,
+          "delayTicks": 90,
+          "count": 4,
+          "enemyId": "bulwark"
+        },
+        {
+          "intervalTicks": 26,
+          "delayTicks": 50,
+          "count": 18,
+          "enemyId": "runner"
+        }
+      ],
+      "clearGold": 32,
+      "healthPercent": 115
+    },
+    {
+      "title": "Outriders",
+      "briefing": "Fast raiders overtake the column. Keep some coverage downstream.",
+      "groups": [
+        {
+          "intervalTicks": 30,
+          "delayTicks": 0,
+          "count": 16,
+          "enemyId": "runner"
+        },
+        {
+          "intervalTicks": 22,
+          "delayTicks": 220,
+          "count": 6,
+          "enemyId": "raider"
+        },
+        {
+          "intervalTicks": 170,
+          "delayTicks": 80,
+          "count": 3,
+          "enemyId": "bulwark"
+        },
+        {
+          "intervalTicks": 280,
+          "delayTicks": 30,
+          "count": 2,
+          "enemyId": "mender"
+        }
+      ],
+      "clearGold": 24,
+      "healthPercent": 140
+    },
+    {
+      "title": "The long siege",
+      "briefing": "A staggered escort tests sustained damage, not only a single burst.",
+      "groups": [
+        {
+          "intervalTicks": 40,
+          "delayTicks": 0,
+          "count": 20,
+          "enemyId": "runner"
+        },
+        {
+          "intervalTicks": 130,
+          "delayTicks": 90,
+          "count": 6,
+          "enemyId": "bulwark"
+        },
+        {
+          "intervalTicks": 250,
+          "delayTicks": 40,
+          "count": 3,
+          "enemyId": "warden"
+        },
+        {
+          "intervalTicks": 330,
+          "delayTicks": 170,
+          "count": 2,
+          "enemyId": "mender"
+        }
+      ],
+      "clearGold": 24,
+      "healthPercent": 140
+    },
+    {
+      "title": "Twin standards",
+      "briefing": "Two Captains and three Menders. Your final relic follows.",
+      "groups": [
+        {
+          "intervalTicks": 350,
+          "delayTicks": 200,
+          "count": 2,
+          "enemyId": "captain"
+        },
+        {
+          "intervalTicks": 30,
+          "delayTicks": 0,
+          "count": 20,
+          "enemyId": "runner"
+        },
+        {
+          "intervalTicks": 160,
+          "delayTicks": 60,
+          "count": 5,
+          "enemyId": "bulwark"
+        },
+        {
+          "intervalTicks": 260,
+          "delayTicks": 20,
+          "count": 3,
+          "enemyId": "mender"
+        }
+      ],
+      "clearGold": 36,
+      "healthPercent": 140
+    },
+    {
+      "title": "Black procession",
+      "briefing": "A full escort line. Switch priorities as support units fall.",
+      "groups": [
+        {
+          "intervalTicks": 22,
+          "delayTicks": 0,
+          "count": 30,
+          "enemyId": "runner"
+        },
+        {
+          "intervalTicks": 110,
+          "delayTicks": 80,
+          "count": 6,
+          "enemyId": "bulwark"
+        },
+        {
+          "intervalTicks": 240,
+          "delayTicks": 0,
+          "count": 3,
+          "enemyId": "warden"
+        },
+        {
+          "intervalTicks": 240,
+          "delayTicks": 120,
+          "count": 3,
+          "enemyId": "mender"
+        }
+      ],
+      "clearGold": 28,
+      "healthPercent": 165
+    },
+    {
+      "title": "The last breach",
+      "briefing": "Raiders follow the heaviest column. Prepare a second killing ground.",
+      "groups": [
+        {
+          "intervalTicks": 20,
+          "delayTicks": 0,
+          "count": 28,
+          "enemyId": "runner"
+        },
+        {
+          "intervalTicks": 30,
+          "delayTicks": 400,
+          "count": 6,
+          "enemyId": "raider"
+        },
+        {
+          "intervalTicks": 100,
+          "delayTicks": 60,
+          "count": 7,
+          "enemyId": "bulwark"
+        },
+        {
+          "intervalTicks": 230,
+          "delayTicks": 0,
+          "count": 3,
+          "enemyId": "warden"
+        },
+        {
+          "intervalTicks": 230,
+          "delayTicks": 110,
+          "count": 3,
+          "enemyId": "mender"
+        }
+      ],
+      "clearGold": 40,
+      "healthPercent": 165
+    },
+    {
+      "title": "Bellwarden",
+      "briefing": "Boss: exposed while ringing. At half health it rallies faster.",
+      "groups": [
+        {
+          "intervalTicks": 1,
+          "delayTicks": 120,
+          "count": 1,
+          "enemyId": "bellwarden"
+        },
+        {
+          "intervalTicks": 35,
+          "delayTicks": 0,
+          "count": 16,
+          "enemyId": "runner"
+        },
+        {
+          "intervalTicks": 180,
+          "delayTicks": 60,
+          "count": 4,
+          "enemyId": "bulwark"
+        },
+        {
+          "intervalTicks": 400,
+          "delayTicks": 180,
+          "count": 2,
+          "enemyId": "mender"
+        },
+        {
+          "intervalTicks": 400,
+          "delayTicks": 90,
+          "count": 2,
+          "enemyId": "warden"
+        }
+      ],
+      "clearGold": 50,
+      "healthPercent": 165
+    }
+  ],
+  "towers": [
+    {
+      "id": "boltworks",
+      "cost": 60,
+      "damage": 18,
+      "range": 190,
+      "cooldownTicks": 42,
+      "projectileSpeed": 480,
+      "splashRadius": 0,
+      "name": "Boltworks",
+      "description": "Fast bolts. Reliable road coverage.",
+      "attack": "Bolt",
+      "damageKind": "Impact"
+    },
+    {
+      "id": "prism",
+      "name": "Prism",
+      "description": "Instant energy beams bypass armor.",
+      "cost": 85,
+      "damage": 25,
+      "range": 175,
+      "cooldownTicks": 64,
+      "projectileSpeed": 880,
+      "attack": "Beam",
+      "damageKind": "Energy"
+    },
+    {
+      "id": "crucible",
+      "name": "Crucible",
+      "description": "Slow shells. Half damage to nearby foes.",
+      "cost": 100,
+      "damage": 36,
+      "range": 220,
+      "cooldownTicks": 96,
+      "projectileSpeed": 270,
+      "splashRadius": 76,
+      "attack": "Shell",
+      "damageKind": "Impact"
+    }
+  ],
+  "enemies": [
+    {
+      "id": "runner",
+      "name": "Runner",
+      "health": 55,
+      "bounty": 2,
+      "leakDamage": 1,
+      "speed": 54
+    },
+    {
+      "id": "bulwark",
+      "name": "Bulwark",
+      "health": 180,
+      "bounty": 5,
+      "leakDamage": 2,
+      "armor": 14,
+      "speed": 38
+    },
+    {
+      "id": "warden",
+      "leakDamage": 2,
+      "shieldRadius": 100,
+      "speed": 43,
+      "health": 160,
+      "name": "Warden",
+      "bounty": 7,
+      "shieldPercent": 40
+    },
+    {
+      "id": "mender",
+      "name": "Mender",
+      "health": 135,
+      "bounty": 6,
+      "healing": {
+        "amount": 12,
+        "intervalTicks": 150,
+        "radius": 105,
+        "windupTicks": 45
+      },
+      "leakDamage": 2,
+      "speed": 36
+    },
+    {
+      "id": "raider",
+      "name": "Raider",
+      "health": 65,
+      "bounty": 0,
+      "leakDamage": 1,
+      "speed": 94
+    },
+    {
+      "id": "captain",
+      "health": 400,
+      "leakDamage": 3,
+      "slowResistancePercent": 25,
+      "speed": 28,
+      "armor": 20,
+      "name": "Iron Captain",
+      "bounty": 15
+    },
+    {
+      "armor": 20,
+      "id": "bellwarden",
+      "boss": {
+        "maxSummons": 12,
+        "intervalTicks": 300,
+        "guardPercent": 45,
+        "windupTicks": 90,
+        "summonsPerPulse": 2,
+        "summonEnemyId": "raider",
+        "enrageSpeedPercent": 25,
+        "enrageHealthPercent": 50
+      },
+      "bounty": 50,
+      "leakDamage": 12,
+      "name": "Bellwarden",
+      "health": 3200,
+      "slowResistancePercent": 50,
+      "speed": 19
+    }
+  ],
+  "combat": {
+    "statuses": [
+      {
+        "id": "chill",
+        "name": "Chill",
+        "maxStacks": 3,
+        "durationTicks": 180,
+        "slowPercentPerStack": 15
+      },
+      {
+        "id": "oil",
+        "name": "Oil",
+        "maxStacks": 1,
+        "durationTicks": 240
+      },
+      {
+        "id": "pin",
+        "name": "Pin",
+        "maxStacks": 1,
+        "durationTicks": 30,
+        "slowPercentPerStack": 80
+      },
+      {
+        "id": "fracture",
+        "name": "Fracture",
+        "maxStacks": 2,
+        "durationTicks": 180,
+        "armorReductionPerStack": 6
+      }
+    ],
+    "reactions": [
+      {
+        "id": "shatter",
+        "name": "Shatter",
+        "statusId": "chill",
+        "requiredStacks": 2,
+        "trigger": "Impact",
+        "effect": "Burst",
+        "damage": 32,
+        "radius": 64,
+        "damageKind": "Frost",
+        "cooldownTicks": 60
+      },
+      {
+        "id": "ignition",
+        "name": "Ignition",
+        "statusId": "oil",
+        "requiredStacks": 1,
+        "trigger": "Fire",
+        "effect": "BurningGround",
+        "damage": 8,
+        "radius": 72,
+        "damageKind": "Fire",
+        "cooldownTicks": 120,
+        "durationTicks": 180,
+        "intervalTicks": 30,
+        "maxAreas": 6
+      }
+    ],
+    "branches": [
+      {
+        "towerId": "boltworks",
+        "cost": 110,
+        "upgrade": {
+          "id": "ballista",
+          "cost": 60,
+          "damage": 55,
+          "range": 245,
+          "cooldownTicks": 78,
+          "projectileSpeed": 650,
+          "splashRadius": 0,
+          "name": "Pinning Ballista",
+          "description": "Heavy bolts pin for 0.5s. Longer reach, slower firing.",
+          "attack": "Bolt",
+          "damageKind": "Impact",
+          "onHit": {
+            "statusId": "pin"
+          }
+        }
+      },
+      {
+        "towerId": "boltworks",
+        "cost": 70,
+        "upgrade": {
+          "id": "pitchbow",
+          "cost": 60,
+          "damage": 12,
+          "range": 195,
+          "cooldownTicks": 32,
+          "projectileSpeed": 480,
+          "splashRadius": 0,
+          "name": "Pitchbow",
+          "description": "Low-damage bolts coat foes in oil. Pair with a Sun Lens.",
+          "attack": "Bolt",
+          "damageKind": "Impact",
+          "onHit": {
+            "statusId": "oil"
+          }
+        }
+      },
+      {
+        "towerId": "prism",
+        "cost": 80,
+        "upgrade": {
+          "id": "rime",
+          "name": "Rime Lens",
+          "description": "Chills and slows. Two chill stacks + impact cause Shatter.",
+          "cost": 85,
+          "damage": 14,
+          "range": 180,
+          "cooldownTicks": 36,
+          "projectileSpeed": 880,
+          "attack": "Beam",
+          "damageKind": "Frost",
+          "onHit": {
+            "statusId": "chill"
+          }
+        }
+      },
+      {
+        "towerId": "prism",
+        "cost": 100,
+        "upgrade": {
+          "id": "sun",
+          "name": "Sun Lens",
+          "description": "Fire beams ignite oiled foes into burning ground.",
+          "cost": 85,
+          "damage": 32,
+          "range": 200,
+          "cooldownTicks": 54,
+          "projectileSpeed": 880,
+          "attack": "Beam",
+          "damageKind": "Fire"
+        }
+      },
+      {
+        "towerId": "crucible",
+        "cost": 110,
+        "upgrade": {
+          "id": "breach",
+          "name": "Breach Mortar",
+          "description": "Shells fracture armor across the blast. Supports physical towers.",
+          "cost": 100,
+          "damage": 44,
+          "range": 220,
+          "cooldownTicks": 102,
+          "projectileSpeed": 270,
+          "splashRadius": 82,
+          "attack": "Shell",
+          "damageKind": "Impact",
+          "onHit": {
+            "statusId": "fracture"
+          }
+        }
+      },
+      {
+        "towerId": "crucible",
+        "cost": 120,
+        "upgrade": {
+          "id": "echo",
+          "name": "Echo Mortar",
+          "description": "A marked second impact lands after 0.5s. Lower direct damage.",
+          "cost": 100,
+          "damage": 34,
+          "range": 235,
+          "cooldownTicks": 108,
+          "projectileSpeed": 270,
+          "splashRadius": 76,
+          "attack": "Shell",
+          "damageKind": "Impact",
+          "echo": {
+            "delayTicks": 30,
+            "damage": 22,
+            "radius": 88
+          }
+        }
+      }
+    ]
+  },
+  "expedition": {
+    "challengeBaseCount": 2,
+    "challengeGrowthPerStage": 3,
+    "challengeEnemyId": "raider",
+    "challengeBonusGold": 20,
+    "rewardWaves": [
+      3,
+      6,
+      9
+    ],
+    "relics": [
+      {
+        "power": 1,
+        "description": "Chill attacks apply one extra stack. A Rime hit can prime Shatter immediately.",
+        "name": "Winter Glass",
+        "id": "winter-glass",
+        "kind": "ExtraChill"
+      },
+      {
+        "id": "split-lens",
+        "name": "Split Lens",
+        "power": 50,
+        "description": "Each beam forks once to a nearby enemy for 50% damage and carries its status or reaction.",
+        "kind": "BeamFork",
+        "radius": 72
+      },
+      {
+        "id": "barbed-relay",
+        "name": "Barbed Relay",
+        "power": 50,
+        "description": "Bolts arc once to a nearby foe for 50% damage. Oil and pin travel with the second hit.",
+        "kind": "BoltFork",
+        "radius": 72
+      },
+      {
+        "id": "echo-spindle",
+        "name": "Echo Spindle",
+        "power": 10,
+        "description": "Every shell leaves a 10-damage delayed blast. Existing Echo Mortars add 10 echo damage.",
+        "kind": "ShellEcho",
+        "radius": 76
+      },
+      {
+        "id": "kiln-heart",
+        "name": "Kiln Heart",
+        "power": 60,
+        "description": "Ignition burns for one extra second and reaches 24 units farther. Overlap limits still apply.",
+        "kind": "LongBurn",
+        "radius": 24
+      },
+      {
+        "power": 90,
+        "description": "Gain 90 gold now. Expand the defense or complete a combination sooner.",
+        "name": "War Chest",
+        "id": "war-chest",
+        "kind": "WarChest"
+      },
+      {
+        "power": 4,
+        "description": "Restore 4 citadel lives and raise maximum lives by 2. A recovery choice for a damaged run.",
+        "name": "Reinforced Gate",
+        "id": "reinforced-gate",
+        "kind": "ReinforcedGate"
+      }
+    ]
+  }
+}
