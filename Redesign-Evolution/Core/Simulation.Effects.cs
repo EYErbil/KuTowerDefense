@@ -113,6 +113,7 @@ public sealed partial class Simulation
 
     private static void WriteEnemyEffects(BinaryWriter writer, EnemyState enemy)
     {
+        writer.Write(enemy.NextAbilityTick); writer.Write(enemy.WindingUp); writer.Write(enemy.Enraged); writer.Write(enemy.SummonsCreated);
         writer.Write(enemy.Statuses.Count);
         foreach (var status in enemy.Statuses.OrderBy(s => s.Definition.Id, StringComparer.Ordinal))
         {

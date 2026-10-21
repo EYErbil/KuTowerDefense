@@ -57,6 +57,7 @@ public sealed partial class Simulation
         enemyDefinitions = this.definition.Enemies.ToDictionary(e => e.Id, StringComparer.Ordinal);
         branches = (this.definition.Combat?.Branches ?? []).ToDictionary(b => b.Upgrade.Id, StringComparer.Ordinal);
         InitializeEffects();
+        InitializeExpedition();
         Seed = seed;
         this.referenceQueries = referenceQueries;
         spatial = new EnemySpatialIndex(this.definition.Map);
@@ -77,7 +78,7 @@ public sealed partial class Simulation
                 if (!towerDefinitions.TryGetValue(placement.TowerId ?? definition.Towers[0].Id, out var spec))
                     return new(false, "Unknown tower type.");
                 if (Gold < spec.Cost) return new(false, "Not enough gold.");
-                var tower = new TowerState(nextId++, placement.Foundation, definition.Map.Center(definition.Map.Foundations[placement.Foundation]), spec);
+                var tower = new TowerState(nextId++, placement.Foundation, definition.Map.Center(definition.Map.Foundations[placement.Foundation]), ApplyRelics(spec));
                 Gold -= tower.Cost; GoldSpent += tower.Cost;
                 towers.Add(tower); towerHistory.Add(tower.Id, tower);
                 Emit(EventKind.Built, tower.Position, tower.Id, tower.Cost);
@@ -101,16 +102,24 @@ public sealed partial class Simulation
                     branch.TowerId != evolving.FamilyId) return new(false, "That path does not belong to this tower.");
                 if (Gold < branch.Cost) return new(false, "Not enough gold for this path.");
                 Gold -= branch.Cost; GoldSpent += branch.Cost; evolving.Cost += branch.Cost;
-                evolving.BranchId = branch.Upgrade.Id; evolving.Definition = branch.Upgrade;
+                evolving.BranchId = branch.Upgrade.Id; evolving.Definition = ApplyRelics(branch.Upgrade);
                 // Preserve cooldown, target priority, statistics and in-flight attack snapshots.
                 Emit(EventKind.Upgraded, evolving.Position, evolving.Id, branch.Cost, effectId: evolving.BranchId);
                 return new(true, $"{branch.Upgrade.Name} ready.", evolving.Id);
             case StartWave:
                 if (Phase != RunPhase.Planning || WaveNumber >= definition.Waves.Length) return new(false, "A wave is already active.");
+                if (rewardOffers.Count > 0) return new(false, "Choose your earned relic before the next wave.");
+                waveKillsAtStart = Kills; waveLeaksAtStart = Leaks; waveIncomeAtStart = GoldEarned;
                 WaveNumber++;
                 var wave = definition.Waves[WaveNumber - 1];
-                spawnPlan = wave.Groups.SelectMany((g, group) => Enumerable.Range(0, g.Count)
-                    .Select(ordinal => new ScheduledSpawn(g.DelayTicks + (long)ordinal * g.IntervalTicks, group, ordinal, enemyDefinitions[g.EnemyId])))
+                var groups = wave.Groups.AsEnumerable();
+                if (ChallengeEnabled && definition.Expedition is { } expedition)
+                    groups = groups.Append(new(expedition.ChallengeEnemyId, ChallengeCountAt(WaveNumber), 45, 90));
+                spawnPlan = groups.SelectMany((g, group) =>
+                    {
+                        var enemy = WaveEnemy(enemyDefinitions[g.EnemyId]);
+                        return Enumerable.Range(0, g.Count).Select(ordinal => new ScheduledSpawn(g.DelayTicks + (long)ordinal * g.IntervalTicks, group, ordinal, enemy));
+                    })
                     .OrderBy(s => s.Offset).ThenBy(s => s.Group).ThenBy(s => s.Ordinal).ToArray();
                 PendingSpawns = spawnPlan.Length; nextSpawn = 0;
                 waveStartTick = Tick + 1; Phase = RunPhase.Wave; IsPaused = false;
@@ -120,6 +129,12 @@ public sealed partial class Simulation
                 if (Phase != RunPhase.Wave) return new(false, "Pause is available during a wave.");
                 IsPaused = pause.Paused;
                 return new(true, IsPaused ? "Tactical pause — you can still build." : "Defense resumed.");
+            case ChooseRelic choice: return ClaimRelic(choice.RelicId);
+            case SetChallenge challenge:
+                if (definition.Expedition is null || Phase != RunPhase.Planning || rewardOffers.Count > 0)
+                    return new(false, "Choose reinforcements during planning, after your relic.");
+                ChallengeEnabled = challenge.Enabled;
+                return new(true, ChallengeEnabled ? $"Overrun accepted: {ChallengeCount} extra raiders; +{ChallengeReward} gold only with zero breaches." : "Standard encounter selected.");
             default: return new(false, "Unknown command.");
         }
     }
@@ -130,15 +145,17 @@ public sealed partial class Simulation
         Tick++;
         while (PendingSpawns > 0 && Tick >= waveStartTick + spawnPlan[nextSpawn].Offset)
         {
-            var enemy = new EnemyState(nextId++, Route.At(0), spawnPlan[nextSpawn++].Enemy);
+            var enemy = new EnemyState(nextId++, Route.At(0), spawnPlan[nextSpawn++].Enemy, Tick);
             enemies.Add(enemy); enemyById.Add(enemy.Id, enemy);
             PendingSpawns--;
         }
         foreach (var enemy in enemies)
         {
+            PrepareAbility(enemy);
             enemy.StatusSet.Expire(Tick);
             enemy.PreviousPosition = enemy.Position;
-            enemy.Progress = Math.Min(Route.Length, enemy.Progress + enemy.Definition.Speed * (100 - enemy.SlowPercent) / (100d * TicksPerSecond));
+            var speed = enemy.Definition.Speed * (enemy.Enraged ? 1 + (enemy.Definition.Boss?.EnrageSpeedPercent ?? 0) / 100d : 1);
+            enemy.Progress = Math.Min(Route.Length, enemy.Progress + speed * (100 - enemy.SlowPercent) / (100d * TicksPerSecond));
             enemy.Position = Route.At(enemy.Progress);
         }
         if (!referenceQueries) spatial.Rebuild(enemies);
@@ -162,7 +179,11 @@ public sealed partial class Simulation
             tower.TargetId = target?.Id ?? 0;
             if (target is null || Tick < tower.NextFireTick) continue;
             Emit(EventKind.Fired, tower.Position, tower.Id, attack: attack.Attack, destination: target.Position, damageKind: attack.DamageKind);
-            if (attack.Attack == AttackKind.Beam) Strike(target, attack.Damage, tower.Id, attack);
+            if (attack.Attack == AttackKind.Beam)
+            {
+                Strike(target, attack.Damage, tower.Id, attack);
+                ForkAttack(target.Id, target.Position, tower.Id, attack);
+            }
             else projectiles.Add(new ProjectileState(nextId++, tower.Id, target.Id, tower.Position, target.Position, attack));
             tower.NextFireTick = Tick + attack.CooldownTicks;
         }
@@ -180,6 +201,7 @@ public sealed partial class Simulation
             {
                 projectile.Position = projectile.AimPosition; projectile.Active = false;
                 if (target is { Alive: true }) Strike(target, attack.Damage, projectile.SourceId, attack);
+                ForkAttack(projectile.TargetId, projectile.Position, projectile.SourceId, attack);
                 if (attack.SplashRadius > 0)
                 {
                     Emit(EventKind.Blast, projectile.Position, projectile.SourceId,
@@ -196,6 +218,7 @@ public sealed partial class Simulation
             else projectile.Position += difference * (travel / difference.Length);
         }
         ResolvePersistentEffects();
+        ResolveEnemyAbilities();
         // Resolve deaths first: a killed enemy at the gate cannot also leak.
         foreach (var enemy in enemies)
         {
@@ -214,6 +237,7 @@ public sealed partial class Simulation
         else if (PendingSpawns == 0 && enemies.Count == 0)
         {
             projectiles.Clear(); burningAreas.Clear(); pendingImpacts.Clear();
+            CompleteWaveRewards();
             Phase = WaveNumber == definition.Waves.Length ? RunPhase.Victory : RunPhase.Planning;
             Emit(Phase == RunPhase.Victory ? EventKind.Victory : EventKind.WaveCleared, Route.At(Route.Length));
         }
@@ -234,7 +258,7 @@ public sealed partial class Simulation
         var rank = priority switch
         {
             TargetPriority.Strongest => candidate.Health.CompareTo(current.Health),
-            TargetPriority.Support => (candidate.Definition.ShieldRadius > 0).CompareTo(current.Definition.ShieldRadius > 0),
+            TargetPriority.Support => candidate.IsSupport.CompareTo(current.IsSupport),
             TargetPriority.Primed => IsPrimed(candidate, kind).CompareTo(IsPrimed(current, kind)),
             _ => 0
         };
@@ -286,6 +310,7 @@ public sealed partial class Simulation
             foreach (var p in projectiles)
             { writer.Write(p.Id); writer.Write(p.SourceId); writer.Write(p.TargetId); writer.Write(p.Position.X); writer.Write(p.Position.Y); writer.Write(p.AimPosition.X); writer.Write(p.AimPosition.Y); writer.Write(p.Definition.Id); }
             WriteEffects(writer);
+            WriteExpedition(writer);
         }
         return Convert.ToHexString(SHA256.HashData(stream.ToArray())).ToLowerInvariant();
     }

@@ -77,7 +77,7 @@ internal sealed class StatusSet : IReadOnlyList<StatusState>
 
 public sealed class ReactionStatistics(ReactionDefinition definition)
 {
-    public ReactionDefinition Definition { get; } = definition;
+    public ReactionDefinition Definition { get; internal set; } = definition;
     public long Triggers { get; internal set; }
     public long Damage { get; internal set; }
 }

@@ -1,6 +1,6 @@
 # REDESIGN: EVOLUTION — Roadmap
 
-Approved 2026-10-19; updated 2026-10-20. P0=critical, P1=required MVP, P2=optional. Complexity S/M/L/XL is relative effort, not a calendar promise. Unchecked means pending unless stated. Completion requires evidence in DEVELOPMENT_PROGRESS.md.
+Approved 2026-10-19; updated 2026-10-21. P0=critical, P1=required MVP, P2=optional. Complexity S/M/L/XL is relative effort, not a calendar promise. Unchecked means pending unless stated. Completion requires evidence in DEVELOPMENT_PROGRESS.md. Player feedback reprioritized the expedition loop ahead of Circuits; [EXPEDITION_REWORK.md](EXPEDITION_REWORK.md) records that decision.
 
 ## Phase 0 — Audit, vision, retirement
 
@@ -25,17 +25,27 @@ Milestone / Slice A: six-wave foundation implemented and automatically verified.
 - [x] **RE2-01 Effect/branch/reaction definitions** | P0 | deps RE1-05 | M | MVP | AC: extend the implemented roster/spawn catalogs so effects, exclusive branches and reactions are tunable without tower-code edits; invalid values/IDs/references produce actionable errors.
 - [x] **RE2-02 Reactions** | P0 | deps RE2-01 | L | MVP | AC: Shatter/Ignition consumption, stacking, attribution and trigger limits tested.
 - [x] **RE2-03 Specialization** | P1 | deps RE2-02 | L | MVP | AC: six exclusive branches change mechanics/visual identity and preserve choices.
-- [ ] **RE2-04 Circuits** | P0 | deps RE2-03 | L | MVP | AC: valid links, charge, empowered attacks/removal/UI; no cycles or recursive generation.
+- [ ] **RE2-04 Circuits** | P0 | deps RE2-03, EX-05 | L | MVP | AC: valid links, charge, empowered attacks/removal/UI; no cycles or recursive generation; at least two useful layouts within the expedition economy.
 - [ ] **RE2-05 Terrain/counterplay** | P1 | deps RE2-04 | M | MVP | AC: overlays and telegraphed Sapper disruption create counterable decisions without invalid routes.
 
-Milestone / Slice B: six-wave encounter combines specializations, reactions and circuits. Reactions/specializations now form a playable intermediate slice; the milestone remains open until Circuits and counterplay are verified.
+Milestone / Slice B: expedition combines specializations, reactions and circuits. The playable expedition below is an intermediate delivery; the signature milestone remains open until Circuits and counterplay are verified.
+
+## Expedition intervention — before additional systems
+
+- [x] **EX-01 Run progression** | P0 | deps RE2-03 | L | MVP | AC: seeded nonduplicate relic offers after waves 3/6/9; one atomic choice; owned-relic review; wave advance blocked until choosing; modifiers affect current/future specializations without compounding.
+- [x] **EX-02 Encounter pressure** | P0 | deps EX-01 | L | MVP | AC: twelve forecasts across four stages; healer windup and bounded boss rallies/vulnerability; exact optional reinforcement count/reward; bonus paid only without breaches.
+- [x] **EX-03 Balance witnesses** | P0 | deps EX-02 | M | MVP | AC: frost/fire/steel and passive/unspecialized controls measured across fixed seeds, with wave/resource/leak reports; limits and unsuccessful witnesses documented.
+- [x] **EX-04 Playable delivery** | P0 | deps EX-03 | M | MVP | AC: reward/contract/boss UI; actual engine flows; inspected export captures; regression tests and self-contained Windows package; updated handoff. Verified export and fresh extraction, including Unicode path and unrelated working directory.
+- [ ] **EX-05 Decision/playtest gate** | P0 | deps EX-04 | M | MVP | AC: record at least three human runs with first-relic time, spending pauses, unclear deaths, declined/accepted contracts and repeated choices; tune dominant frost/reward patterns; rerun the published witnesses. Do not claim enjoyment from bot wins.
+
+Milestone / Slice B0: an escalating expedition with earned build changes and readable final encounter. No additional tower catalog is needed to pass this gate.
 
 ## Phase 3 — Depth and replayability
 
-- [ ] **RE3-01 Run structure** | P0 | deps RE2-05 | L | MVP | AC: 18 waves/three acts, twelve relics, forecasts/contracts reproduce by seed.
-- [ ] **RE3-02 Enemies/boss** | P1 | deps RE3-01 | L | MVP | AC: six roles and two Bellwarden phases have visible tells, counters and behavior coverage.
+- [ ] **RE3-01 Run structure** | P0 | deps RE2-05, EX-05 | L | MVP | AC: full-run pacing validated toward 25–40 minutes including planning; about twelve useful relics and varied forecast contracts reproduce by seed. Partial: twelve waves/seven relics/Overruns implemented; expand only when additional decisions justify length.
+- [ ] **RE3-02 Enemies/boss** | P1 | deps RE3-01 | L | MVP | AC: six distinct behavioral roles and two Bellwarden phases have visible tells, counters and behavior coverage within the final circuit economy. Partial: healing, rally/guard/enrage implemented; Sapper and broader encounter coverage pending.
 - [ ] **RE3-03 Maps/authoring** | P1 | deps RE2-05 | M | MVP | AC: two maps/variations validate entrances/exits/foundations and useful circuit layouts.
-- [ ] **RE3-04 Profiles** | P1 | deps RE3-01 | M | MVP | AC: capped bonuses/unlocks/fresh profiles/standardized challenges; no grind needed for standard victory.
+- [ ] **RE3-04 Profiles** | P1 | deps RE3-01 | M | MVP | AC: challenge unlocks/alternative starting options/fresh profiles/standardized challenges; no grind needed for standard victory; permanent power bonuses require a separate balance decision.
 - [ ] **RE3-05 Saves** | P0 | deps RE3-02, RE3-04 | L | MVP | AC: mid-wave load yields identical continuation including projectiles/status/boss/circuit/RNG; corrupt saves preserve current run.
 - [ ] **RE3-06 Analytics** | P1 | deps RE3-05 | M | MVP | AC: tower efficiency/resources/defeats/reactions/wave results, with seed/content/difficulty/profile context.
 
@@ -61,6 +71,6 @@ Milestone / Slice D: reproducible tested release candidate.
 
 ## Order and creative experiments
 
-Completed: RE0-02 → RE0-03 → RE1-01 → RE1-02 → RE1-03 → RE1-04 → RE1-05 → RE2-01 → RE2-02 → RE2-03. Next: RE2-04 → RE2-05. Keep the six-wave export playable and the three-wave fixture passing at each step. RE3-03 can proceed after RE2-05; RE5-01 can overlap presentation work.
+Completed: RE0-02 → RE0-03 → RE1-01 → RE1-02 → RE1-03 → RE1-04 → RE1-05 → RE2-01 → RE2-02 → RE2-03 → EX-01 → EX-02 → EX-03 → EX-04. Next EX-05 → RE2-04 → RE2-05. Keep the expedition export playable and prior three/six-wave fixtures passing at each step. RE3-03 can proceed after RE2-05; RE5-01 can overlap presentation work.
 
 Battlefield Memory, Evacuation Couriers and Echo Blueprints are not hidden release requirements. Limit first prototypes to three focused engineering days; retain only observable new decisions surviving readability/playtest review. Document discarded findings.

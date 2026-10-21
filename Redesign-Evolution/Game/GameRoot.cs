@@ -46,44 +46,15 @@ public partial class GameRoot : Control
                     Json.Stringify(Engine.GetCopyrightInfo(), "  ") + "\n\nComponent licenses\n" + Json.Stringify(Engine.GetLicenseInfo(), "  "));
                 GetTree().Quit(); return;
             }
-            Content = ContentLoader.Parse(Godot.FileAccess.GetFileAsString("res://Content/emberwatch.json"));
-            Run = new Simulation(Content, 42);
-            BuildInterface(); loaded = true;
             var args = OS.GetCmdlineUserArgs();
+            var seedText = args.FirstOrDefault(a => a.StartsWith("--seed="))?[7..];
+            var seed = seedText is not null ? ulong.Parse(seedText) : args.Any(a => a.Contains("demo") || a == "--smoke") ? 42UL : (ulong)DateTime.UtcNow.Ticks;
+            Content = ContentLoader.Parse(Godot.FileAccess.GetFileAsString("res://Content/expedition.json"));
+            Run = new Simulation(Content, seed);
+            BuildInterface(); loaded = true;
             capturePath = args.FirstOrDefault(a => a.StartsWith("--capture="))?[10..];
             if (args.Contains("--smoke")) AddChild(new SmokeHarness { Game = this });
-            if (args.Contains("--demo"))
-            {
-                // Reach the first reaction-enabled escorted wave through ordinary player commands.
-                while (Run.Phase == RunPhase.Planning && Run.WaveNumber < 4)
-                {
-                    foreach (var command in EvolutionShowcase.PlanningCommands(Run))
-                    {
-                        var result = Run.Apply(command);
-                        if (!result.Success) throw new InvalidOperationException(result.Message);
-                    }
-                    Run.Apply(new StartWave());
-                    if (Run.WaveNumber == 4) break;
-                    var budget = 20000;
-                    while (Run.Phase == RunPhase.Wave && budget-- > 0) { Run.Step(); Run.DrainEvents(); }
-                }
-                SelectedTower = Run.Towers.First(t => t.BranchId == "rime").Id;
-                // Capture an actual ignition, with a bounded fallback if balance changes later.
-                for (var i = 0; i < 1200; i++)
-                {
-                    Run.Step();
-                    var events = Run.DrainEvents();
-                    if (Run.BurningAreas.Count > 0 && Run.Enemies.Any(e => e.Definition.ShieldRadius > 0) && Run.Enemies.Any(e => e.Statuses.Count > 0))
-                    {
-                        // Only show this instant's effects, not a backlog from fast-forwarding the showcase.
-                        foreach (var e in events) Board.Receive(e);
-                        break;
-                    }
-                }
-                Run.Apply(new Pause(true));
-                Run.DrainEvents();
-                Message("Rime prepares Shatter. Pitchbow prepares Ignition. Use Primed targeting on a finisher to consume the setup.");
-            }
+            PrepareExpeditionDemo(args);
             if (args.Contains("--paths-demo"))
             {
                 SelectedTower = Run.Apply(new PlaceTower(2, "prism")).EntityId;
@@ -103,19 +74,18 @@ public partial class GameRoot : Control
     {
         AddLabel(this, "REDESIGN  /  EVOLUTION", new(30, 22), new(800, 24), 15, Mint);
         AddLabel(this, "EMBERWATCH", new(28, 49), new(740, 55), 40, Text);
-        AddLabel(this, "Hold the old road. Keep the frontier alive.", new(30, 108), new(390, 28), 17, Muted);
+        AddLabel(this, "Build a defense. Earn a legacy.", new(30, 108), new(390, 28), 17, Muted);
         forecastTitle = AddLabel(this, "", new(440, 30), new(415, 24), 14, Gold);
-        forecastBody = AddLabel(this, "", new(440, 57), new(415, 24), 16, Text);
-        forecastTip = AddLabel(this, "", new(440, 88), new(415, 42), 14, Muted);
-        forecastTip.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        forecastBody = AddLabel(this, "", new(440, 55), new(415, 43), 14, Text, wrap: true);
+        forecastTip = AddLabel(this, "", new(440, 100), new(415, 34), 12, Muted, wrap: true);
         AddLabel(this, "GOLD", new(900, 30), new(130, 24), 13, Muted);
         goldLabel = AddLabel(this, "", new(900, 53), new(135, 44), 32, Gold);
         AddLabel(this, "CITADEL", new(1080, 30), new(130, 24), 13, Muted);
         livesLabel = AddLabel(this, "", new(1080, 53), new(130, 44), 32, Mint);
         AddLabel(this, "WAVE", new(1260, 30), new(130, 24), 13, Muted);
         waveLabel = AddLabel(this, "", new(1260, 53), new(155, 44), 32, Text);
-        AddLabel(this, "01  /  THE OLD ROAD", new(40, 151), new(440, 24), 14, Gold);
-        AddLabel(this, "SIX-WAVE DEFENSE", new(772, 151), new(230, 24), 12, Muted);
+        stageLabel = AddLabel(this, "", new(40, 151), new(660, 24), 14, Gold);
+        relicButton = AddButton(this, "RELICS / 0  [I]", new(772, 148), new(230, 28), OpenRelicReview);
         Board = new ArenaCanvas { Game = this, Position = new(40, 185), Size = new(960, 640), ClipContents = true };
         AddChild(Board);
         phaseLabel = AddLabel(this, "", new(1052, 174), new(340, 32), 20, Mint);
@@ -132,33 +102,40 @@ public partial class GameRoot : Control
             return button;
         }).ToArray();
         detailTitle = AddLabel(this, "", new(1052, 490), new(336, 28), 20, Text);
-        detailBody = AddLabel(this, "", new(1052, 530), new(336, 72), 15, Muted);
-        detailBody.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        detailBody = AddLabel(this, "", new(1052, 530), new(336, 72), 15, Muted, wrap: true);
         PriorityButton = AddButton(this, "TARGET: FIRST  [T]", new(1052, 612), new(336, 36), CyclePriority);
-        PriorityButton.TooltipText = "First: nearest the gate. Strongest: highest current health. Support: Wardens first. Primed: enemies ready for this tower's reaction, then nearest the gate.";
+        PriorityButton.TooltipText = "First: nearest the gate. Strongest: highest current health. Support: Wardens and Menders first. Primed: ready for this tower's reaction, then nearest the gate.";
         EvolveButton = AddButton(this, "EVOLVE  [U]", new(1052, 658), new(162, 36), OpenEvolution);
         SellButton = AddButton(this, "SELL", new(1224, 658), new(164, 36), SellSelected);
         SellButton.AddThemeFontSizeOverride("font_size", 14);
         StartButton = AddButton(this, "START WAVE  [N]", new(1052, 720), new(336, 58), StartNextWave, true);
-        soundButton = AddButton(this, "SOUND ON  [M]", new(1052, 793), new(336, 28), ToggleSound);
-        notice = AddLabel(this, "Choose a tower card, then a marked foundation. Read the forecast before starting.", new(40, 848), new(1360, 34), 16, Text);
+        ChallengeButton = AddButton(this, "OVERRUN: OFF", new(1052, 788), new(336, 38), ToggleChallenge);
+        soundButton = AddButton(this, "SOUND ON  [M]", new(1052, 848), new(336, 28), ToggleSound);
+        notice = AddLabel(this, "Start with two towers. Earn relics after waves 3, 6 and 9. Read the forecast before committing.", new(40, 848), new(970, 40), 14, Text, wrap: true);
         audio = new AudioCues(); AddChild(audio);
 
-        var result = new Panel { Position = new(340, 258), Size = new(760, 384), Visible = false };
+        var result = new Panel { Position = new(300, 220), Size = new(840, 460), Visible = false };
         result.AddThemeStyleboxOverride("panel", Box(new("12252d"), Mint));
         AddChild(result); ResultPanel = result;
         AddLabel(result, "EMBERWATCH  /  AFTER ACTION", new(40, 30), new(680, 30), 14, Gold);
-        resultTitle = AddLabel(result, "", new(40, 78), new(680, 66), 43, Text);
-        resultBody = AddLabel(result, "", new(40, 164), new(680, 105), 20, Muted);
-        RestartButton = AddButton(result, "DEFEND AGAIN  [R]", new(40, 290), new(680, 54), Restart, true);
+        resultTitle = AddLabel(result, "", new(40, 78), new(760, 66), 38, Text);
+        resultBody = AddLabel(result, "", new(40, 154), new(760, 194), 17, Muted, wrap: true);
+        RestartButton = AddButton(result, "NEW EXPEDITION  [R]", new(40, 372), new(760, 54), Restart, true);
         BuildEvolutionInterface();
+        BuildExpeditionInterface();
     }
 
     public override void _Process(double delta)
     {
         if (!loaded) return;
         clock.Advance(Run, delta, Speed);
-        foreach (var e in Run.DrainEvents()) { Board.Receive(e); audio.Receive(e); }
+        foreach (var e in Run.DrainEvents())
+        {
+            Board.Receive(e); audio.Receive(e);
+            if (e.Kind == EventKind.WaveCleared && Run.WaveReports.LastOrDefault() is { } wave)
+                Message($"Wave {wave.Wave} held: {wave.Kills} stopped, {wave.Leaks} breaches. +{wave.ClearGold} clear reward. " +
+                    (wave.Challenged ? wave.ChallengeWon ? "Overrun bonus earned." : "Overrun bonus lost to breaches." : "Prepare for the next forecast."));
+        }
         RefreshInterface(); Board.QueueRedraw(); QueueRedraw();
         if (capturePath is not null && ++frames == 25)
         {
@@ -184,7 +161,7 @@ public partial class GameRoot : Control
     public void RefreshInterface()
     {
         if (!loaded) return;
-        goldLabel.Text = Run.Gold.ToString(); livesLabel.Text = $"{Run.Lives} / {Content.StartingLives}";
+        goldLabel.Text = Run.Gold.ToString(); livesLabel.Text = $"{Run.Lives} / {Run.MaxLives}";
         waveLabel.Text = $"{Run.WaveNumber:00} / {Content.Waves.Length:00}";
         var ended = Run.Phase is RunPhase.Victory or RunPhase.Defeat;
         phaseLabel.Text = Run.Phase switch
@@ -203,7 +180,7 @@ public partial class GameRoot : Control
         forecastTip.Text = forecast.Briefing;
         PauseButton.Disabled = Run.Phase != RunPhase.Wave;
         PauseButton.Text = Run.IsPaused ? "RESUME  [SPACE]" : "PAUSE  [SPACE]";
-        StartButton.Disabled = Run.Phase != RunPhase.Planning;
+        StartButton.Disabled = Run.Phase != RunPhase.Planning || Run.RewardOffers.Count > 0;
         StartButton.Text = Run.Phase == RunPhase.Planning ? $"START WAVE {Run.WaveNumber + 1}  [N]" : "WAVE IN PROGRESS";
         for (var i = 0; i < BuildButtons.Length; i++)
         {
@@ -230,7 +207,7 @@ public partial class GameRoot : Control
             detailBody.Text = Building
                 ? $"{BuildDefinition.Damage} {BuildDefinition.DamageKind.ToString().ToLowerInvariant()}  /  {BuildDefinition.CooldownTicks / 60d:0.00}s  /  range {BuildDefinition.Range:0}\nHover a foundation to preview range.\nEscape cancels placement."
                 : "Boltworks covers the road. Prism defeats armor. Crucible breaks groups.\nSelect a tower to set its target priority.";
-            if (!Building) detailBody.Text = "Chill twice + impact = Shatter.\nOil + fire = Ignition.\nSelect a tower to evolve its role [U].";
+            if (!Building) detailBody.Text = $"{forecast.ClearGold} gold for clearing the next wave.\nEnemy health: {forecast.HealthPercent}% of base.\nEvolve [U] or accept an Overrun for more risk.";
         }
         ResultPanel.Visible = ended;
         if (ended)
@@ -239,19 +216,21 @@ public partial class GameRoot : Control
             resultTitle.AddThemeColorOverride("font_color", Run.Phase == RunPhase.Victory ? Mint : Red);
             resultBody.Text = $"{Run.Kills} stopped    /    {Run.Leaks} breached    /    {Run.Lives} lives remain\n{Run.DamageDealt} damage dealt    ·    {Run.GoldEarned} gold earned\n{Run.WaveNumber} waves faced    ·    {Run.Tick / 60d:0.0}s simulated";
             resultBody.Text += "\n" + string.Join("  /  ", Run.Reactions.Select(r => $"{r.Triggers} {r.Definition.Name}")) + $"  /  {Run.ReactionDamage} reaction damage";
+            resultBody.Text += $"\nRelics: {string.Join(", ", Run.Relics.Select(r => r.Name))}\n{Run.WaveReports.Count} waves cleared / {Run.WaveReports.Count(w => w.ChallengeWon)} Overruns earned / seed {Run.Seed}";
         }
+        RefreshExpeditionInterface();
     }
 
     public void ChooseBuild(int type = 0)
     {
-        if (EvolutionPanel.Visible) return;
+        if (EvolutionPanel.Visible || RewardPanel.Visible) return;
         if (Run.Phase is RunPhase.Victory or RunPhase.Defeat || type < 0 || type >= Content.Towers.Length) return;
         BuildType = type; Building = true; SelectedTower = 0;
         Message($"{BuildDefinition.Name}: {BuildDefinition.Description} Choose a foundation."); RefreshInterface();
     }
     public void SelectFoundation(int index)
     {
-        if (EvolutionPanel.Visible) return;
+        if (EvolutionPanel.Visible || RewardPanel.Visible) return;
         if (Run.Phase is RunPhase.Victory or RunPhase.Defeat) return;
         var tower = Run.Towers.FirstOrDefault(t => t.Foundation == index);
         if (tower is not null) { SelectedTower = tower.Id; Building = false; Message("Tower selected. Its range is shown on the battlefield."); }
@@ -279,12 +258,21 @@ public partial class GameRoot : Control
     public void Restart()
     {
         EvolutionPanel.Visible = false;
-        Run = new Simulation(Content, 42); clock = new(); Speed = 1; Building = false; SelectedTower = 0; BuildType = 0;
+        RewardPanel.Visible = false;
+        Run = new Simulation(Content, unchecked(Run.Seed + 1)); clock = new(); Speed = 1; Building = false; SelectedTower = 0; BuildType = 0;
         Board.ClearEffects(); audio.StopAll(); Message("A fresh defense. Read the forecast and choose your tower mix."); RefreshInterface();
     }
     public override void _UnhandledKeyInput(InputEvent @event)
     {
         if (!loaded || @event is not InputEventKey { Pressed: true, Echo: false } key) return;
+        if (RewardPanel.Visible)
+        {
+            if (Run.RewardOffers.Count > 0 && key.PhysicalKeycode is Key.Key1 or Key.Key2 or Key.Key3)
+                ClaimReward((int)key.PhysicalKeycode - (int)Key.Key1);
+            if (Run.RewardOffers.Count == 0 && key.PhysicalKeycode is Key.Escape or Key.I) CloseRelicReview();
+            if (key.PhysicalKeycode == Key.M) ToggleSound();
+            GetViewport().SetInputAsHandled(); return;
+        }
         if (EvolutionPanel.Visible)
         {
             if (key.PhysicalKeycode == Key.Escape) CloseEvolution();
@@ -298,6 +286,7 @@ public partial class GameRoot : Control
             case Key.C: ChooseBuild(2); break;
             case Key.T: CyclePriority(); break;
             case Key.U: OpenEvolution(); break;
+            case Key.I: OpenRelicReview(); break;
             case Key.N: StartNextWave(); break;
             case Key.Space: TogglePause(); break;
             case Key.Key1: SetSpeed(1); break;
@@ -315,9 +304,11 @@ public partial class GameRoot : Control
         if (loaded && what == NotificationWMWindowFocusOut && Run.Phase == RunPhase.Wave)
         { Run.Apply(new Pause(true)); Message("Paused while the window is inactive."); }
     }
-    internal static Label AddLabel(Control parent, string text, Vector2 position, Vector2 size, int fontSize, Color color)
+    internal static Label AddLabel(Control parent, string text, Vector2 position, Vector2 size, int fontSize, Color color, bool wrap = false)
     {
-        var label = new Label { Text = text, Position = position, Size = size, MouseFilter = MouseFilterEnum.Ignore };
+        // Configure wrapping before assigning text so its unwrapped minimum width cannot expand the card.
+        var label = new Label { AutowrapMode = wrap ? TextServer.AutowrapMode.WordSmart : TextServer.AutowrapMode.Off,
+            Text = text, Position = position, Size = size, MouseFilter = MouseFilterEnum.Ignore };
         label.AddThemeFontSizeOverride("font_size", fontSize); label.AddThemeColorOverride("font_color", color); parent.AddChild(label); return label;
     }
     private static Button AddButton(Control parent, string text, Vector2 position, Vector2 size, Action action, bool primary = false)

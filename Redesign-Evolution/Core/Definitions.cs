@@ -18,11 +18,13 @@ public enum TargetPriority { First, Strongest, Support, Primed }
 public sealed record TowerDefinition(string Id, int Cost, int Damage, double Range,
     int CooldownTicks, double ProjectileSpeed, double SplashRadius = 0,
     AttackKind Attack = AttackKind.Bolt, DamageKind DamageKind = DamageKind.Impact,
-    string Name = "", string Description = "", StatusApplication? OnHit = null, EchoDefinition? Echo = null);
+    string Name = "", string Description = "", StatusApplication? OnHit = null, EchoDefinition? Echo = null,
+    double ForkRadius = 0, int ForkDamagePercent = 50);
 public sealed record EnemyDefinition(string Id, int Health, double Speed, int Bounty, int LeakDamage,
-    int Armor = 0, double ShieldRadius = 0, int ShieldPercent = 0, string Name = "");
+    int Armor = 0, double ShieldRadius = 0, int ShieldPercent = 0, string Name = "",
+    HealingDefinition? Healing = null, BossDefinition? Boss = null, int SlowResistancePercent = 0);
 public sealed record SpawnGroup(string EnemyId, int Count, int IntervalTicks, int DelayTicks = 0);
-public sealed record WaveDefinition(string Title, string Briefing, SpawnGroup[] Groups);
+public sealed record WaveDefinition(string Title, string Briefing, SpawnGroup[] Groups, int ClearGold = 0, int HealthPercent = 100);
 public sealed record MapDefinition(string Id, string Title, int Width, int Height, int TileSize,
     Cell[] Route, Cell[] Foundations)
 {
@@ -31,14 +33,14 @@ public sealed record MapDefinition(string Id, string Title, int Width, int Heigh
 
 public sealed record GameDefinition(int FormatVersion, string Id, int StartingGold, int StartingLives,
     MapDefinition Map, TowerDefinition[] Towers, EnemyDefinition[] Enemies, WaveDefinition[] Waves,
-    CombatDefinition? Combat = null)
+    CombatDefinition? Combat = null, ExpeditionDefinition? Expedition = null)
 {
     public GameDefinition Copy() => this with
     {
         Map = Map with { Route = [.. Map.Route], Foundations = [.. Map.Foundations] },
         Towers = [.. Towers], Enemies = [.. Enemies],
         Waves = Waves.Select(w => w with { Groups = [.. w.Groups] }).ToArray(),
-        Combat = Combat?.Copy()
+        Combat = Combat?.Copy(), Expedition = Expedition?.Copy()
     };
 
     public void Validate()
@@ -112,6 +114,9 @@ public sealed record GameDefinition(int FormatVersion, string Id, int StartingGo
                     group.DelayTicks is >= 0 and <= 216000, $"wave {i + 1}: spawn count/timing");
             }
             Require(wave.Groups.Sum(g => g.Count) <= 10000, $"wave {i + 1}: maximum 10000 spawns");
+            Require(wave.ClearGold is >= 0 and <= 10000, $"wave {i + 1}: clear reward");
+            Require(wave.HealthPercent is >= 25 and <= 300, $"wave {i + 1}: health percentage");
         }
+        ExpeditionContent.Validate(this);
     }
 }

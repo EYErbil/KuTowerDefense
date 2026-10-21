@@ -59,6 +59,8 @@ internal static class CombatContent
         }
         void ValidateAttack(TowerDefinition tower)
         {
+            Require(double.IsFinite(tower.ForkRadius) && tower.ForkRadius >= 0 &&
+                tower.ForkDamagePercent is >= 1 and <= 100 && (tower.ForkRadius == 0 || tower.Attack != AttackKind.Shell), $"tower '{tower.Id}' fork");
             if (tower.OnHit is { } onHit)
                 Require(onHit.StatusId is not null && statuses.TryGetValue(onHit.StatusId, out var status) &&
                     onHit.Stacks > 0 && onHit.Stacks <= status.MaxStacks, $"tower '{tower.Id}' onHit status/stacks");

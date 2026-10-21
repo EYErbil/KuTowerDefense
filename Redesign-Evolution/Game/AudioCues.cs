@@ -24,6 +24,9 @@ public partial class AudioCues : Node
         sounds[EventKind.Killed] = Tone(780, .09, .3);
         sounds[EventKind.Built] = Tone(440, .16, .65);
         sounds[EventKind.Upgraded] = Tone(600, .28, .8);
+        sounds[EventKind.RelicChosen] = Tone(720, .45, .7);
+        sounds[EventKind.Rally] = Tone(105, .4, -.2);
+        sounds[EventKind.BossEnraged] = Tone(180, .5, -.7);
         reactions["shatter"] = Tone(1350, .15, -.8);
         reactions["ignition"] = Tone(130, .24, .8);
         sounds[EventKind.Leaked] = Tone(150, .22, -.3);

@@ -1,8 +1,23 @@
 # Simulation performance baseline
 
-## Current Phase 2 measurement
+## Current expedition kernel check
 
-Rechecked 2026-10-20 after RE2-01/02/03. Same 64-tower, 1,001–2,500-enemy workload and runtime described below. `.\dev.cmd benchmark` reproduces this current measurement. All six runs agree on checksum `43eb99888f7ede025a0fe41730f7a16de7dca8752ea274e57509184571fc0af4`.
+Rechecked 2026-10-21 after relics, healing and boss state were added. The existing 64-tower/1,001–2,500-enemy workload still agrees across all six grid/reference runs: checksum `2069a65603354f4bea4bab800bc2b86050d2a4248587be48699b0e7c213c7929`. Raw report: `.artifacts/expedition-benchmark.json`. Same Debug/runtime/machine/method described below; graphical capture also ran during part of this diagnostic, so timings are not a controlled before/after comparison.
+
+| Round | Query method | Mean ms/tick | Median ms/tick | p95 ms/tick | Allocated bytes/tick |
+|---|---|---:|---:|---:|---:|
+| 1 | Reference scan | 5.417 | 5.133 | 9.090 | 4,975 |
+| 1 | Spatial grid | 1.315 | 1.156 | 2.339 | 5,034 |
+| 2 | Spatial grid | 1.543 | 1.273 | 3.330 | 5,034 |
+| 2 | Reference scan | 6.604 | 5.414 | 14.773 | 4,975 |
+| 3 | Reference scan | 4.634 | 4.605 | 6.615 | 4,975 |
+| 3 | Spatial grid | 1.360 | 1.189 | 2.657 | 5,034 |
+
+The workload measures general kernel overhead, not mass Menders/forks/bosses or rendered performance. A full expedition additionally compares final digests under grid/reference queries and direct ticks versus 144 FPS/4×. No allocation explosion or correctness mismatch was observed; no pooling or broader architecture change is justified by this diagnostic. Production effect-density/GPU/lifecycle gates remain open.
+
+## Historical Phase 2 measurement
+
+Rechecked 2026-10-20 after RE2-01/02/03. Same 64-tower, 1,001–2,500-enemy workload and runtime described below. `.\dev.cmd benchmark` runs this workload against the current kernel. These historical six runs agree on checksum `43eb99888f7ede025a0fe41730f7a16de7dca8752ea274e57509184571fc0af4`.
 
 | Round | Query method | Mean ms/tick | Median ms/tick | p95 ms/tick | Allocated bytes/tick |
 |---|---|---:|---:|---:|---:|

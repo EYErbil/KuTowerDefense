@@ -43,15 +43,14 @@ public partial class GameRoot
         branchCards.CustomMinimumSize = new(884, ((BranchChoices.Length + 1) / 2) * 302);
         BranchButtons = BranchChoices.Select((branch, i) =>
         {
-            var spec = branch.Upgrade;
+            var spec = Run.PreviewUpgrade(branch.Upgrade.Id)!;
             var card = new Panel { Position = new(i % 2 * 450, i / 2 * 302), Size = new(434, 286) };
             card.TooltipText = DescribeEffects(spec);
             card.AddThemeStyleboxOverride("panel", Box(new("192e37"), Border)); branchCards.AddChild(card);
             AddLabel(card, spec.Name.ToUpperInvariant(), new(22, 18), new(390, 34), 23, Text);
             AddLabel(card, $"{spec.Damage} {spec.DamageKind.ToString().ToLowerInvariant()} / {spec.CooldownTicks / 60d:0.00}s / range {spec.Range:0}",
                 new(22, 62), new(390, 26), 16, Gold);
-            var description = AddLabel(card, spec.Description, new(22, 108), new(390, 94), 17, Text);
-            description.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            AddLabel(card, spec.Description, new(22, 108), new(390, 94), 17, Text, wrap: true);
             var button = AddButton(card, Run.Gold >= branch.Cost ? $"CHOOSE PATH / {branch.Cost} G" : $"NEED {branch.Cost - Run.Gold} MORE GOLD / {branch.Cost} G",
                 new(22, 224), new(390, 42), () => PurchaseBranch(branch.Upgrade.Id), true);
             button.Disabled = Run.Gold < branch.Cost;
@@ -72,7 +71,8 @@ public partial class GameRoot
             if (status.ArmorReductionPerStack > 0) lines.Add($"-{status.ArmorReductionPerStack} armor per stack, minimum zero. Applies before this hit.");
         }
         if (spec.Echo is { } echo) lines.Add($"Echo: {echo.Damage} {echo.DamageKind.ToString().ToLowerInvariant()} damage in radius {echo.Radius:0} after {echo.DelayTicks / 60d:0.0}s. Cannot trigger reactions.");
-        foreach (var reaction in Content.Combat?.Reactions ?? [])
+        if (spec.ForkRadius > 0) lines.Add($"Relic fork: one nearby enemy in radius {spec.ForkRadius:0} takes {spec.ForkDamagePercent}% damage and receives the attack's status/reaction.");
+        foreach (var reaction in Run.Reactions.Select(r => r.Definition))
             if (reaction.Trigger == spec.DamageKind || reaction.StatusId == spec.OnHit?.StatusId)
                 lines.Add($"{reaction.Name}: consumes {reaction.RequiredStacks} {reaction.StatusId} on {reaction.Trigger.ToString().ToLowerInvariant()} hit. " +
                     (reaction.Effect == ReactionEffect.Burst ? $"{reaction.Damage} damage in radius {reaction.Radius:0}." :

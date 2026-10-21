@@ -39,6 +39,10 @@ public partial class ArenaCanvas : Control
                     : enemy.ShieldPercent > 0 ? $"Warded: {enemy.ShieldPercent}% less damage. Defeat the nearby escort." : $"Breach costs {enemy.Definition.LeakDamage} citadel lives.");
             if (enemy is not null) foreach (var status in enemy.Statuses)
                 TooltipText += $"\n{status.Definition.Name} x{status.Count}: next stack expires in {(status.Stacks.Min(s => s.ExpiresAt) - Game.Run.Tick) / 60d:0.0}s.";
+            if (enemy?.Definition.Healing is { } heal)
+                TooltipText += $"\nMends {heal.Amount} health in radius {heal.Radius:0} every {heal.IntervalTicks / 60d:0.0}s. Kill it before its green ring completes.";
+            if (enemy?.Definition.Boss is { } boss)
+                TooltipText += $"\n{(enemy.BossVulnerable ? "EXPOSED: no armor or personal guard." : $"Guarded: {boss.GuardPercent}% damage reduction.")}\nRallies {boss.SummonsPerPulse} Raiders; {boss.MaxSummons - enemy.SummonsCreated} remain. Half-health enrage doubles rally frequency.";
         }
         if (e is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left } click)
         {
@@ -55,7 +59,7 @@ public partial class ArenaCanvas : Control
     }
     public void Receive(GameEvent e)
     {
-        if (e.Kind is EventKind.Hit or EventKind.Killed or EventKind.Leaked or EventKind.Built or EventKind.Fired or EventKind.Blast or EventKind.Reaction or EventKind.Upgraded)
+        if (e.Kind is EventKind.Hit or EventKind.Killed or EventKind.Leaked or EventKind.Built or EventKind.Fired or EventKind.Blast or EventKind.Reaction or EventKind.Upgraded or EventKind.Healed or EventKind.Rally or EventKind.BossEnraged)
         { if (effects.Count == 160) effects.RemoveAt(0); effects.Add(new(e)); }
     }
     public void ClearEffects() { effects.Clear(); hover = -1; }
@@ -92,6 +96,7 @@ public partial class ArenaCanvas : Control
             DrawRect(new(p.X + 3, p.Y + 8, 14, 6), new Color("776a4e"));
         }
         TerrainEffects();
+        AbilityTelegraphs();
         DrawString(font, new(8, 292), "INBOUND", HorizontalAlignment.Left, -1, 12, GameRoot.Gold);
         DrawLine(new(10, 307), new(44, 307), GameRoot.Gold, 2);
         DrawLine(new(36, 301), new(44, 307), GameRoot.Gold, 2);
@@ -135,10 +140,12 @@ public partial class ArenaCanvas : Control
         Castle(V(map.Center(map.Route[^1])));
         foreach (var tower in Game.Run.Towers) Tower(tower);
         foreach (var enemy in Game.Run.Enemies)
-            if (enemy.Definition.ShieldRadius == 0) Enemy(enemy);
+            if (!enemy.IsSupport && enemy.Definition.Boss is null) Enemy(enemy);
         // Keep escort silhouettes/staves readable when fast units overlap their formation.
         foreach (var enemy in Game.Run.Enemies)
-            if (enemy.Definition.ShieldRadius > 0) Enemy(enemy);
+            if (enemy.IsSupport && enemy.Definition.Boss is null) Enemy(enemy);
+        foreach (var enemy in Game.Run.Enemies)
+            if (enemy.Definition.Boss is not null) Enemy(enemy);
         foreach (var shot in Game.Run.Projectiles)
         {
             var p = V(shot.PreviousPosition).Lerp(V(shot.Position), (float)Game.Alpha);
@@ -150,6 +157,7 @@ public partial class ArenaCanvas : Control
             else { DrawLine(p - direction * 8, p, color, 2); DrawCircle(p, 2, new("fff6cf")); }
         }
         foreach (var effect in effects) Effect(effect);
+        DrawBossReadout();
         if (Game.Run.IsPaused)
         {
             DrawRect(new(285, 18, 390, 46), new Color("10262a"));
@@ -165,7 +173,16 @@ public partial class ArenaCanvas : Control
         DrawEllipseShadow(p + new Vector2(0, 9), spec.Armor > 0 ? 20 : 15);
         DrawLine(p + new Vector2(-8, 3), p + new Vector2(-13, 12 + stride), new("262433"), 4);
         DrawLine(p + new Vector2(8, 3), p + new Vector2(13, 12 - stride), new("262433"), 4);
-        if (spec.ShieldRadius > 0)
+        if (spec.Boss is not null) DrawBellwarden(enemy, p);
+        else if (spec.Healing is not null)
+        {
+            DrawColoredPolygon([p + new Vector2(0, -26), p + new Vector2(-15, 12), p + new Vector2(15, 12)], new("355d53"));
+            DrawCircle(p + new Vector2(0, -16), 8, new("a3c1a1"));
+            DrawLine(p + new Vector2(19, 10), p + new Vector2(19, -23), new("d0d9ac"), 3);
+            DrawLine(p + new Vector2(13, -20), p + new Vector2(25, -20), GameRoot.Mint, 4);
+            DrawLine(p + new Vector2(19, -26), p + new Vector2(19, -14), GameRoot.Mint, 4);
+        }
+        else if (spec.ShieldRadius > 0)
         {
             DrawColoredPolygon([p + new Vector2(0, -24), p + new Vector2(-15, 10), p + new Vector2(15, 10)], new("554b77"));
             DrawColoredPolygon([p + new Vector2(0, -23), p + new Vector2(-8, -11), p + new Vector2(0, -2), p + new Vector2(8, -11)], new("b2a3dd"));
@@ -181,12 +198,22 @@ public partial class ArenaCanvas : Control
             DrawColoredPolygon([p + new Vector2(-19, -5), p + new Vector2(1, -5), p + new Vector2(1, 14), p + new Vector2(-9, 21), p + new Vector2(-19, 14)], new("b57b58"));
             DrawLine(p + new Vector2(-9, -2), p + new Vector2(-9, 16), GameRoot.Gold, 3);
             DrawLine(p + new Vector2(-15, 5), p + new Vector2(-3, 5), GameRoot.Gold, 2);
+            if (spec.LeakDamage >= 3)
+            {
+                DrawLine(p + new Vector2(18, 10), p + new Vector2(18, -45), new("dfc99b"), 3);
+                DrawColoredPolygon([p + new Vector2(18, -45), p + new Vector2(40, -39), p + new Vector2(18, -28)], new("c97e60"));
+            }
         }
         else
         {
             DrawColoredPolygon([p + new Vector2(-12, 2), p + new Vector2(-9, -10), p + new Vector2(0, -17), p + new Vector2(10, -9), p + new Vector2(13, 3), p + new Vector2(0, 12)], new("493d57"));
             DrawColoredPolygon([p + new Vector2(-9, -7), p + new Vector2(0, -14), p + new Vector2(9, -7), p + new Vector2(0, 2)], new("8c6c83"));
             DrawRect(new(p.X - 6, p.Y - 3, 4, 3), GameRoot.Red); DrawRect(new(p.X + 2, p.Y - 3, 4, 3), GameRoot.Red);
+            if (spec.Speed >= 80)
+            {
+                DrawLine(p + new Vector2(-18, 5), p + new Vector2(-26, -7), new("eed6a9"), 2);
+                DrawLine(p + new Vector2(18, 5), p + new Vector2(26, -7), new("eed6a9"), 2);
+            }
         }
         if (enemy.Health < spec.Health)
         {
@@ -260,7 +287,16 @@ public partial class ArenaCanvas : Control
     {
         var p = V(effect.Event.Position); var fade = 1 - effect.Age / .85f;
         var color = effect.Event.Kind == EventKind.Leaked ? GameRoot.Red : effect.Event.EffectId == "echo" ? new Color("c3acf3") : AttackColor(effect.Event.Attack, effect.Event.DamageKind);
-        if (effect.Event.Kind == EventKind.Reaction)
+        if (effect.Event.Kind == EventKind.Healed)
+        {
+            DrawString(font, p + new Vector2(-15, -30 - effect.Age * 24), $"+{effect.Event.Amount} HP", HorizontalAlignment.Left, -1, 12, new Color(GameRoot.Mint, fade));
+        }
+        else if (effect.Event.Kind is EventKind.Rally or EventKind.BossEnraged)
+        {
+            DrawArc(p, 30 + effect.Age * 110, 0, Mathf.Tau, 12, new Color(GameRoot.Red, fade), 3);
+            DrawString(font, p + new Vector2(-28, -65 - effect.Age * 15), effect.Event.Kind == EventKind.Rally ? "RALLY" : "ENRAGED", HorizontalAlignment.Left, -1, 18, new Color(GameRoot.Red, fade));
+        }
+        else if (effect.Event.Kind == EventKind.Reaction)
         {
             var radius = 12 + Math.Min(effect.Event.Amount, 75) * Math.Min(1, effect.Age / .4f);
             DrawArc(p, radius, 0, Mathf.Tau, effect.Event.DamageKind == DamageKind.Frost ? 6 : 32, new Color(color, fade * .8f), 2);

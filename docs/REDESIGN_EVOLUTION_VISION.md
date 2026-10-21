@@ -21,7 +21,9 @@ Target PC strategy players seeking understandable decisions, satisfying combat a
 
 Choose map/doctrine → forecast threats → build/connect → defend → choose relic/contract → specialize → defeat act encounter → inspect results and unlock progression.
 
-The complete MVP targets three tower families with two branches each, two reactions, six enemy archetypes, one two-phase boss, eighteen waves in three acts, two authored maps with seeded variation and twelve relics. The first delivery established one map, one tower, one enemy and three waves. The current Phase 2 slice has three tower families, all six exclusive specializations, Shatter/Ignition, three enemy roles and six teaching waves. Resonance Circuits are the next milestone; their signature gameplay is not implemented yet.
+The complete MVP targets three tower families with two branches each, two reactions, distinct enemy behaviors, one two-phase boss, two authored maps with seeded variation and roughly twelve relics. Eighteen waves in three acts is a pacing hypothesis, not a reason to pad a successful shorter structure. The current expedition has twelve waves in four stages, three earned relic choices from seven definitions, optional Overruns, Menders, Captains, Raiders and a rallying Bellwarden alongside the earlier roster and specializations. It remains one map. Combat witnesses last 5.5–7.5 minutes plus planning; full-length pacing is not achieved.
+
+Player feedback on repetition changed the implementation order on 2026-10-20/21: earned choices, a tighter economy and distinct encounters precede Circuits. A player should reach a build-changing reward early, face a reason to reconsider target priorities, and choose whether extra risk is affordable. More enemy health alone does not satisfy this gate. The expedition is implemented; human observations must still establish whether its decisions are rewarding. Circuits remain the proposed signature, not a shipped feature.
 
 ## Signature
 
@@ -41,7 +43,7 @@ Scores are design hypotheses, not playtest results. O=originality, D=depth, F=ex
 |---|---|---|---|---|---|
 | Resonance Circuits | 4/5/4/5/4 | L | Reactions become a placement/resource network | Recursive escalation | Signature; committed |
 | Battlefield Memory | 4/4/4/5/3 | L | Combat leaves consumable terrain imprints for later waves | Snowballing, visual noise | Experiment |
-| Countermarch Contracts | 3/4/4/4/5 | M | Accept a forecast formation for a known reward | Always-correct reward choice | Phase 3 |
+| Countermarch Contracts | 3/4/4/4/5 | M | Accept a forecast formation for a known reward | Always-correct reward choice | Overrun subset implemented; broaden only after playtesting |
 | Evacuation Couriers | 4/4/4/3/3 | L | Protect optional friendly reverse-path convoys | Attention overload, unfair losses | Experiment |
 | Echo Blueprints | 4/5/4/5/4 | M | Retire a tower between acts for a limited support imprint | Permanent stacking exploits | Experiment |
 

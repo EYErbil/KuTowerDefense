@@ -3,6 +3,7 @@ using Redesign.Core;
 using Redesign.Infrastructure;
 
 if (args.Contains("--benchmark")) return CombatBenchmark.Run();
+if (!args.Contains("--foundation") && !args.Contains("--evolution") && !args.Contains("--roster")) return ExpeditionRunner.Run(args);
 var lose = args.Contains("--no-build");
 var foundation = args.Contains("--foundation");
 var evolution = args.Contains("--evolution") && !foundation;
