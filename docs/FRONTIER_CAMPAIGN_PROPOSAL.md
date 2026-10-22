@@ -1,8 +1,8 @@
 # Frontier campaign and road warriors — research and proposal
 
-2026-10-21. Research/design proposal responding to the player's request for maps, unlocks, warriors, stronger presentation and a longer progression chase. These features are **not implemented** by this document. The existing expedition is the playable baseline. Repository inspection began clean at `3748e0d` on `Ege-redevelop`, which contains the previous delivery.
+2026-10-21. Research/design proposal responding to the player's request for maps, unlocks, warriors, stronger presentation and a longer progression chase. The existing expedition is the playable baseline. Research began at `3748e0d`; implementation resumed from the committed handoff at `856cb2d` on `Ege-redevelop`.
 
-**Handoff status:** the owner accepted this direction and asked for documentation only while a colleague begins implementation. Start with FR-01, then FR-02; [AGENT_HANDOFF.md](AGENT_HANDOFF.md) contains the concrete first patch, code entry points and verification commands. Prices, timings, later regions and experiments remain provisional. Acceptance of the direction does not mark any gameplay task complete.
+**Current status:** the owner resumed development. FR-01 is implemented and tested in Core/headless scenarios; **FR-02 UI/animation is next**. See [ROAD_SQUAD_KERNEL.md](ROAD_SQUAD_KERNEL.md) for exact implemented rules and balance evidence, and [AGENT_HANDOFF.md](AGENT_HANDOFF.md) for continuation. Maps/profile unlocks and later systems remain unimplemented; prices, timings and experiments remain provisional.
 
 ## Recommendation
 
@@ -97,17 +97,17 @@ Post-run graphs should explain decisions: gold earned/spent by wave; damage cont
 
 - `GameRoot` currently loads one content file directly; stage/relic presentation assumes twelve waves and fixed reward checkpoints. A mission catalog and configuration-driven HUD must precede new mission lengths.
 - `MapDefinition` and `Route` support one immutable orthogonal path and authored foundations. A second single-route map is practical now. Multiple simultaneous entrances, freeform walls and rerouting need additional navigation/target-progress design.
-- No friendly combatant, enemy melee attack or engagement state exists. Add bounded squad/engagement state and commands in Core, not Godot physics callbacks. Stable IDs and tick ordering must resolve deaths, release engagements and prevent corpses blocking movement.
+- FR-01 now supplies bounded friendly combatants, melee/engagement state and commands in Core. Stable IDs and explicit tick ordering resolve deaths and release engagements. FR-02 must present these authoritative states rather than recreating combat in Godot callbacks.
 - Infrastructure currently loads content and provides command witnesses; there is no profile persistence. Versioned profile writes, backup/recovery and exact-once awards are prerequisites for promising permanent unlocks. This is smaller than full mid-wave save/resume, which remains separate.
 - Existing tower statistics and `WaveReport` support part of a results dashboard. Per-wave spending/damage and troop utility need new explicit recording. Avoid retaining every combat event indefinitely.
-- The current 76-test report and Windows build are prior-delivery evidence. This research-only change does not rerun or revalidate them.
+- FR-01 verification records 96 passing tests, the existing Godot smoke flow and opt-in squad/no-squad command witnesses. The older Windows ZIP and rendered captures predate squad work; squad UI and final art have not been inspected or delivered.
 
 ## Dependency-aware implementation checklist
 
-P0 = first prototype, P1 = follow-on; S/M/L/XL = relative complexity. These are planned tasks for the accepted direction, not completed game features. MVP candidate scope remains subject to prototype evidence. The human observations in EX-05 remain an evaluation gate, not a reason to freeze bounded prototypes. This sequence takes priority over the earlier Circuits-first plan; the current handoff session implements none of it.
+P0 = first prototype, P1 = follow-on; S/M/L/XL = relative complexity. Checkboxes distinguish verified work from pending features. MVP candidate scope remains subject to prototype evidence. The human observations in EX-05 remain an evaluation gate, not a reason to freeze bounded prototypes. This sequence takes priority over the earlier Circuits-first plan.
 
 - [x] **FR-00 Research/design** | P0 | deps EX-04 | S | MVP planning | AC: first-party comparisons, concrete troop/map/progression rules, code constraints and testable candidate tasks recorded.
-- [ ] **FR-01 Road squad kernel** | P0 | deps FR-00 | L | MVP candidate | AC: one Garrison/three guards; valid rally/retreat; finite engagements; enemy melee/death/release rules; no permanent stall; pause/speed/reference determinism; unchanged earlier fixtures.
+- [x] **FR-01 Road squad kernel** | P0 | deps FR-00 | L | MVP candidate | AC: one Garrison/three guards; valid rally/retreat; finite engagements; enemy melee/death/release rules; no permanent stall; pause/speed/reference determinism; unchanged earlier fixtures. Verified in Core and headless scenarios; UI/animation and balance remain FR-02.
 - [ ] **FR-02 Animated squad slice** | P0 | deps FR-01 | M | MVP candidate | AC: actual selection/rally UI, reachable-position preview, readable attack/hurt/fall states, boss counter telegraph, 1×/4× and paused render inspection; useful Garrison and no-Garrison witnesses on Emberwatch.
 - [ ] **FR-03 Mission catalog/Stoneford** | P0 | deps FR-00 | L | MVP candidate | AC: select either of two authored maps with distinct formations; no hardcoded twelve-wave HUD assumptions; valid route/foundations; both maps terminate and have at least two viable builds.
 - [ ] **FR-04 Frontier/profile unlocks** | P0 | deps FR-03 | L | MVP candidate | AC: clear Emberwatch → visible Stoneford unlock → restart application → unlock retained; atomic versioned profile/backup recovery; repeated completion cannot repay; failure keeps earned milestone progress; resetting a run does not erase profile.

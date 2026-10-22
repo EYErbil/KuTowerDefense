@@ -1,6 +1,21 @@
 # Simulation performance baseline
 
-## Current expedition kernel check
+## Current FR-01 kernel check
+
+Rechecked 2026-10-21 after road squad state/commands/combat were added. The unchanged dense workload has no Garrison, so this measures shared kernel overhead rather than deployed squad performance. All six runs retain checksum `2069a65603354f4bea4bab800bc2b86050d2a4248587be48699b0e7c213c7929`. Raw report: `.artifacts/spatial-benchmark.json`. Same Debug/runtime/machine/method below; timing is diagnostic, not a controlled speedup claim.
+
+| Round | Query method | Mean ms/tick | Median ms/tick | p95 ms/tick | Allocated bytes/tick |
+|---|---|---:|---:|---:|---:|
+| 1 | Reference scan | 4.246 | 4.183 | 6.497 | 4,999 |
+| 1 | Spatial grid | 1.204 | 1.170 | 2.012 | 5,058 |
+| 2 | Spatial grid | 1.111 | 1.067 | 1.860 | 5,058 |
+| 2 | Reference scan | 4.235 | 4.219 | 6.171 | 4,999 |
+| 3 | Reference scan | 4.180 | 4.123 | 6.253 | 4,999 |
+| 3 | Spatial grid | 1.064 | 1.038 | 1.755 | 5,058 |
+
+Enemy melee state adds 24 bytes to each newly spawned enemy in this one-spawn-per-tick workload. The squad is bounded to three members, but active squad allocation/timing is not measured by this diagnostic. It does not establish rendered performance or eliminate the later need to profile active troops/effects. A separate complete squad expedition reproduces across grid/reference queries and 144 FPS/4× as correctness evidence.
+
+## Historical expedition kernel check
 
 Rechecked 2026-10-21 after relics, healing and boss state were added. The existing 64-tower/1,001–2,500-enemy workload still agrees across all six grid/reference runs: checksum `2069a65603354f4bea4bab800bc2b86050d2a4248587be48699b0e7c213c7929`. Raw report: `.artifacts/expedition-benchmark.json`. Same Debug/runtime/machine/method described below; graphical capture also ran during part of this diagnostic, so timings are not a controlled before/after comparison.
 

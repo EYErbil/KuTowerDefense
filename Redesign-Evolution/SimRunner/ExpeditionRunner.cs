@@ -19,7 +19,7 @@ internal static class ExpeditionRunner
             {
                 if (run.Phase == RunPhase.Planning)
                 {
-                    foreach (var command in ExpeditionStrategy.PlanningCommands(run, style, args.Contains("--risk")))
+                    foreach (var command in ExpeditionStrategy.PlanningCommands(run, style, args.Contains("--risk"), args.Contains("--squad")))
                     {
                         var result = run.Apply(command);
                         if (!result.Success) throw new InvalidOperationException($"Wave {run.WaveNumber + 1} {command}: {result.Message}");
@@ -31,7 +31,10 @@ internal static class ExpeditionRunner
             Console.WriteLine(JsonSerializer.Serialize(new { Style = style, run.Seed, Outcome = run.Phase.ToString(),
                 Wave = run.WaveNumber, run.Tick, run.Kills, run.Leaks, run.Lives, run.Gold, run.GoldSpent, run.ReactionDamage,
                 Relics = run.Relics.Select(r => r.Id), Waves = run.WaveReports,
-                Towers = run.Towers.Select(t => new { t.Definition.Id, t.Foundation, t.DamageDealt, t.Kills }), Checksum = run.Checksum() }));
+                Towers = run.Towers.Select(t => new { t.Definition.Id, t.Foundation, t.DamageDealt, t.Kills }),
+                Squad = run.Garrison is { } squad ? new { squad.Foundation, squad.DamageDealt, squad.Kills, squad.Casualties,
+                    squad.EngagedTicks, Guards = squad.Guards.Select(g => new { g.Id, g.Health, g.DamageDealt, g.Kills, g.EngagedTicks }) } : null,
+                Checksum = run.Checksum() }));
             success &= budget > 0 && (batch || run.Phase == (style == "none" ? RunPhase.Defeat : RunPhase.Victory));
         }
         return success ? 0 : 1;

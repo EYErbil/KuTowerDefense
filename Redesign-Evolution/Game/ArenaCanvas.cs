@@ -13,7 +13,7 @@ public partial class ArenaCanvas : Control
     private double visualTime;
     private Font font = null!;
     private Vector2[] drawnRoute = [];
-    private sealed class VisualEffect(GameEvent e) { public GameEvent Event = e; public float Age; }
+    private sealed class VisualEffect(GameEvent e) { public GameEvent Event = e; public float Age; public float RestAge; }
     public override void _Ready()
     {
         font = ThemeDB.FallbackFont;
@@ -25,13 +25,13 @@ public partial class ArenaCanvas : Control
             for (var c = a; ; c = new(c.X + dx, c.Y + dy)) { road.Add(c); if (c == b) break; }
         }
         GuiInput += HandleInput;
-        MouseExited += () => hover = -1;
+        MouseExited += () => { hover = -1; previewPointer = null; };
     }
     private void HandleInput(InputEvent e)
     {
         if (e is InputEventMouseMotion motion)
         {
-            hover = FoundationAt(motion.Position);
+            SetPreviewPointer(motion.Position);
             var enemy = Game.Run.Enemies.FirstOrDefault(enemy => V(enemy.Position).DistanceSquaredTo(motion.Position) < 24 * 24);
             TooltipText = enemy is null ? "" : $"{enemy.Definition.Name}: {enemy.Health}/{enemy.Definition.Health} health, {enemy.EffectiveArmor} armor, {enemy.SlowPercent}% slow.\n" +
                 (enemy.Definition.ShieldRadius > 0
@@ -43,11 +43,21 @@ public partial class ArenaCanvas : Control
                 TooltipText += $"\nMends {heal.Amount} health in radius {heal.Radius:0} every {heal.IntervalTicks / 60d:0.0}s. Kill it before its green ring completes.";
             if (enemy?.Definition.Boss is { } boss)
                 TooltipText += $"\n{(enemy.BossVulnerable ? "EXPOSED: no armor or personal guard." : $"Guarded: {boss.GuardPercent}% damage reduction.")}\nRallies {boss.SummonsPerPulse} Raiders; {boss.MaxSummons - enemy.SummonsCreated} remain. Half-health enrage doubles rally frequency.";
+            var guard = GuardAt(motion.Position);
+            if (guard is not null) TooltipText = $"Shieldguard: {guard.Health}/{guard.Definition.Health} HP. Holds one enemy; extra enemies pass.\nClick to select the squad. Rally [F], retreat [H]. Recovery between waves only.";
         }
+        if (Game.OrdersBlocked) return;
+        if (e is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Right })
+        { Game.CancelOrders(); AcceptEvent(); return; }
         if (e is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left } click)
         {
-            var index = FoundationAt(click.Position);
-            if (index >= 0) Game.SelectFoundation(index);
+            if (Game.Rallying) Game.RallyAtPointer(click.Position);
+            else
+            {
+                var index = FoundationAt(click.Position);
+                if (index >= 0) Game.SelectFoundation(index);
+                else if (GuardAt(click.Position) is not null) Game.SelectGarrison();
+            }
             AcceptEvent();
         }
     }
@@ -59,14 +69,19 @@ public partial class ArenaCanvas : Control
     }
     public void Receive(GameEvent e)
     {
+        ReceiveSquadEvent(e);
         if (e.Kind is EventKind.Hit or EventKind.Killed or EventKind.Leaked or EventKind.Built or EventKind.Fired or EventKind.Blast or EventKind.Reaction or EventKind.Upgraded or EventKind.Healed or EventKind.Rally or EventKind.BossEnraged)
         { if (effects.Count == 160) effects.RemoveAt(0); effects.Add(new(e)); }
     }
-    public void ClearEffects() { effects.Clear(); hover = -1; }
+    public void ClearEffects() { effects.Clear(); guardPoses.Clear(); hover = -1; previewPointer = null; }
     public override void _Process(double delta)
     {
         visualTime += delta;
-        foreach (var e in effects) e.Age += (float)delta;
+        foreach (var e in effects)
+        {
+            if (Game.Run.Phase != RunPhase.Wave) e.RestAge += (float)delta;
+            e.Age = Math.Max(0, (float)(PresentationTick - e.Event.Tick) / 60) + e.RestAge;
+        }
         effects.RemoveAll(e => e.Age > .85f);
     }
     public override void _Draw()
@@ -97,6 +112,8 @@ public partial class ArenaCanvas : Control
         }
         TerrainEffects();
         AbilityTelegraphs();
+        DrawSquadOrders();
+        DrawCleaveWarnings();
         DrawString(font, new(8, 292), "INBOUND", HorizontalAlignment.Left, -1, 12, GameRoot.Gold);
         DrawLine(new(10, 307), new(44, 307), GameRoot.Gold, 2);
         DrawLine(new(36, 301), new(44, 307), GameRoot.Gold, 2);
@@ -104,7 +121,7 @@ public partial class ArenaCanvas : Control
         for (var i = 0; i < map.Foundations.Length; i++)
         {
             var p = V(map.Center(map.Foundations[i]));
-            var occupied = Game.Run.Towers.Any(t => t.Foundation == i);
+            var occupied = Game.Run.Towers.Any(t => t.Foundation == i) || Game.Run.Garrison?.Foundation == i;
             DrawRect(new(p.X - 23, p.Y - 15, 46, 36), new Color("132a28"));
             DrawRect(new(p.X - 21, p.Y - 19, 42, 36), new Color("5b6d60"));
             DrawRect(new(p.X - 17, p.Y - 15, 34, 28), new Color("394e47"));
@@ -120,7 +137,7 @@ public partial class ArenaCanvas : Control
         var selected = Game.Run.Towers.FirstOrDefault(t => t.Id == Game.SelectedTower);
         Vector2? range = selected is null ? null : V(selected.Position);
         var rangeSpec = selected?.Definition ?? Game.BuildDefinition;
-        if (Game.Building && hover >= 0)
+        if (Game.Building && !Game.BuildingGarrison && hover >= 0)
         {
             range = V(map.Center(map.Foundations[hover])); rangeSpec = Game.BuildDefinition;
         }
@@ -139,6 +156,7 @@ public partial class ArenaCanvas : Control
             }
         Castle(V(map.Center(map.Route[^1])));
         foreach (var tower in Game.Run.Towers) Tower(tower);
+        DrawGarrison();
         foreach (var enemy in Game.Run.Enemies)
             if (!enemy.IsSupport && enemy.Definition.Boss is null) Enemy(enemy);
         // Keep escort silhouettes/staves readable when fast units overlap their formation.
@@ -146,6 +164,7 @@ public partial class ArenaCanvas : Control
             if (enemy.IsSupport && enemy.Definition.Boss is null) Enemy(enemy);
         foreach (var enemy in Game.Run.Enemies)
             if (enemy.Definition.Boss is not null) Enemy(enemy);
+        DrawGuards();
         foreach (var shot in Game.Run.Projectiles)
         {
             var p = V(shot.PreviousPosition).Lerp(V(shot.Position), (float)Game.Alpha);
@@ -169,7 +188,7 @@ public partial class ArenaCanvas : Control
     {
         var p = V(enemy.PreviousPosition).Lerp(V(enemy.Position), (float)Game.Alpha);
         var spec = enemy.Definition;
-        var stride = MathF.Sin((float)(Game.Run.Tick * .3 + enemy.Id)) * 3;
+        var stride = enemy.EngagedGuardId == 0 ? MathF.Sin((float)(PresentationTick * .3 + enemy.Id)) * 3 : 0;
         DrawEllipseShadow(p + new Vector2(0, 9), spec.Armor > 0 ? 20 : 15);
         DrawLine(p + new Vector2(-8, 3), p + new Vector2(-13, 12 + stride), new("262433"), 4);
         DrawLine(p + new Vector2(8, 3), p + new Vector2(13, 12 - stride), new("262433"), 4);
@@ -226,6 +245,7 @@ public partial class ArenaCanvas : Control
             DrawString(font, p + new Vector2(-5, -39), "+", HorizontalAlignment.Left, -1, 14, new("e0cef7"));
         }
         EnemyStatuses(enemy, p);
+        DrawEnemyMelee(enemy, p);
     }
 
     private void Tower(TowerState tower)

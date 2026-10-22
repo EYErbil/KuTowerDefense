@@ -11,6 +11,8 @@ public partial class AudioCues : Node
     private readonly Dictionary<AttackKind, AudioStreamWav> attacks = [];
     private readonly Dictionary<string, AudioStreamWav> reactions = [];
     private ulong lastReaction;
+    private ulong lastMelee;
+    private AudioStreamWav cleave = null!;
     private int nextVoice;
     private readonly ulong[] lastShot = new ulong[3];
     public bool Muted { get; set; }
@@ -27,6 +29,12 @@ public partial class AudioCues : Node
         sounds[EventKind.RelicChosen] = Tone(720, .45, .7);
         sounds[EventKind.Rally] = Tone(105, .4, -.2);
         sounds[EventKind.BossEnraged] = Tone(180, .5, -.7);
+        sounds[EventKind.GarrisonBuilt] = Tone(360, .24, .7);
+        sounds[EventKind.SquadRallied] = Tone(620, .12, .3);
+        sounds[EventKind.SquadRetreated] = Tone(460, .16, -.5);
+        sounds[EventKind.GuardStruck] = Tone(1150, .06, -.9);
+        sounds[EventKind.GuardFallen] = Tone(240, .24, -.6);
+        cleave = Tone(95, .5, .5);
         reactions["shatter"] = Tone(1350, .15, -.8);
         reactions["ignition"] = Tone(130, .24, .8);
         sounds[EventKind.Leaked] = Tone(150, .22, -.3);
@@ -50,7 +58,14 @@ public partial class AudioCues : Node
             var now = Time.GetTicksMsec();
             if (now - lastReaction < 100) return; lastReaction = now;
         }
+        else if (e.Kind == EventKind.EnemyMeleeStarted && e.EffectId == "cleave") sound = cleave;
         else if (!sounds.TryGetValue(e.Kind, out sound)) return;
+        if (e.Kind is EventKind.GuardStruck or EventKind.GuardFallen)
+        {
+            var now = Time.GetTicksMsec();
+            if (now - lastMelee < 100) return;
+            lastMelee = now;
+        }
         var voice = voices[nextVoice++ % voices.Length]; voice.Stream = sound; voice.Play();
     }
     public void StopAll() { foreach (var voice in voices) voice.Stop(); }

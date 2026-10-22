@@ -22,7 +22,8 @@ public sealed record TowerDefinition(string Id, int Cost, int Damage, double Ran
     double ForkRadius = 0, int ForkDamagePercent = 50);
 public sealed record EnemyDefinition(string Id, int Health, double Speed, int Bounty, int LeakDamage,
     int Armor = 0, double ShieldRadius = 0, int ShieldPercent = 0, string Name = "",
-    HealingDefinition? Healing = null, BossDefinition? Boss = null, int SlowResistancePercent = 0);
+    HealingDefinition? Healing = null, BossDefinition? Boss = null, int SlowResistancePercent = 0,
+    MeleeDefinition? Melee = null);
 public sealed record SpawnGroup(string EnemyId, int Count, int IntervalTicks, int DelayTicks = 0);
 public sealed record WaveDefinition(string Title, string Briefing, SpawnGroup[] Groups, int ClearGold = 0, int HealthPercent = 100);
 public sealed record MapDefinition(string Id, string Title, int Width, int Height, int TileSize,
@@ -33,7 +34,7 @@ public sealed record MapDefinition(string Id, string Title, int Width, int Heigh
 
 public sealed record GameDefinition(int FormatVersion, string Id, int StartingGold, int StartingLives,
     MapDefinition Map, TowerDefinition[] Towers, EnemyDefinition[] Enemies, WaveDefinition[] Waves,
-    CombatDefinition? Combat = null, ExpeditionDefinition? Expedition = null)
+    CombatDefinition? Combat = null, ExpeditionDefinition? Expedition = null, GarrisonDefinition? Garrison = null)
 {
     public GameDefinition Copy() => this with
     {
@@ -118,5 +119,6 @@ public sealed record GameDefinition(int FormatVersion, string Id, int StartingGo
             Require(wave.HealthPercent is >= 25 and <= 300, $"wave {i + 1}: health percentage");
         }
         ExpeditionContent.Validate(this);
+        SquadContent.Validate(this);
     }
 }

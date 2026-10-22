@@ -1,7 +1,8 @@
 namespace Redesign.Core;
 
 public enum RunPhase { Planning, Wave, Victory, Defeat }
-public enum EventKind { Built, Sold, Fired, Hit, Killed, Leaked, WaveStarted, WaveCleared, Victory, Defeat, Blast, Upgraded, Reaction, RelicChosen, Healed, Rally, BossEnraged }
+public enum EventKind { Built, Sold, Fired, Hit, Killed, Leaked, WaveStarted, WaveCleared, Victory, Defeat, Blast, Upgraded, Reaction, RelicChosen, Healed, Rally, BossEnraged,
+    GarrisonBuilt, SquadRallied, SquadRetreated, Engaged, Disengaged, GuardAttackStarted, EnemyMeleeStarted, GuardHit, GuardFallen, SquadRecovered, GuardStruck }
 public readonly record struct GameEvent(long Tick, EventKind Kind, Point Position, int EntityId = 0,
     long Amount = 0, AttackKind Attack = AttackKind.Bolt, Point? Destination = null,
     DamageKind DamageKind = DamageKind.Impact, string? EffectId = null);
@@ -51,6 +52,10 @@ public sealed class EnemyState(int id, Point position, EnemyDefinition definitio
     public bool WindingUp { get; internal set; }
     public bool Enraged { get; internal set; }
     public int SummonsCreated { get; internal set; }
+    public int EngagedGuardId { get; internal set; }
+    public int MeleeTargetId { get; internal set; }
+    public long MeleeAtTick { get; internal set; }
+    public long NextMeleeTick { get; internal set; }
     public bool BossVulnerable => Definition.Boss is { } boss && (WindingUp || SummonsCreated >= boss.MaxSummons);
     public bool IsSupport => Definition.ShieldRadius > 0 || Definition.Healing is not null;
     internal StatusSet StatusSet { get; } = new();

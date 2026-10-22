@@ -2,10 +2,13 @@ using Redesign.Core;
 
 namespace Redesign.Infrastructure;
 
+/// <summary>A published purchase/deployment experiment, not live AI or a rule of the game.</summary>
+public sealed record SquadDeployment(int Foundation, int RecruitBeforeWave, double RallyOffset = 0);
+
 /// <summary>Deliberately simple, published balance witnesses. They use the same commands as the player.</summary>
 public static class ExpeditionStrategy
 {
-    public static IEnumerable<GameCommand> PlanningCommands(Simulation run, string style = "frost", bool risk = false)
+    public static IEnumerable<GameCommand> PlanningCommands(Simulation run, string style = "frost", bool risk = false, bool squad = false, SquadDeployment? deployment = null)
     {
         if (run.RewardOffers.Count > 0)
         {
@@ -19,6 +22,15 @@ public static class ExpeditionStrategy
             yield return new ChooseRelic(chosen.Id);
         }
         var content = run.Definition;
+        deployment ??= new(3, 3);
+        if (squad && style != "none" && run.Garrison is null && run.WaveNumber + 1 >= deployment.RecruitBeforeWave &&
+            content.Garrison is { } garrison && run.Gold >= garrison.Cost)
+            yield return new PlaceGarrison(deployment.Foundation);
+        if (squad && run.Garrison is { } guards)
+        {
+            var progress = Math.Clamp(guards.EntryProgress + deployment.RallyOffset, 0, run.Route.Length);
+            if (progress != guards.RallyProgress || guards.Retreating) yield return new RallySquad(run.Route.At(progress));
+        }
         var plan = style switch
         {
             "fire" => new[] { (1, "boltworks", false), (2, "prism", false), (0, "crucible", false), (1, "pitchbow", true), (2, "sun", true),
@@ -37,6 +49,7 @@ public static class ExpeditionStrategy
         if (style == "none") plan = [];
         foreach (var (foundation, id, upgrade) in plan)
         {
+            if (squad && foundation == deployment.Foundation) continue;
             var tower = run.Towers.FirstOrDefault(t => t.Foundation == foundation);
             if (!upgrade && tower is not null || upgrade && tower?.BranchId is not null) continue;
             var cost = upgrade ? content.Combat!.Branches.Single(b => b.Upgrade.Id == id).Cost : content.Towers.Single(t => t.Id == id).Cost;

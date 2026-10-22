@@ -55,6 +55,7 @@ public partial class GameRoot : Control
             capturePath = args.FirstOrDefault(a => a.StartsWith("--capture="))?[10..];
             if (args.Contains("--smoke")) AddChild(new SmokeHarness { Game = this });
             PrepareExpeditionDemo(args);
+            PrepareSquadDemo(args);
             if (args.Contains("--paths-demo"))
             {
                 SelectedTower = Run.Apply(new PlaceTower(2, "prism")).EntityId;
@@ -95,19 +96,21 @@ public partial class GameRoot : Control
         var shortcuts = new[] { "B", "P", "C" };
         BuildButtons = Content.Towers.Select((tower, i) =>
         {
-            var button = AddButton(this, $"{tower.Name.ToUpperInvariant()}    {tower.Cost} G    [{shortcuts[i]}]\n{tower.Description}",
-                new(1052, 292 + i * 62), new(336, 54), () => ChooseBuild(i));
-            button.AddThemeFontSizeOverride("font_size", 14);
-            button.TooltipText = $"{tower.Damage} {tower.DamageKind.ToString().ToLowerInvariant()} damage every {tower.CooldownTicks / 60d:0.00}s. Range {tower.Range:0}.";
+            var role = i == 0 ? "Precision" : i == 1 ? "Anti-armor" : "Area damage";
+            var button = AddButton(this, $"{tower.Name.ToUpperInvariant()} [{shortcuts[i]}]\n{tower.Cost} G / {role}",
+                new(1052 + i % 2 * 172, 292 + i / 2 * 82), new(164, 72), () => ChooseBuild(i));
+            button.AddThemeFontSizeOverride("font_size", 13);
+            button.TooltipText = $"{tower.Description}\n{tower.Damage} {tower.DamageKind.ToString().ToLowerInvariant()} damage every {tower.CooldownTicks / 60d:0.00}s. Range {tower.Range:0}.";
             return button;
         }).ToArray();
-        detailTitle = AddLabel(this, "", new(1052, 490), new(336, 28), 20, Text);
-        detailBody = AddLabel(this, "", new(1052, 530), new(336, 72), 15, Muted, wrap: true);
+        detailTitle = AddLabel(this, "", new(1052, 478), new(336, 28), 20, Text);
+        detailBody = AddLabel(this, "", new(1052, 516), new(336, 88), 14, Muted, wrap: true);
         PriorityButton = AddButton(this, "TARGET: FIRST  [T]", new(1052, 612), new(336, 36), CyclePriority);
         PriorityButton.TooltipText = "First: nearest the gate. Strongest: highest current health. Support: Wardens and Menders first. Primed: ready for this tower's reaction, then nearest the gate.";
         EvolveButton = AddButton(this, "EVOLVE  [U]", new(1052, 658), new(162, 36), OpenEvolution);
         SellButton = AddButton(this, "SELL", new(1224, 658), new(164, 36), SellSelected);
         SellButton.AddThemeFontSizeOverride("font_size", 14);
+        BuildSquadInterface();
         StartButton = AddButton(this, "START WAVE  [N]", new(1052, 720), new(336, 58), StartNextWave, true);
         ChallengeButton = AddButton(this, "OVERRUN: OFF", new(1052, 788), new(336, 38), ToggleChallenge);
         soundButton = AddButton(this, "SOUND ON  [M]", new(1052, 848), new(336, 28), ToggleSound);
@@ -152,7 +155,7 @@ public partial class GameRoot : Control
         DrawRect(new(28, 178, 984, 658), Border, false, 1);
         DrawRect(new(1032, 156, 378, 680), Panel);
         DrawRect(new(1032, 156, 378, 680), Border, false, 1);
-        DrawLine(new(1052, 478), new(1388, 478), Border, 1);
+        DrawLine(new(1052, 462), new(1388, 462), Border, 1);
         DrawLine(new(870, 31), new(870, 100), Border, 1);
         DrawLine(new(1050, 31), new(1050, 100), Border, 1);
         DrawLine(new(1230, 31), new(1230, 100), Border, 1);
@@ -185,7 +188,7 @@ public partial class GameRoot : Control
         for (var i = 0; i < BuildButtons.Length; i++)
         {
             BuildButtons[i].Disabled = ended;
-            BuildButtons[i].Modulate = Building && BuildType == i ? Mint : Run.Gold >= Content.Towers[i].Cost ? Colors.White : Muted;
+            BuildButtons[i].Modulate = Building && !BuildingGarrison && BuildType == i ? Mint : Run.Gold >= Content.Towers[i].Cost ? Colors.White : Muted;
         }
         for (var i = 0; i < SpeedButtons.Length; i++) SpeedButtons[i].Modulate = Speed == (1 << i) ? Mint : Colors.White;
         var tower = Run.Towers.FirstOrDefault(t => t.Id == SelectedTower);
@@ -217,7 +220,10 @@ public partial class GameRoot : Control
             resultBody.Text = $"{Run.Kills} stopped    /    {Run.Leaks} breached    /    {Run.Lives} lives remain\n{Run.DamageDealt} damage dealt    ·    {Run.GoldEarned} gold earned\n{Run.WaveNumber} waves faced    ·    {Run.Tick / 60d:0.0}s simulated";
             resultBody.Text += "\n" + string.Join("  /  ", Run.Reactions.Select(r => $"{r.Triggers} {r.Definition.Name}")) + $"  /  {Run.ReactionDamage} reaction damage";
             resultBody.Text += $"\nRelics: {string.Join(", ", Run.Relics.Select(r => r.Name))}\n{Run.WaveReports.Count} waves cleared / {Run.WaveReports.Count(w => w.ChallengeWon)} Overruns earned / seed {Run.Seed}";
+            if (Run.Garrison is { } garrison)
+                resultBody.Text += $"\nShieldguards: {garrison.DamageDealt} damage / {garrison.Kills} stopped / {garrison.Casualties} fallen / {garrison.EngagedTicks / 60d:0}s total engagement";
         }
+        RefreshSquadInterface(ended);
         RefreshExpeditionInterface();
     }
 
@@ -225,21 +231,26 @@ public partial class GameRoot : Control
     {
         if (EvolutionPanel.Visible || RewardPanel.Visible) return;
         if (Run.Phase is RunPhase.Victory or RunPhase.Defeat || type < 0 || type >= Content.Towers.Length) return;
-        BuildType = type; Building = true; SelectedTower = 0;
+        ClearSquadSelection(); BuildType = type; Building = true; SelectedTower = 0;
         Message($"{BuildDefinition.Name}: {BuildDefinition.Description} Choose a foundation."); RefreshInterface();
     }
     public void SelectFoundation(int index)
     {
         if (EvolutionPanel.Visible || RewardPanel.Visible) return;
         if (Run.Phase is RunPhase.Victory or RunPhase.Defeat) return;
+        if (Run.Garrison?.Foundation == index) { SelectGarrison(); return; }
         var tower = Run.Towers.FirstOrDefault(t => t.Foundation == index);
-        if (tower is not null) { SelectedTower = tower.Id; Building = false; Message("Tower selected. Its range is shown on the battlefield."); }
+        if (tower is not null) { ClearSquadSelection(); SelectedTower = tower.Id; Building = false; Message("Tower selected. Its range is shown on the battlefield."); }
         else if (Building)
         {
-            var result = Run.Apply(new PlaceTower(index, BuildDefinition.Id)); Message(result.Message);
-            if (result.Success) { SelectedTower = result.EntityId; Building = false; }
+            var result = Run.Apply(BuildingGarrison ? new PlaceGarrison(index) : new PlaceTower(index, BuildDefinition.Id)); Message(result.Message);
+            if (result.Success)
+            {
+                if (BuildingGarrison) { SelectGarrison(); BeginRally(); }
+                else { SelectedTower = result.EntityId; Building = false; }
+            }
         }
-        else Message("Choose Boltworks [B], Prism [P] or Crucible [C], then an empty foundation.");
+        else Message("Choose a tower [B/P/C] or Garrison [G], then an empty foundation.");
         RefreshInterface();
     }
     private void SellSelected() { Message(Run.Apply(new SellTower(SelectedTower)).Message); SelectedTower = 0; RefreshInterface(); }
@@ -260,6 +271,7 @@ public partial class GameRoot : Control
         EvolutionPanel.Visible = false;
         RewardPanel.Visible = false;
         Run = new Simulation(Content, unchecked(Run.Seed + 1)); clock = new(); Speed = 1; Building = false; SelectedTower = 0; BuildType = 0;
+        ClearSquadSelection();
         Board.ClearEffects(); audio.StopAll(); Message("A fresh defense. Read the forecast and choose your tower mix."); RefreshInterface();
     }
     public override void _UnhandledKeyInput(InputEvent @event)
@@ -284,6 +296,9 @@ public partial class GameRoot : Control
             case Key.B: ChooseBuild(0); break;
             case Key.P: ChooseBuild(1); break;
             case Key.C: ChooseBuild(2); break;
+            case Key.G: ChooseGarrison(); break;
+            case Key.F: BeginRally(); break;
+            case Key.H: OrderRetreat(); break;
             case Key.T: CyclePriority(); break;
             case Key.U: OpenEvolution(); break;
             case Key.I: OpenRelicReview(); break;
@@ -293,7 +308,7 @@ public partial class GameRoot : Control
             case Key.Key2: SetSpeed(2); break;
             case Key.Key4: SetSpeed(4); break;
             case Key.M: ToggleSound(); break;
-            case Key.Escape: Building = false; SelectedTower = 0; Message("Placement cancelled."); break;
+            case Key.Escape: CancelOrders(); break;
             case Key.R: if (Run.Phase is RunPhase.Victory or RunPhase.Defeat) Restart(); break;
             default: return;
         }

@@ -1,6 +1,6 @@
 # REDESIGN: EVOLUTION — Game design
 
-Version 0.4, 2026-10-21. Reactions, specializations and the expedition intervention are implemented; Circuits and the full-length run remain planned. Numbers below describe active `expedition.json`. The earlier six-wave `emberwatch.json` retains its own unchanged balance as a regression fixture. Numbers are design hypotheses, not inherited assignment requirements.
+Version 0.5, 2026-10-21. Reactions, specializations and the expedition are playable. FR-01 squad combat is implemented in Core/headless scenarios; its player controls/animation are next in FR-02. Circuits are deferred for reassessment after the squad/map work. Numbers below describe active `expedition.json`; the earlier six-wave `emberwatch.json` retains its own balance as a regression fixture. Values are design hypotheses, not inherited assignment requirements.
 
 ## Implemented expedition: Emberwatch
 
@@ -67,11 +67,19 @@ Overrun is a per-wave, opt-in contract, reset after clearing. Add `2 + floor(wav
 
 Wave reports retain kills, breaches, duration, total income, clear/bonus payment and contract outcome. The current result UI summarizes these; the CLI includes every wave and tower. Persistent comparison analytics remain planned.
 
+## Road squads — Core implemented, player integration pending
+
+One 120-gold Garrison commits a foundation and deploys three 80-health Shieldguards. Each holds one ordinary enemy, deals modest impact damage and can retreat or rally along the road within a 230-unit travel budget. Extra enemies pass. Melee does not consume chill/oil or trigger reactions, preserving the tower finisher's role. Guards cannot heal or respawn during combat; entering planning fully heals/revives and regroups them for free. Captains can be held but defeat a full-health guard in two hits. Bellwarden keeps moving and warns before cleaving nearby guards.
+
+The [kernel contract](ROAD_SQUAD_KERNEL.md) owns exact values, command validation, tick ordering, recovery and event rules. The system is available through Core commands and the opt-in CLI `--squad` witness. Normal Godot play does not yet show a Garrison card, troops or cleave warnings. Do not treat the 96-test result as animation or usability verification.
+
+The first squad purchase experiment replaces foundation 3's tower and often loses where the preceding build wins. FR-02 must test deliberate placement/purchase timing alongside no-Garrison alternatives, add actual controls and state-driven animation, and expose the boss warning before calling the squad slice playable or balanced.
+
 ## Full run — planned
 
 Use human observations to validate the eventual 25–40-minute pacing target. Eighteen waves/three acts was an initial hypothesis; retain the current four-stage structure if it produces stronger decisions. Expand relic diversity toward twelve, forecast two waves, add distinct contract formations and vary maps by seed. Do not pad duration with redundant waves. No hidden adaptive hard counters.
 
-Currency creates opportunity costs between towers, branches and links. Avoid mandatory click-to-collect income. Two authored maps receive validated variations. Godot editor authoring comes first; a player map editor is optional.
+Currency creates opportunity costs between towers, branches and the Garrison. Links are a later candidate if retained. Avoid mandatory click-to-collect income. Two authored maps receive validated variations. Godot editor authoring comes first; a player map editor is optional.
 
 ## Tower evolution — implemented
 
@@ -114,7 +122,9 @@ Credit actual reaction damage and kills to the triggering tower, including after
 
 Ignition is the first temporary terrain interaction. Frozen ground, freeform walls, flooding and water/electricity are deferred. Oil currently belongs to an enemy, not a ground surface. Enemy disruption and broader terrain counterplay remain RE2-05.
 
-## Resonance Circuits — after expedition playtesting, not implemented
+## Resonance Circuits — deferred experiment, not implemented
+
+Reassess after FR-07 against troop positioning, relics and Field Standards/Resolve. The following numbers describe the earlier proposal, not mandatory MVP work or an approved next implementation task.
 
 Directed links: four-tile maximum, 25 gold initial cost, one outgoing/two incoming ports. Reject cycles/invalid endpoints before spending. Rewire between waves without another fee; no investment refund for rewiring. Removing towers removes their links.
 
@@ -139,7 +149,7 @@ Menders restore 12 health to eligible allies within 105 units every 150 ticks, p
 
 **Implemented Bellwarden:** personal 45% guard and 20 armor open during a 90-tick windup before each rally. Rally every 300 ticks: two Raiders placed behind the boss, at most twelve total. At half health, enrage latches, speed rises 25%, rally interval halves and the next rally is brought closer without skipping its warning. Once reinforcements run out the personal guard/armor remain down. External Wardens can still protect it. All timers pause. No repeatable summon bounty. Kill supports, manage the fast rush, exploit exposed windows; the boss bar reports both phases.
 
-The earlier concept of summoning supports and suppressing a circuit is superseded for this slice. Reevaluate disruption only after Circuits work; adding it is not a requirement merely because it appeared in an earlier document.
+The earlier concept of summoning supports and suppressing a circuit is superseded for this slice. Reevaluate disruption against the tower/squad battlefield; it does not require implementing Circuits first. Its precise behavior remains a separate design task.
 
 ## Replayability and progression
 

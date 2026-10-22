@@ -6,11 +6,11 @@ A PC tower defense game about an arcane frontier, tower specialization and eleme
 
 **Read [the agent handoff](docs/AGENT_HANDOFF.md).** It contains the current state, exact next task, code entry points, verification commands and a ready-to-paste continuation prompt. Root [AGENTS.md](AGENTS.md) directs repository-aware agents to the same handoff.
 
-As of 2026-10-21, the twelve-wave expedition is implemented at `3748e0d` on `Ege-redevelop`. The latest session is **documentation only**: the owner is handing implementation to a colleague. The last recorded baseline is 76 passing tests and a verified Windows package; verify it again when beginning code changes.
+As of 2026-10-21, development has resumed from `856cb2d` on `Ege-redevelop`. **FR-01 road squad simulation is implemented**, with 96 passing tests and the existing Godot UI smoke passing. Its Garrison controls and animations are not yet available in normal play; the next milestone is **FR-02 Animated squad slice**. The existing Windows ZIP predates this kernel work.
 
-The accepted next direction is **road warriors → stronger animation → a second battlefield and persistent map unlocks → mastery/challenges and results graphs**. Begin with **FR-01 Road squad kernel**, then **FR-02 Animated squad slice** on Emberwatch. These systems are not implemented yet. The [frontier design and task checklist](docs/FRONTIER_CAMPAIGN_PROPOSAL.md) provides the rules and acceptance criteria; Circuits are deferred for reassessment after this work.
+The direction is **road warriors → stronger animation → a second battlefield and persistent map unlocks → mastery/challenges and results graphs**. The [squad kernel contract](docs/ROAD_SQUAD_KERNEL.md) records implemented rules, provisional values and measured balance limitations. The [frontier task checklist](docs/FRONTIER_CAMPAIGN_PROPOSAL.md) tracks the remaining work; Circuits are deferred for reassessment.
 
-Check Git status before editing and preserve local changes. Handoff/research documents are currently uncommitted: include them when transferring work to another checkout. No gameplay implementation was started by this handoff session.
+Check Git status before editing and preserve local changes. FR-01 source and documentation changes are currently uncommitted; include them when transferring work to another checkout.
 
 ## Play and develop
 
@@ -34,6 +34,8 @@ Start with 180 gold and 12 lives. Click a tower card then a foundation; select t
 Active content lives in `Redesign-Evolution/Game/Content/expedition.json` (format 2). The prior six-wave `emberwatch.json` and three-wave `foundation.json` remain unchanged as regression scenarios. Circuits, additional maps, save/resume, final art and full 25–40-minute runs remain planned. This iteration prioritizes earned progression and encounter pressure over another isolated combat system.
 
 `dev.cmd sim` runs the expedition through ordinary commands. After building, use `dotnet Redesign-Evolution/SimRunner/bin/Debug/net8.0/Redesign.SimRunner.dll --balance` for frost/fire/steel and passive controls across seeds 1/7/42; add `--risk` to accept every Overrun. Individual runs accept `--strategy fire --seed 42`. `--roster`, `--evolution` and `--foundation` select the earlier scenarios; `--no-build` verifies defeat. `dev.cmd benchmark` measures reference scans versus spatial queries, not graphics FPS. Automated victories establish feasibility; human difficulty/enjoyment playtesting remains necessary.
+
+Add `--squad` to an expedition CLI run or balance batch to exercise the new Garrison through ordinary commands. This reserves one tower foundation and adds guard contribution/casualty/engagement statistics. It is an early strategy experiment: several previously winning builds lose after this purchase change, so squad balance remains an explicit FR-02 task.
 
 ## Project
 

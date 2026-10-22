@@ -74,7 +74,7 @@ public sealed partial class Simulation
             case PlaceTower placement:
                 if (placement.Foundation < 0 || placement.Foundation >= definition.Map.Foundations.Length)
                     return new(false, "Choose a marked foundation.");
-                if (towers.Any(t => t.Foundation == placement.Foundation)) return new(false, "This foundation is occupied.");
+                if (FoundationOccupied(placement.Foundation)) return new(false, "This foundation is occupied.");
                 if (!towerDefinitions.TryGetValue(placement.TowerId ?? definition.Towers[0].Id, out var spec))
                     return new(false, "Unknown tower type.");
                 if (Gold < spec.Cost) return new(false, "Not enough gold.");
@@ -129,6 +129,9 @@ public sealed partial class Simulation
                 if (Phase != RunPhase.Wave) return new(false, "Pause is available during a wave.");
                 IsPaused = pause.Paused;
                 return new(true, IsPaused ? "Tactical pause — you can still build." : "Defense resumed.");
+            case PlaceGarrison placement: return BuildGarrison(placement.Foundation);
+            case RallySquad rally: return RallyGuards(rally.Position);
+            case RetreatSquad: return RetreatGuards();
             case ChooseRelic choice: return ClaimRelic(choice.RelicId);
             case SetChallenge challenge:
                 if (definition.Expedition is null || Phase != RunPhase.Planning || rewardOffers.Count > 0)
@@ -149,13 +152,15 @@ public sealed partial class Simulation
             enemies.Add(enemy); enemyById.Add(enemy.Id, enemy);
             PendingSpawns--;
         }
+        MoveGuards();
         foreach (var enemy in enemies)
         {
             PrepareAbility(enemy);
             enemy.StatusSet.Expire(Tick);
             enemy.PreviousPosition = enemy.Position;
             var speed = enemy.Definition.Speed * (enemy.Enraged ? 1 + (enemy.Definition.Boss?.EnrageSpeedPercent ?? 0) / 100d : 1);
-            enemy.Progress = Math.Min(Route.Length, enemy.Progress + speed * (100 - enemy.SlowPercent) / (100d * TicksPerSecond));
+            var nextProgress = Math.Min(Route.Length, enemy.Progress + speed * (100 - enemy.SlowPercent) / (100d * TicksPerSecond));
+            enemy.Progress = MoveAgainstGuards(enemy, nextProgress);
             enemy.Position = Route.At(enemy.Progress);
         }
         if (!referenceQueries) spatial.Rebuild(enemies);
@@ -218,12 +223,14 @@ public sealed partial class Simulation
             else projectile.Position += difference * (travel / difference.Length);
         }
         ResolvePersistentEffects();
+        ResolveSquadCombat();
         ResolveEnemyAbilities();
         // Resolve deaths first: a killed enemy at the gate cannot also leak.
         foreach (var enemy in enemies)
         {
             if (!enemy.Alive || enemy.Progress < Route.Length) continue;
             enemy.Alive = false; Leaks++;
+            ReleaseEnemyEngagement(enemy);
             Lives = Math.Max(0, Lives - enemy.Definition.LeakDamage);
             Emit(EventKind.Leaked, enemy.Position, enemy.Id, enemy.Definition.LeakDamage);
         }
@@ -232,6 +239,7 @@ public sealed partial class Simulation
         if (Lives == 0)
         {
             Phase = RunPhase.Defeat; IsPaused = false;
+            FinishSquadWave(false);
             Emit(EventKind.Defeat, Route.At(Route.Length));
         }
         else if (PendingSpawns == 0 && enemies.Count == 0)
@@ -239,6 +247,7 @@ public sealed partial class Simulation
             projectiles.Clear(); burningAreas.Clear(); pendingImpacts.Clear();
             CompleteWaveRewards();
             Phase = WaveNumber == definition.Waves.Length ? RunPhase.Victory : RunPhase.Planning;
+            FinishSquadWave(Phase == RunPhase.Planning);
             Emit(Phase == RunPhase.Victory ? EventKind.Victory : EventKind.WaveCleared, Route.At(Route.Length));
         }
     }
@@ -266,19 +275,25 @@ public sealed partial class Simulation
             (candidate.Progress == current.Progress && candidate.Id < current.Id);
     }
 
-    private void DealDamage(EnemyState enemy, int amount, int towerId, DamageKind kind,
+    private void DealDamage(EnemyState enemy, int amount, int sourceId, DamageKind kind,
         AttackKind attack = AttackKind.Bolt, ReactionStatistics? reaction = null)
     {
         if (!enemy.Alive) return;
+        towerHistory.TryGetValue(sourceId, out var tower);
+        var guard = tower is null ? guardById[sourceId] : null;
         var afterArmor = kind != DamageKind.Impact ? amount : Math.Max(1, amount - enemy.EffectiveArmor);
         var afterShield = Math.Max(1, (int)((long)afterArmor * (100 - enemy.ShieldPercent) / 100));
         var damage = Math.Min(afterShield, enemy.Health);
         enemy.Health -= damage; DamageDealt += damage;
-        var tower = towerHistory[towerId]; tower.DamageDealt += damage;
-        if (reaction is not null) { reaction.Damage += damage; tower.ReactionDamage += damage; ReactionDamage += damage; }
-        Emit(EventKind.Hit, enemy.Position, enemy.Id, damage, attack, damageKind: kind);
+        if (tower is not null) tower.DamageDealt += damage;
+        else { guard!.DamageDealt += damage; Garrison!.DamageDealt += damage; }
+        if (reaction is not null) { reaction.Damage += damage; tower!.ReactionDamage += damage; ReactionDamage += damage; }
+        Emit(EventKind.Hit, enemy.Position, enemy.Id, damage, attack, damageKind: kind, effectId: guard is null ? null : "melee");
         if (enemy.Health > 0) return;
-        enemy.Alive = false; Kills++; tower.Kills++;
+        enemy.Alive = false; Kills++;
+        ReleaseEnemyEngagement(enemy); CancelEnemyMelee(enemy);
+        if (tower is not null) tower.Kills++;
+        else { guard!.Kills++; Garrison!.Kills++; }
         Gold += enemy.Definition.Bounty; GoldEarned += enemy.Definition.Bounty;
         Emit(EventKind.Killed, enemy.Position, enemy.Id, enemy.Definition.Bounty);
     }
@@ -311,6 +326,7 @@ public sealed partial class Simulation
             { writer.Write(p.Id); writer.Write(p.SourceId); writer.Write(p.TargetId); writer.Write(p.Position.X); writer.Write(p.Position.Y); writer.Write(p.AimPosition.X); writer.Write(p.AimPosition.Y); writer.Write(p.Definition.Id); }
             WriteEffects(writer);
             WriteExpedition(writer);
+            WriteSquad(writer);
         }
         return Convert.ToHexString(SHA256.HashData(stream.ToArray())).ToLowerInvariant();
     }

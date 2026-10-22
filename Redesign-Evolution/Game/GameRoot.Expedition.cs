@@ -54,7 +54,7 @@ public partial class GameRoot
     }
     private void ShowRelics(bool choosing)
     {
-        EvolutionPanel.Visible = false; Building = false;
+        EvolutionPanel.Visible = false; Building = false; ClearSquadSelection();
         var offers = choosing ? Run.RewardOffers : Run.Relics;
         rewardTitle.Text = choosing ? $"WAVE {Run.WaveNumber} HELD / CLAIM A RELIC" : "YOUR EXPEDITION / RELICS";
         rewardHint.Text = choosing ? "Choose one. It lasts for this run and changes existing and future towers. The other two are left behind.\n" +

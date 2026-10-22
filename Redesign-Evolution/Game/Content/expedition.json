@@ -3,6 +3,23 @@
   "id": "emberwatch-expedition-v1",
   "startingGold": 180,
   "startingLives": 12,
+  "garrison": {
+    "id": "garrison",
+    "name": "Shieldguard Garrison",
+    "description": "Three guards hold one enemy each. Rally along the road or retreat; recover only between waves. One permanent foundation per run.",
+    "cost": 120,
+    "commandRadius": 230,
+    "guard": {
+      "id": "shieldguard",
+      "name": "Shieldguard",
+      "health": 80,
+      "damage": 8,
+      "speed": 100,
+      "reach": 20,
+      "cooldownTicks": 60,
+      "windupTicks": 15
+    }
+  },
   "map": {
     "id": "emberwatch",
     "title": "Emberwatch",
@@ -478,6 +495,7 @@
     {
       "id": "runner",
       "name": "Runner",
+      "melee": { "damage": 8, "reach": 24, "cooldownTicks": 60, "windupTicks": 20 },
       "health": 55,
       "bounty": 2,
       "leakDamage": 1,
@@ -486,6 +504,7 @@
     {
       "id": "bulwark",
       "name": "Bulwark",
+      "melee": { "damage": 20, "reach": 24, "cooldownTicks": 90, "windupTicks": 30 },
       "health": 180,
       "bounty": 5,
       "leakDamage": 2,
@@ -494,6 +513,7 @@
     },
     {
       "id": "warden",
+      "melee": { "damage": 10, "reach": 24, "cooldownTicks": 60, "windupTicks": 20 },
       "leakDamage": 2,
       "shieldRadius": 100,
       "speed": 43,
@@ -505,6 +525,7 @@
     {
       "id": "mender",
       "name": "Mender",
+      "melee": { "damage": 6, "reach": 24, "cooldownTicks": 90, "windupTicks": 30 },
       "health": 135,
       "bounty": 6,
       "healing": {
@@ -519,6 +540,7 @@
     {
       "id": "raider",
       "name": "Raider",
+      "melee": { "damage": 10, "reach": 24, "cooldownTicks": 42, "windupTicks": 14 },
       "health": 65,
       "bounty": 0,
       "leakDamage": 1,
@@ -526,6 +548,7 @@
     },
     {
       "id": "captain",
+      "melee": { "damage": 40, "reach": 28, "cooldownTicks": 90, "windupTicks": 30 },
       "health": 400,
       "leakDamage": 3,
       "slowResistancePercent": 25,
@@ -537,6 +560,7 @@
     {
       "armor": 20,
       "id": "bellwarden",
+      "melee": { "damage": 70, "reach": 76, "cooldownTicks": 180, "windupTicks": 60, "unstoppable": true, "cleave": true },
       "boss": {
         "maxSummons": 12,
         "intervalTicks": 300,

@@ -35,7 +35,7 @@ public partial class GameRoot
         BranchChoices = Content.Combat?.Branches.Where(b => b.TowerId == tower.FamilyId).ToArray() ?? [];
         if (BranchChoices.Length == 0) return;
         if (Run.Phase == RunPhase.Wave) Run.Apply(new Pause(true));
-        Building = false;
+        Building = false; ClearSquadSelection();
         evolutionTitle.Text = $"EVOLVE / {tower.Definition.Name.ToUpperInvariant()}";
         evolutionHint.Text = $"{Run.Gold} gold available. Choose one permanent specialization for this tower.\n" +
             (Run.Phase == RunPhase.Wave ? "Battle paused. After choosing or closing, press Space to resume." : "Paths change how a tower fights. Pair a setup tower with a finisher.");
